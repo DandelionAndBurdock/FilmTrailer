@@ -46,16 +46,16 @@ public:
 	void		GenerateW();	//builds 4th component when loading in shortened, 3 component quaternions
 
 	static Quaternion EulerAnglesToQuaternion(float pitch, float yaw, float roll);
-	static Quaternion AxisAngleToQuaterion(const Vector3& vector, float degrees);
+	static Quaternion AxisAngleToQuaterion(const glm::vec3& vector, float degrees);
 
-	static void RotatePointByQuaternion(const Quaternion &q, Vector3 &point);
+	static void RotatePointByQuaternion(const Quaternion &q, glm::vec3 &point);
 
 	static Quaternion FromMatrix(const Matrix4 &m);
 
 	static float Dot(const Quaternion &a, const Quaternion &b);
 
 	Quaternion operator *(const Quaternion &a) const;
-	Quaternion operator *(const Vector3 &a) const;
+	Quaternion operator *(const glm::vec3 &a) const;
 
 	inline friend std::ostream& operator<<(std::ostream& o, const Quaternion& q){
 		o << "Quat(" << q.x << "," << q.y << "," << q.z <<  "," << q.w << ")" << std::endl;

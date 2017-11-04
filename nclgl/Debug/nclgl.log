@@ -1,10 +1,10 @@
-﻿  Window.cpp
+﻿  Camera.cpp
+  Generating Code...
+  Compiling...
+  Window.cpp
   Shader.cpp
   OGLRenderer.cpp
   Mesh.cpp
+  HeightMap.cpp
   Generating Code...
-  Skipping... (no relevant changes detected)
-  Quaternion.cpp
-  Light.cpp
-Light.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
   nclgl.vcxproj -> C:\FilmTrailer\Coursework\Debug\nclgl.lib

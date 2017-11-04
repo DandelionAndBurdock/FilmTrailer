@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Vector4.h"
-#include "Vector3.h"
+#include "../glm/vec4.hpp"
+#include "../glm/vec3.hpp"
 
 class Light
 {
 public:
-	Light(Vector3 position, Vector4 colour, float radius) {
+	Light(glm::vec3 position, glm::vec4 colour, float radius) {
 		this->position = position;
 		this->colour = colour;
 		this->radius = radius;
@@ -14,17 +14,17 @@ public:
 
 	~Light() {}
 
-	Vector3 GetPosition() const {	return position; }
-	void SetPosition(Vector3 val) {	position = val; }
+	glm::vec3 GetPosition() const {	return position; }
+	void SetPosition(glm::vec3 val) {	position = val; }
 
 	float GetRadius() const {	return radius;}
 	void SetRadius(float val) {	radius = val; }
 
-	Vector4 GetColour() const {	return colour; }
-	void SetColour(Vector4 val) { colour = val; }
+	glm::vec4 GetColour() const {	return colour; }
+	void SetColour(glm::vec4 val) { colour = val; }
 
 protected:
-	Vector3 position;
-	Vector4 colour;
+	glm::vec3 position;
+	glm::vec4 colour;
 	float radius;
 };

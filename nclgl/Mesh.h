@@ -31,9 +31,9 @@ protected:
 	GLuint numIndices;
 	GLuint type;
 
-	Vector3* vertices;
-	Vector3* normals;
-	Vector4* colours;
-	Vector2* textureCoords;
+	glm::vec3* vertices;
+	glm::vec3* normals;
+	glm::vec4* colours;
+	glm::vec2* textureCoords;
 	unsigned int* indices;
 };

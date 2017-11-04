@@ -2,6 +2,7 @@
 #include "Mouse.h"
 #include "Keyboard.h"
 
+#include <iostream>
 Window* Window::window;
 
 Keyboard*Window::keyboard	= NULL;

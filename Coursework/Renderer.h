@@ -1,12 +1,20 @@
 #pragma once
-#include "nclgl/OGLRenderer.h"
 
-class Renderer : public OGLRenderer	{
+#include "../../nclgl/OGLRenderer.h"
+#include "../../nclgl/Camera.h"
+#include "../../nclgl/HeightMap.h"
+
+class Renderer : public OGLRenderer {
 public:
-	Renderer(Window &parent);
-	virtual ~Renderer(void);
+	Renderer(Window& parent);
+	virtual ~Renderer();
+
 	virtual void RenderScene();
+	virtual void UpdateScene(float msec);
 
 protected:
-	Mesh*	triangle;
+	HeightMap* heightMap;
+	Camera* camera;
+
+	GLuint mapTexture;
 };

@@ -111,7 +111,7 @@ void Mouse::UpdateHolds()	{
 	memcpy(holdButtons,buttons,	MOUSE_MAX * sizeof(bool));
 	//We sneak this in here, too. Resets how much the mouse has moved
 	//since last update
-	relativePosition.ToZero();
+	relativePosition.x = relativePosition.y = 0;
 	//And the same for the mouse wheel
 	frameWheel = 0;
 }
@@ -153,14 +153,14 @@ bool Mouse::ButtonHeld(MouseButtons b)	{
 /*
 Returns how much the mouse has moved by since the last frame.
 */
-Vector2	Mouse::GetRelativePosition()	{
+glm::vec2	Mouse::GetRelativePosition()	{
 	return relativePosition;
 }
 
 /*
 Returns the mouse pointer position in absolute space.
 */
-Vector2 Mouse::GetAbsolutePosition()	{
+glm::vec2 Mouse::GetAbsolutePosition()	{
 	return absolutePosition;
 }
 

@@ -40,7 +40,7 @@ public:
 	void	LockMouseToWindow(bool lock);
 	void	ShowOSPointer(bool show);
 
-	Vector2	GetScreenSize() {return size;};
+	glm::vec2	GetScreenSize() {return size;};
 
 	static Keyboard*	GetKeyboard()	{return keyboard;}
 	static Mouse*		GetMouse()		{return mouse;}
@@ -67,8 +67,8 @@ protected:
 	bool				lockMouse;
 	bool				showMouse;
 
-	Vector2				position;
-	Vector2				size;
+	glm::vec2				position;
+	glm::vec2				size;
 
 	float				elapsedMS;
 

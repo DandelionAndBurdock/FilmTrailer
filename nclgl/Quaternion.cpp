@@ -47,7 +47,7 @@ Quaternion Quaternion::operator *(const Quaternion &b) const{
 	return ans;
 }
 
-Quaternion Quaternion::operator *(const Vector3 &b) const{
+Quaternion Quaternion::operator *(const glm::vec3 &b) const{
 	Quaternion ans;
 
 	ans.w = -(x * b.x) - (y * b.y) - (z * b.z);
@@ -111,7 +111,7 @@ Quaternion Quaternion::EulerAnglesToQuaternion(float pitch, float yaw, float rol
 	return q;
 };
 
-Quaternion Quaternion::AxisAngleToQuaterion(const Vector3& vector, float degrees)	{
+Quaternion Quaternion::AxisAngleToQuaterion(const glm::vec3& vector, float degrees)	{
 	float theta = (float)DegToRad(degrees);
 	float result = (float)sin( theta / 2.0f );
 

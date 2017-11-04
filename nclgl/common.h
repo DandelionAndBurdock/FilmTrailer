@@ -32,11 +32,9 @@ static inline double DegToRad(const double rad)	{
 	return rad * PI / 180.0;
 };
 
-//I blame Microsoft...
-#define max(a,b)    (((a) > (b)) ? (a) : (b))
-#define min(a,b)    (((a) < (b)) ? (a) : (b))
 
-#define SHADERDIR	"../../Shaders/"
-#define MESHDIR		"../../Meshes/"
-#define TEXTUREDIR  "../../Textures/"
-#define SOUNDSDIR	"../../Sounds/"
+
+#define SHADERDIR	"../Shaders/"
+#define MESHDIR		"../Meshes/"
+#define TEXTUREDIR  "../Textures/"
+#define SOUNDSDIR	"../Sounds/"

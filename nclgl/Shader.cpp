@@ -1,5 +1,6 @@
 #include "Shader.h"
 
+#include <iostream>
 Shader::Shader(string vFile, string fFile, string gFile)	{
 	program = glCreateProgram();
 	objects[SHADER_VERTEX] = GenerateShader(vFile, GL_VERTEX_SHADER);
