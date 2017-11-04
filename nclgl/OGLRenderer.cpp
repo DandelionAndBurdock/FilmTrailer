@@ -135,7 +135,6 @@ OGLRenderer::OGLRenderer(Window &window)	{
 Destructor. Deletes the default shader, and the OpenGL rendering context.
 */
 OGLRenderer::~OGLRenderer(void)	{
-	delete currentShader;
 	wglDeleteContext(renderContext);
 }
 
@@ -189,12 +188,13 @@ projMatrix, and textureMatrix. Updates them with the relevant
 matrix data. Sanity checks currentShader, so is always safe to
 call.
 */
+//TODO: Make MVP
 void OGLRenderer::UpdateShaderMatrices()	{
 	if(currentShader) {
-		glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "modelMatrix"),	1,false, (float*)&modelMatrix);
-		glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "viewMatrix") ,	1,false, (float*)&viewMatrix);
-		glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "projMatrix") ,	1,false, (float*)&projMatrix);
-		glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "textureMatrix")  ,1,false, (float*)&textureMatrix);
+		glUniformMatrix4fv(currentShader->GetLocation("modelMatrix"),	1,false, (float*)&modelMatrix);
+		glUniformMatrix4fv(currentShader->GetLocation("viewMatrix"),	1,false, (float*)&viewMatrix);
+		glUniformMatrix4fv(currentShader->GetLocation("projMatrix"),	1,false, (float*)&projMatrix);
+		glUniformMatrix4fv(currentShader->GetLocation("textureMatrix"),1,false, (float*)&textureMatrix);
 	}
 }
 

@@ -1,10 +1,4 @@
-﻿  Camera.cpp
-  Generating Code...
-  Compiling...
-  Window.cpp
-  Shader.cpp
-  OGLRenderer.cpp
-  Mesh.cpp
-  HeightMap.cpp
-  Generating Code...
+﻿cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
+  Texture.cpp
+c:\filmtrailer\nclgl\texture.cpp(42): warning C4800: 'GLuint': forcing value to bool 'true' or 'false' (performance warning)
   nclgl.vcxproj -> C:\FilmTrailer\Coursework\Debug\nclgl.lib

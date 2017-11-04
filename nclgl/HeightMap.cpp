@@ -6,7 +6,7 @@
 HeightMap::HeightMap(std::string name)
 {
 
-	std::ifstream file(name.c_str(), ios::binary);
+	std::ifstream file(name.c_str(), std::ios::binary);
 
 	if (!file) {
 		std::cout << "Failed to load" << name << std::endl;

@@ -14,6 +14,7 @@
 #define HEIGHTMAP_TEX_X 1.0f / 16.0f
 #define HEIGHTMAP_TEX_Z 1.0f / 16.0f
 
+
 class HeightMap : public Mesh
 {
 public:

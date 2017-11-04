@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OGLRenderer.h"
+#include "OGLRenderer.h" //TODO: Why this include?
 
 enum MeshBuffer {
 	VERTEX_BUFFER, COLOUR_BUFFER, TEXTURE_BUFFER, NORMAL_BUFFER, INDEX_BUFFER, MAX_BUFFER

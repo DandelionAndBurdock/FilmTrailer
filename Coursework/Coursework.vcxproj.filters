@@ -2,9 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="tutorial8.cpp" />
+    <ClCompile Include="CubeRobot.cpp" />
+    <ClCompile Include="Tutorial7.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="CubeRobot.h" />
   </ItemGroup>
 </Project>
