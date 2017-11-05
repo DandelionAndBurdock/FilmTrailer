@@ -86,6 +86,45 @@ Mesh* Mesh::GenerateQuad(){
 	return m;
 }
 
+Mesh* Mesh::GenerateNullQuad() {
+	const int VERTS_PER_QUAD = 4;
+	const int FLOATS_PER_VERTEX = 3;
+	const int INDICES_PER_QUAD = 6;
+	const int STRIDE = 0;
+	const int OFFSET = 0;
+
+	Mesh* m = new Mesh();
+
+	m->type = GL_TRIANGLE_STRIP;
+	m->numVertices = VERTS_PER_QUAD;
+	m->numIndices = INDICES_PER_QUAD;
+
+	m->vertices = nullptr;
+
+	m->indices = new unsigned int[m->numIndices];
+	m->indices[0] = m->indices[3] = 0;
+	m->indices[1] = m->indices[4] = 1;
+	m->indices[2] = 2;
+	m->indices[5] = 3;
+
+	m->textureCoords = new glm::vec2[m->numVertices];
+	m->textureCoords[0] = glm::vec2(0.0f, 0.0f);
+	m->textureCoords[1] = glm::vec2(1.0f, 1.0f);
+	m->textureCoords[2] = glm::vec2(0.0f, 1.0f);
+	m->textureCoords[3] = glm::vec2(1.0f, 0.0f);
+
+
+	m->BufferData();
+
+	return m;
+}
+
+void Mesh::BufferVertices(glm::vec3* newVertices) {
+	glBindBuffer(GL_ARRAY_BUFFER, bufferObject[VERTEX_BUFFER]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, numVertices * sizeof(glm::vec3),
+		newVertices);
+}
+
 
 
 void Mesh::BufferData() {
@@ -98,10 +137,10 @@ void Mesh::BufferData() {
 
 	glGenBuffers(1, &bufferObject[VERTEX_BUFFER]);
 	glBindBuffer(GL_ARRAY_BUFFER, bufferObject[VERTEX_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(glm::vec3), 
-				 vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(glm::vec3),
+		vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(VERTEX_BUFFER, FLOATS_PER_VERTEX, GL_FLOAT,
-							GL_FALSE, STRIDE, OFFSET);
+		GL_FALSE, STRIDE, OFFSET);
 	glEnableVertexAttribArray(VERTEX_BUFFER);
 
 	if (textureCoords) {

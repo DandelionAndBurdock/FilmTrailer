@@ -66,13 +66,9 @@ T lerp(T a, T b, float mix) {
 
 #include <iostream>
 void CameraController::UpdatePosition() {
-	std::cout << "Lerp Factor: " << time / timePerWayPoint << std::endl;
 	glm::vec3 targetPosition(lerp<glm::vec3>(wayPoints[currentWaypoint], wayPoints[nextWaypoint], time / timePerWayPoint));
-	std::cout << "Target Position: " << targetPosition.x << "," << targetPosition.y << "," << targetPosition.z << std::endl;
 	glm::vec3 currentPosition = camera->GetPosition();
-	std::cout << "Current Position: " << camera->GetPosition().x << "," << camera->GetPosition().y << "," << camera->GetPosition().z << std::endl;
 	camera->SetPosition(lerp<glm::vec3>(currentPosition, targetPosition, time / timePerWayPoint));
-	std::cout << "Final Position: " << camera->GetPosition().x << "," << camera->GetPosition().y << "," << camera->GetPosition().z << std::endl;
 }
 
 void CameraController::UpdateViewDirection() {

@@ -37,22 +37,15 @@ public:
 	//Sets position in world space
 	void	SetPosition(glm::vec3 val) { position = val;}
 
-	//Gets yaw, in degrees
-	float	GetYaw()   const { return yaw;}
-	//Sets yaw, in degrees
-	void	SetYaw(float y);
-
-	//Gets pitch, in degrees
-	float	GetPitch() const { return pitch;}
-	//Sets pitch, in degrees
-	void	SetPitch(float p);
-
+	//Gets position in world space
+	glm::vec3 GetViewDirection() const { return viewDirection; }
+	//Sets position in world space
+	void	SetViewDirection(glm::vec3 val) { viewDirection = val; }
 
 protected:
 	void HandleMouseUpdates();  // Updates pitch, yaw, (roll) and view direction based on relative mouse movement since last called
 	void HandleKeyboardUpdates(float msec); // Moves camera position in response to keyboard input
-	float	yaw;
-	float	pitch;
+
 	float cameraMoveSpeed;			// Controls how fast the camera position changes
 	float cameraRotateSpeed;		// Controls how fast the camera rotates
 	glm::vec3 position;

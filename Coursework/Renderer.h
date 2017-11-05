@@ -4,11 +4,13 @@
 #include "../../nclgl/Camera.h"
 #include "../../nclgl/SceneNode.h"
 //#include "../../nclgl/Frustum.h"
+#include "nclgl\CameraController.h"
 #include "CubeRobot.h"
 
 #include <algorithm>
 
 class HeightMap;
+class TextRenderer;
 
 class Renderer : public OGLRenderer {
 public:
@@ -25,7 +27,10 @@ protected:
 	void DrawNodes();
 	void DrawNode(SceneNode* n);
 
+	void DrawFPS();
+
 	SceneNode* root;
+	CameraController* cameraControl;
 	Camera* camera;
 	Mesh* quad;
 
@@ -39,4 +44,6 @@ protected:
 	HeightMap* terrain;
 
 	GLuint mapTexture;
+
+	TextRenderer* text;
 };

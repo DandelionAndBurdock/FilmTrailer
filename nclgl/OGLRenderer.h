@@ -63,6 +63,7 @@ public:
 	}
 
 protected:
+	void CalculateFPS(float msec);
 	void SetShaderLight(const Light & l);
 
 	virtual void	Resize(int x, int y);	
@@ -85,4 +86,7 @@ protected:
 
 	HDC		deviceContext;	//...Device context?
 	HGLRC	renderContext;	//Permanent Rendering Context
+
+
+	float FPS;	// Frames per second
 };

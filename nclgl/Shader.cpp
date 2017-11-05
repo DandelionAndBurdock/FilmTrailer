@@ -173,5 +173,5 @@ void Shader::SetUniform(const std::string& name, const glm::mat4& mat) {
 	glUniformMatrix4fv(GetLocation(name), 1, false, (float*) &mat);
 }
 void Shader::SetUniform(const std::string& name, const glm::vec3& vec) {
-	glUniform4fv(GetLocation(name), 1, (float*)& vec);
+	glUniform3fv(GetLocation(name), 1, (float*)& vec);
 }

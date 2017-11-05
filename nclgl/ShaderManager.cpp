@@ -25,18 +25,15 @@ Shader* ShaderManager::GetShader(std::string name) const {
 	}
 }
 
-bool ShaderManager::AddShader(std::string name, const std::vector<std::string>& paths) {
-	if (paths.size() == 2) {
-		Shader* s = new Shader(paths[0], paths[1]);
-		shaders[name] = s;
-		if (!s->WasLoaded()) {
-			return false;
-		}
-		else {
-			return s->LinkProgram();
-		}
+bool ShaderManager::AddShader(const std::string& name, const std::string& vertex, const std::string& fragment, const std::string& geometry) {
+	Shader* s = new Shader(vertex, fragment, geometry);
+	shaders[name] = s;
+	if (!s->WasLoaded()) {
+		return false;
 	}
-
+	else {
+		return s->LinkProgram();
+	}
 	return false;
 }
 

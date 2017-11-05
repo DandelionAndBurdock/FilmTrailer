@@ -4,8 +4,11 @@
 #include "nclgl/HeightMap.h"
 #include "nclgl/TextureManager.h"
 #include "nclgl/ShaderManager.h"
+#include "nclgl/TextRenderer.h"
 
 #include "nclgl\Texture.h" //TODO: Remove
+
+#include <iomanip> // setprecision()
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CubeRobot::CreateCube();
@@ -14,11 +17,13 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	camera = new Camera();
 	camera->SetPosition(glm::vec3(0.0f, 100.0f, 750.0f));
+	std::vector<glm::vec3> wps = { glm::vec3(-2000.0f, 1800.0f, -2000.0f), glm::vec3(2000.0f, -1800.0f, -2000.0f) , glm::vec3(2000.0f, 1800.0f, 2000.0f), glm::vec3(-2000.0f, -1800.0f, 2000.0f) }; //TODO: Read in from file
+	std::vector<glm::vec3> lps = { glm::vec3(00.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) , glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f) };
+	cameraControl = new CameraController(camera, wps, lps);
 
-	std::vector<std::string> shaderOne = { SHADERDIR"TexturedColourVertex.glsl", SHADERDIR"TexturedColourFragment.glsl" };
-	ShaderManager::GetInstance()->AddShader("TerrainShader", shaderOne);
-	std::vector<std::string> shaderTwo = { SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl" };
-	ShaderManager::GetInstance()->AddShader("QuadShader", shaderTwo);
+
+	ShaderManager::GetInstance()->AddShader("TerrainShader", SHADERDIR"TexturedColourVertex.glsl", SHADERDIR"TexturedColourFragment.glsl");
+	ShaderManager::GetInstance()->AddShader("QuadShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 
 	quad = Mesh::GenerateQuad();
 	TextureManager::GetInstance()->AddTexture("StainedGlass", TEXTUREDIR"stainedglass.tga");
@@ -26,6 +31,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	
 	terrain = new HeightMap(TEXTUREDIR"terrain.raw");
 
+	text = new TextRenderer(width, height, FONTSDIR"arial.ttf", 30, glm::vec3(1.0f, 1.0f, 1.0f));
 
 	root = new SceneNode();
 
@@ -60,14 +66,18 @@ Renderer::~Renderer() {
 	delete root;
 	delete quad;
 	delete camera;
+	delete cameraControl;
 	CubeRobot::DeleteCube();
 }
 
 
 void Renderer::UpdateScene(float msec) {
-	camera->UpdateCamera(msec);
-	viewMatrix = camera->BuildViewMatrix();
+	CalculateFPS(msec); 
+	//camera->UpdateCamera(msec);
+	cameraControl->Update(msec);
+	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	//frameFrustum.FromMatrix(projMatrix * viewMatrix);
+
 	root->Update(msec);
 }
 
@@ -136,12 +146,14 @@ void Renderer::RenderScene() {
 	currentShader->Use();
 
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
 	UpdateShaderMatrices();
 	currentShader->SetUniform("diffuseTex", 0);
 	Texture* tex = TextureManager::GetInstance()->GetTexture("Terrain");
 	tex->Bind();
 	terrain->Draw();
 	DrawNodes();
+	DrawFPS();
 	SwapBuffers();
 	glUseProgram(0);
 	ClearNodeLists();
@@ -151,4 +163,10 @@ void Renderer::RenderScene() {
 void Renderer::ClearNodeLists() {
 	transparentNodeList.clear();
 	nodeList.clear();
+}
+
+void Renderer::DrawFPS() {
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(0) << FPS;
+	text->RenderText(std::string("FPS: ") + ss.str(), 100, 100, 1.0f);
 }

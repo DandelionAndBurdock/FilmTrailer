@@ -12,7 +12,7 @@ public:
 	static ShaderManager* GetInstance();
 
 	Shader* GetShader(std::string name) const;
-	bool AddShader(std::string name, const std::vector<std::string>& paths);
+	bool AddShader(const std::string& name, const std::string& vertex, const std::string& fragment, const std::string& geometry = "");
 protected:
 	ShaderManager();
 	~ShaderManager();

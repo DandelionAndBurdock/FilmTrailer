@@ -1,4 +1,4 @@
-﻿cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
-  Texture.cpp
-c:\filmtrailer\nclgl\texture.cpp(42): warning C4800: 'GLuint': forcing value to bool 'true' or 'false' (performance warning)
+﻿  TextRenderer.cpp
+c:\filmtrailer\nclgl\textrenderer.cpp(91): warning C4244: 'initializing': conversion from 'float' to 'GLuint', possible loss of data
+c:\filmtrailer\nclgl\textrenderer.cpp(178): warning C4838: conversion from 'FT_Pos' to 'GLuint' requires a narrowing conversion
   nclgl.vcxproj -> C:\FilmTrailer\Coursework\Debug\nclgl.lib

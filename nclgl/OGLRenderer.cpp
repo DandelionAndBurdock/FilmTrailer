@@ -216,3 +216,7 @@ void OGLRenderer::SetShaderLight(const Light &l) {
 	glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"),1,(float*)&l.GetColour());
 	glUniform1f(glGetUniformLocation(currentShader->GetProgram() , "lightRadius"),l.GetRadius());
 }
+
+void OGLRenderer::CalculateFPS(float msec) {
+	FPS = 1000.0f / msec;
+}
