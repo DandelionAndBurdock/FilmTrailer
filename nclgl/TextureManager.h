@@ -12,6 +12,8 @@ public:
 
 	Texture* GetTexture(std::string name) const;
 	bool AddTexture(std::string name, std::string path);
+	bool AddTexture(std::string name, float* data, int dimension); //TODO: Accept format as parameter
+
 protected:
 	TextureManager();
 	~TextureManager();

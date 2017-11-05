@@ -30,6 +30,7 @@ Mesh::~Mesh(){
 	delete[] normals;
 }
 
+
 Mesh* Mesh::GenerateTriangle(){
 	const int VERTS_PER_TRIANGLE = 3;
 	Mesh* m = new Mesh();

@@ -4,11 +4,16 @@
 #include "GL/glew.h"	// For openGL types
 
 
+
+
 class Texture
 {
 public:
 	// Constructs the texture at path
 	Texture(std::string path);	
+
+	// Constructs a
+	Texture(float* data, int dimension);//TODO: Add image format
 
 	// Cleans up
 	~Texture();

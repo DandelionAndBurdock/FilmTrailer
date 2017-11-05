@@ -5,6 +5,7 @@
 #include "nclgl/TextureManager.h"
 #include "nclgl/ShaderManager.h"
 #include "nclgl/TextRenderer.h"
+#include "nclgl\PerlinNoise.h"
 
 #include "nclgl\Texture.h" //TODO: Remove
 
@@ -13,7 +14,8 @@
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CubeRobot::CreateCube();
 
-	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
+	//projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
+	projMatrix = glm::ortho(-float(width) / 2, float(width) / 2, -float(height) / 2, float(height) / 2);
 
 	camera = new Camera();
 	camera->SetPosition(glm::vec3(0.0f, 100.0f, 750.0f));
@@ -24,6 +26,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	ShaderManager::GetInstance()->AddShader("TerrainShader", SHADERDIR"TexturedColourVertex.glsl", SHADERDIR"TexturedColourFragment.glsl");
 	ShaderManager::GetInstance()->AddShader("QuadShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
+	
+	//ShaderManager::GetInstance()->AddShader("LineShader", SHADERDIR"BasicVertex.glsl", SHADERDIR"BasicFragment.glsl", SHADERDIR"LineGeometry.glsl");
+	//SetupLine();
+	PerlinNoise p;
+	p.GenerateTexture();
 
 	quad = Mesh::GenerateQuad();
 	TextureManager::GetInstance()->AddTexture("StainedGlass", TEXTUREDIR"stainedglass.tga");
@@ -74,8 +81,8 @@ Renderer::~Renderer() {
 void Renderer::UpdateScene(float msec) {
 	CalculateFPS(msec); 
 	//camera->UpdateCamera(msec);
-	cameraControl->Update(msec);
-	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
+	//cameraControl->Update(msec);
+	//viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	//frameFrustum.FromMatrix(projMatrix * viewMatrix);
 
 	root->Update(msec);
@@ -140,23 +147,31 @@ void Renderer::DrawNode(SceneNode* n) {
 }
 
 void Renderer::RenderScene() {
-	BuildNodeLists(root);
-	SortNodeLists();
-	currentShader = ShaderManager::GetInstance()->GetShader("TerrainShader");
-	currentShader->Use();
-
+	//BuildNodeLists(root);
+	//SortNodeLists();
+	//currentShader = ShaderManager::GetInstance()->GetShader("TerrainShader");
+	//currentShader->Use();
+	//currentShader = ShaderManager::GetInstance()->GetShader("LineShader");
+	//currentShader->Use();
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+	//UpdateShaderMatrices();
+	//currentShader->SetUniform("diffuseTex", 0);
+	//Texture* tex = TextureManager::GetInstance()->GetTexture("Terrain");
+	//tex->Bind();
+	//terrain->Draw();
+	//DrawNodes();
+	//DrawFPS();
+	//DrawLine();
+	currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
+	currentShader->Use();
 	UpdateShaderMatrices();
-	currentShader->SetUniform("diffuseTex", 0);
-	Texture* tex = TextureManager::GetInstance()->GetTexture("Terrain");
+	Texture* tex = TextureManager::GetInstance()->GetTexture("Noise");
 	tex->Bind();
-	terrain->Draw();
-	DrawNodes();
-	DrawFPS();
+	quad->Draw();
 	SwapBuffers();
 	glUseProgram(0);
-	ClearNodeLists();
+	//ClearNodeLists();
 
 }
 
@@ -169,4 +184,41 @@ void Renderer::DrawFPS() {
 	std::stringstream ss;
 	ss << std::fixed << std::setprecision(0) << FPS;
 	text->RenderText(std::string("FPS: ") + ss.str(), 100, 100, 1.0f);
+}
+
+#include <iostream>
+void Renderer::SetupLine() {
+	GLuint VBOSample;
+	std::cout << glGetError() << std::endl;
+	GLfloat sample[] = {  200.0f, 800.0f, -100.0f ,
+	 200.0f, 500.0f, -100.0f ,
+	  200.0f, 300.0f, -100.0f ,
+	200.0f, 0.0f, -100.0f , 
+		200.0f, -300.0f, -100.0f ,
+	 200.0f, -600.0f, -100.0f  };
+	GLfloat normals[] = { 1.0f, 0.0f, 0.0f ,
+		1.0f, 0.0f, 0.0f ,
+		1.0f, 0.0f, 0.0f ,
+		1.0f, 0.0f, 0.0f ,
+		1.0f, 0.0f, 0.0f ,
+		1.0f, 0.0f, 0.0f };
+	glGenVertexArrays(1, &VAOSample);
+	glGenBuffers(1, &VBOSample);
+	GLuint VBONormal;
+
+	glBindVertexArray(VAOSample);
+	glBindBuffer(GL_ARRAY_BUFFER, VBOSample);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(sample), sample, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0); //point start, #
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, VBONormal);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0); //point start, #
+	glEnableVertexAttribArray(1);
+}
+void Renderer::DrawLine() {
+	//Position -- TODO:Remove magic numbers
+	glBindVertexArray(VAOSample);
+	glDrawArrays(GL_LINE_STRIP, 0, 6);
+
 }

@@ -32,7 +32,15 @@ bool TextureManager::AddTexture(std::string name, std::string path) {
 }
 
 
+
+
 TextureManager* TextureManager::GetInstance() {
 	static TextureManager manager;
 	return &manager;
+}
+
+bool TextureManager::AddTexture(std::string name, float* data, int dimension) { // TODO: Make const
+	Texture* t = new Texture(data, dimension);
+	textures[name] = t;
+	return t->WasLoaded();
 }

@@ -29,6 +29,10 @@ protected:
 
 	void DrawFPS();
 
+	void DrawLine();
+	GLuint VAOSample;
+	void SetupLine();
+
 	SceneNode* root;
 	CameraController* cameraControl;
 	Camera* camera;
