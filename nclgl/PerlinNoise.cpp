@@ -52,5 +52,5 @@ void PerlinNoise::GenerateNoise() {
 
 void PerlinNoise::GenerateTexture() {
 	GenerateNoise();
-	TextureManager::GetInstance()->AddTexture("Noise", noiseValues, dimensions);
+	TEXTURE_MANAGER->AddTexture("Noise", noiseValues, dimensions);
 }

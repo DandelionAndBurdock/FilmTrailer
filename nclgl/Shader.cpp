@@ -109,7 +109,7 @@ void	Shader::SetDefaultAttributes()	{
 	glBindAttribLocation(program, VERTEX_BUFFER, "position");
 	glBindAttribLocation(program, COLOUR_BUFFER, "colour");
 	glBindAttribLocation(program, NORMAL_BUFFER,  "normal");
-	//glBindAttribLocation(program, TANGENT_BUFFER, "tangent");
+//	glBindAttribLocation(program, TANGENT_BUFFER, "tangent");
 	glBindAttribLocation(program, TEXTURE_BUFFER, "texCoord");
 }
 
@@ -162,16 +162,30 @@ GLint Shader::GetLocation(const std::string& name) {
 	
 }
 
-void Shader::SetUniform(const std::string& name, GLint i) {
-	glUniform1i(GetLocation(name), i);
+std::vector<std::string> Shader::GetUniformNames() {
+	std::vector<std::string> names;
+
+	for (auto const& uniform : uniformLocations)
+		names.push_back(uniform.first);
+
+	return names;
 }
 
-void Shader::SetUniform(const std::string& name, GLfloat f) {
+GLint Shader::SetUniform(const std::string& name, GLint i) {
+	glUniform1i(GetLocation(name), i);
+	return GetLocation(name);
+}
+
+GLint Shader::SetUniform(const std::string& name, GLfloat f) {
 	glUniform1i(GetLocation(name), f);
+	return GetLocation(name);
 }
-void Shader::SetUniform(const std::string& name, const glm::mat4& mat) {
+GLint Shader::SetUniform(const std::string& name, const glm::mat4& mat) {
 	glUniformMatrix4fv(GetLocation(name), 1, false, (float*) &mat);
+	return GetLocation(name);
 }
-void Shader::SetUniform(const std::string& name, const glm::vec3& vec) {
+GLint Shader::SetUniform(const std::string& name, const glm::vec3& vec) {
 	glUniform3fv(GetLocation(name), 1, (float*)& vec);
+	return GetLocation(name);
 }
+

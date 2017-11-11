@@ -19,10 +19,12 @@ public:
 
 	bool WasLoaded() const { return !loadFailed; }
 	GLint GetLocation(const std::string& name);
-	void SetUniform(const std::string& name, GLint i);
-	void SetUniform(const std::string& name, GLfloat f);
-	void SetUniform(const std::string& name, const glm::mat4& mat);
-	void SetUniform(const std::string& name, const glm::vec3& vec);
+	GLint SetUniform(const std::string& name, GLint i);
+	GLint SetUniform(const std::string& name, GLfloat f);
+	GLint SetUniform(const std::string& name, const glm::mat4& mat);
+	GLint SetUniform(const std::string& name, const glm::vec3& vec);
+
+	std::vector<std::string> GetUniformNames();
 
 protected:
 	bool	LoadShaderFile(std::string from, std::string &into);

@@ -4,6 +4,7 @@
 
 
 #include "Mesh.h"
+#include "SceneNode.h"
 
 #define RAW_WIDTH 257
 #define RAW_HEIGHT 257
@@ -15,7 +16,7 @@
 #define HEIGHTMAP_TEX_Z 1.0f / 16.0f
 
 
-class HeightMap : public Mesh
+class HeightMap : public Mesh, public SceneNode
 {
 public:
 	HeightMap(std::string name);

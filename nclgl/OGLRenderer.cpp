@@ -17,6 +17,7 @@ _-_-_-_-_-_-_-""  ""
 #include "OGLRenderer.h"
 
 #include <iostream>
+#include <numeric> // For accumulate()
 
 
 /*
@@ -129,6 +130,8 @@ OGLRenderer::OGLRenderer(Window &window)	{
 
 	window.SetRenderer(this);					//Tell our window about the new renderer! (Which will in turn resize the renderer window to fit...)
 
+	fps = std::vector<int>(NUM_FPS_FRAMES, 60);
+
 }
 
 /*
@@ -181,23 +184,6 @@ void OGLRenderer::UpdateScene(float msec)	{
 
 }
 
-/*
-Updates the uniform matrices of the current shader. Assumes that
-the shader has uniform matrices called modelMatrix, viewMatrix,
-projMatrix, and textureMatrix. Updates them with the relevant
-matrix data. Sanity checks currentShader, so is always safe to
-call.
-*/
-//TODO: Make MVP
-void OGLRenderer::UpdateShaderMatrices()	{
-	if(currentShader) {
-		glUniformMatrix4fv(currentShader->GetLocation("modelMatrix"),	1,false, (float*)&modelMatrix);
-		glUniformMatrix4fv(currentShader->GetLocation("viewMatrix"),	1,false, (float*)&viewMatrix);
-		glUniformMatrix4fv(currentShader->GetLocation("projMatrix"),	1,false, (float*)&projMatrix);
-		glUniformMatrix4fv(currentShader->GetLocation("textureMatrix"),1,false, (float*)&textureMatrix);
-	}
-}
-
 void OGLRenderer::SetCurrentShader(Shader*s) {
 	currentShader = s;
 
@@ -218,5 +204,12 @@ void OGLRenderer::SetShaderLight(const Light &l) {
 }
 
 void OGLRenderer::CalculateFPS(float msec) {
-	FPS = 1000.0f / msec;
+	static int i = 0;
+	// Store current value
+	fps[i % NUM_FPS_FRAMES] = int(std::round(1000.0f / msec));
+	++i;
+
+	// Calculate average
+	int sum = std::accumulate(fps.begin(), fps.end(), 0.0);
+	framesPerSecond = sum / NUM_FPS_FRAMES;
 }

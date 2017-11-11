@@ -3,7 +3,8 @@
 #include <iostream>
 #include <fstream>
 
-HeightMap::HeightMap(std::string name)
+HeightMap::HeightMap(std::string name) :
+	SceneNode(this)
 {
 
 	std::ifstream file(name.c_str(), std::ios::binary);

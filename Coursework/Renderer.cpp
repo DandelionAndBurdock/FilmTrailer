@@ -11,36 +11,57 @@
 
 #include <iomanip> // setprecision()
 
+
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CubeRobot::CreateCube();
 
-	//projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
-	projMatrix = glm::ortho(-float(width) / 2, float(width) / 2, -float(height) / 2, float(height) / 2);
-
-	camera = new Camera();
-	camera->SetPosition(glm::vec3(0.0f, 100.0f, 750.0f));
-	std::vector<glm::vec3> wps = { glm::vec3(-2000.0f, 1800.0f, -2000.0f), glm::vec3(2000.0f, -1800.0f, -2000.0f) , glm::vec3(2000.0f, 1800.0f, 2000.0f), glm::vec3(-2000.0f, -1800.0f, 2000.0f) }; //TODO: Read in from file
-	std::vector<glm::vec3> lps = { glm::vec3(00.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) , glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f) };
-	cameraControl = new CameraController(camera, wps, lps);
-
-
-	ShaderManager::GetInstance()->AddShader("TerrainShader", SHADERDIR"TexturedColourVertex.glsl", SHADERDIR"TexturedColourFragment.glsl");
-	ShaderManager::GetInstance()->AddShader("QuadShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 	
-	//ShaderManager::GetInstance()->AddShader("LineShader", SHADERDIR"BasicVertex.glsl", SHADERDIR"BasicFragment.glsl", SHADERDIR"LineGeometry.glsl");
-	//SetupLine();
-	PerlinNoise p;
-	p.GenerateTexture();
+	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
 
-	quad = Mesh::GenerateQuad();
-	TextureManager::GetInstance()->AddTexture("StainedGlass", TEXTUREDIR"stainedglass.tga");
-	TextureManager::GetInstance()->AddTexture("Terrain", TEXTUREDIR"Barren Reds.jpg");
-	
-	terrain = new HeightMap(TEXTUREDIR"terrain.raw");
+
+	SetupCamera();
+	LoadShaders();
+	LoadTextures();
+
+	SetupScenes();
+	currentRoot = sceneARoot;
 
 	text = new TextRenderer(width, height, FONTSDIR"arial.ttf", 30, glm::vec3(1.0f, 1.0f, 1.0f));
 
-	root = new SceneNode();
+	//SetupLine();
+	//PerlinNoise p;
+	//p.GenerateTexture();
+
+
+
+	ConfigureOpenGL();
+
+	init = true;
+}
+
+
+Renderer::~Renderer() {
+	if (currentRoot)
+		delete currentRoot;
+	delete sceneARoot;
+	delete quad;
+	delete camera;
+	delete cameraControl;
+	CubeRobot::DeleteCube();
+}
+
+
+void Renderer::SetupSceneA() {
+	quad = Mesh::GenerateQuad();
+
+
+	terrain = new HeightMap(TEXTUREDIR"terrain.raw");
+
+	sceneARoot = new SceneNode();
+	sceneARoot->AddChild(terrain);
+	terrain->UseTexture("Terrain");
+	terrain->SetShader("TerrainShader");
+
 
 	for (int i = 0; i < 5; ++i) {
 		SceneNode* s = new SceneNode();
@@ -52,66 +73,46 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		s->UseTexture("StainedGlass");
 		s->SetShader("QuadShader");
 
-		root->AddChild(s);
+		terrain->AddChild(s);
 	}
 
 
-	root->AddChild(new CubeRobot());
+	terrain->AddChild(new CubeRobot());
 
 	CubeRobot* CR2 = new CubeRobot();
 	CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
-	root->AddChild(CR2);
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	init = true;
+	terrain->AddChild(CR2);
 }
-
-
-Renderer::~Renderer() {
-	delete root;
-	delete quad;
-	delete camera;
-	delete cameraControl;
-	CubeRobot::DeleteCube();
-}
-
 
 void Renderer::UpdateScene(float msec) {
 	CalculateFPS(msec); 
-	//camera->UpdateCamera(msec);
+	camera->UpdateCamera(msec);
 	//cameraControl->Update(msec);
-	//viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
+	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	//frameFrustum.FromMatrix(projMatrix * viewMatrix);
-
-	root->Update(msec);
+	if (currentRoot) {
+		currentRoot->Update(msec);
+	}
+	
 }
 
 void Renderer::BuildNodeLists(SceneNode* from) {
+
 	//if (frameFrustum.InsideFrustum(*from)) {
 	//	glm::vec3 dir = glm::vec3(from->GetWorldTransform()[3]) -
 	//		camera->GetPosition();
 
 	//	from->SetCameraDistance(glm::dot(dir, dir));
 
-	//	if (from->GetColour().w < 1.0f) {
-	//		transparentNodeList.push_back(from);
-	//	}
-	//	else {
-	//		nodeList.push_back(from);
-	//	}
-	//}
-
-	//for (auto iter = from->GetChildIteratorStart(); iter != from->GetChildIteratorEnd(); ++iter) {
-	//	BuildNodeLists(*iter);
-	//}
+	if (from->GetMesh()) {
+		activeShaders.insert(from->GetShaderName());
+	}
 
 	if (from->GetColour().w < 1.0f) {
 		transparentNodeList.push_back(from);
 	}
 	else {
-		nodeList.push_back(from);
+		opaqueNodeList.push_back(from);
 	}
 	for (auto iter = from->GetChildIteratorStart(); iter != from->GetChildIteratorEnd(); ++iter) {
 		BuildNodeLists(*iter);
@@ -121,12 +122,12 @@ void Renderer::BuildNodeLists(SceneNode* from) {
 
 void Renderer::SortNodeLists() {
 	std::sort(transparentNodeList.begin(), transparentNodeList.end(), SceneNode::CompareByCameraDistance);
-	std::sort(nodeList.begin(), nodeList.end(), SceneNode::CompareByCameraDistance);
+	std::sort(opaqueNodeList.begin(), opaqueNodeList.end(), SceneNode::CompareByCameraDistance);
 }
 
 
 void Renderer::DrawNodes() {
-	for (auto iter = nodeList.begin(); iter != nodeList.end(); ++iter) {
+	for (auto iter = opaqueNodeList.begin(); iter != opaqueNodeList.end(); ++iter) {
 		DrawNode(*iter);
 	}
 
@@ -138,51 +139,50 @@ void Renderer::DrawNodes() {
 
 void Renderer::DrawNode(SceneNode* n) {
 	if (n->GetMesh()) {
-		currentShader = ShaderManager::GetInstance()->GetShader(n->GetShaderName());
-		currentShader->Use();
-		UpdateShaderMatrices();
-		currentShader->SetUniform("modelMatrix", n->GetWorldTransform() * glm::scale(n->GetModelScale()));
-		n->Draw();
+		SHADER_MANAGER->SetShader(n->GetShaderName());
+		SHADER_MANAGER->SetUniform(n->GetShaderName(), "modelMatrix", n->GetWorldTransform() * glm::scale(n->GetModelScale()));
+		n->DrawNode();
 	}
 }
 
+
 void Renderer::RenderScene() {
-	//BuildNodeLists(root);
-	//SortNodeLists();
-	//currentShader = ShaderManager::GetInstance()->GetShader("TerrainShader");
-	//currentShader->Use();
+	if (currentRoot) {
+		BuildNodeLists(currentRoot);
+		SortNodeLists();
+	}
+
 	//currentShader = ShaderManager::GetInstance()->GetShader("LineShader");
 	//currentShader->Use();
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	//UpdateShaderMatrices();
-	//currentShader->SetUniform("diffuseTex", 0);
-	//Texture* tex = TextureManager::GetInstance()->GetTexture("Terrain");
-	//tex->Bind();
-	//terrain->Draw();
-	//DrawNodes();
+	UpdateUniforms();
+	DrawNodes();
 	//DrawFPS();
 	//DrawLine();
-	currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
-	currentShader->Use();
-	UpdateShaderMatrices();
-	Texture* tex = TextureManager::GetInstance()->GetTexture("Noise");
-	tex->Bind();
-	quad->Draw();
+	//currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
+	//currentShader->Use();
+	//UpdateShaderMatrices();
+	//Texture* tex = TextureManager::GetInstance()->GetTexture("Noise");
+	//tex->Bind();
+	//quad->Draw();
 	SwapBuffers();
 	glUseProgram(0);
-	//ClearNodeLists();
+	ClearNodeLists();
+	activeShaders.clear();
 
 }
 
 void Renderer::ClearNodeLists() {
 	transparentNodeList.clear();
-	nodeList.clear();
+	opaqueNodeList.clear();
+
 }
 
 void Renderer::DrawFPS() {
 	std::stringstream ss;
-	ss << std::fixed << std::setprecision(0) << FPS;
+	//ss << std::fixed << std::setprecision(0) << framesPerSecond;
+	ss << framesPerSecond;
 	text->RenderText(std::string("FPS: ") + ss.str(), 100, 100, 1.0f);
 }
 
@@ -216,9 +216,71 @@ void Renderer::SetupLine() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0); //point start, #
 	glEnableVertexAttribArray(1);
 }
+
 void Renderer::DrawLine() {
 	//Position -- TODO:Remove magic numbers
 	glBindVertexArray(VAOSample);
 	glDrawArrays(GL_LINE_STRIP, 0, 6);
+
+}
+
+void Renderer::SetupScenes() {
+	SetupSceneA();
+}
+
+
+void Renderer::LoadShaders() {
+	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
+	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"TexturedColourVertex.glsl", SHADERDIR"TexturedColourFragment.glsl");
+	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
+
+	//ShaderManager::GetInstance()->AddShader("LineShader", SHADERDIR"BasicVertex.glsl", SHADERDIR"BasicFragment.glsl", SHADERDIR"LineGeometry.glsl");
+}
+
+void Renderer::LoadTextures() {
+	TEXTURE_MANAGER->AddTexture("StainedGlass", TEXTUREDIR"stainedglass.tga");
+	TEXTURE_MANAGER->AddTexture("Terrain", TEXTUREDIR"Barren Reds.jpg");
+}
+
+void Renderer::ConfigureOpenGL() {
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void Renderer::SetupCamera() {
+	camera = new Camera();
+	camera->SetPosition(glm::vec3(0.0f, 100.0f, 750.0f));
+	std::vector<glm::vec3> wps = { glm::vec3(-2000.0f, 1800.0f, -2000.0f), glm::vec3(2000.0f, -1800.0f, -2000.0f) , glm::vec3(2000.0f, 1800.0f, 2000.0f), glm::vec3(-2000.0f, -1800.0f, 2000.0f) }; //TODO: Read in from file
+	std::vector<glm::vec3> lps = { glm::vec3(00.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) , glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f) };
+	cameraControl = new CameraController(camera, wps, lps);
+}
+
+
+void Renderer::UpdateUniforms() {
+	for (const auto& shader : activeShaders) {
+		SHADER_MANAGER->SetShader(shader);
+		std::vector<std::string> uniforms = SHADER_MANAGER->GetUniformNames(shader);
+		for (const auto& uniform : uniforms) {
+			if (uniform.find("Tex") != std::string::npos) {
+				continue; // Don't handle textures here
+			}
+			if (uniform == "modelMatrix") {
+				SHADER_MANAGER->SetUniform(shader, uniform, modelMatrix);
+			}
+			else if (uniform == "viewMatrix") {
+				SHADER_MANAGER->SetUniform(shader, uniform, viewMatrix);
+			}
+			else if (uniform == "projMatrix") {
+				SHADER_MANAGER->SetUniform(shader, uniform, projMatrix);
+			}
+			else if (uniform == "textureMatrix") {
+				SHADER_MANAGER->SetUniform(shader, uniform, textureMatrix);
+			}
+			else {
+				std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+			}
+		}
+	}
 
 }

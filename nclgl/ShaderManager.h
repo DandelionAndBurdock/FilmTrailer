@@ -4,15 +4,29 @@
 #include <string>
 #include <vector>
 
+#include "../GLEW/include/GL/glew.h"
+#include "../../glm/glm.hpp"
+
 class Shader;
+
+#define SHADER_MANAGER ShaderManager::Instance()
 
 class ShaderManager
 {
 public:
-	static ShaderManager* GetInstance();
+	static ShaderManager* Instance();
 
-	Shader* GetShader(std::string name) const;
+	bool SetShader(const std::string& name) const;
+	Shader* GetShader(const std::string& name) const;
 	bool AddShader(const std::string& name, const std::string& vertex, const std::string& fragment, const std::string& geometry = "");
+
+	bool SetUniform(const std::string& shader, const std::string& uniform, GLint i);
+	bool SetUniform(const std::string& shader, const std::string& uniform, GLfloat f);
+	bool SetUniform(const std::string& shader, const std::string& uniform, const glm::mat4& mat);
+	bool SetUniform(const std::string& shader, const std::string& uniform, const glm::vec3& vec);
+
+	std::vector<std::string> GetUniformNames(const std::string& shader);
+
 protected:
 	ShaderManager();
 	~ShaderManager();

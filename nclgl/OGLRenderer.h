@@ -63,17 +63,20 @@ public:
 	}
 
 protected:
+	// Calculate an average of the current frames per second rounded to the nearest integer
 	void CalculateFPS(float msec);
 	void SetShaderLight(const Light & l);
 
 	virtual void	Resize(int x, int y);	
-	void			UpdateShaderMatrices();
 	void			SetCurrentShader(Shader*s);
 
 	void			SetTextureRepeating(GLuint target, bool state);
 
 	Shader* currentShader;
 	
+	int framesPerSecond;		  // Number of frames renderered to the screen per second
+	const int NUM_FPS_FRAMES = 120; // Number of frames to average the FPS over
+	std::vector<int> fps;		  // Holds values of the fps over the last 5 frames
 
 	glm::mat4 projMatrix;		//Projection matrix
 	glm::mat4 modelMatrix;	//Model matrix. NOT MODELVIEW
@@ -88,5 +91,5 @@ protected:
 	HGLRC	renderContext;	//Permanent Rendering Context
 
 
-	float FPS;	// Frames per second
+	
 };

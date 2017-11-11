@@ -50,7 +50,7 @@ void TextRenderer::RenderText(std::string text, GLfloat x, GLfloat y, GLfloat sc
 {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	shader->Use();
+	SHADER_MANAGER->SetShader("TextShader");
 	for (auto c = text.begin(); c != text.end(); ++c)
 	{
 		Character ch = characters[*c];
@@ -180,10 +180,8 @@ void TextRenderer::StoreCharacter(char c, FT_Face& face, GLuint textureID) {
 }
 
 void TextRenderer::LoadShader(GLuint screenWidth, GLuint screenHeight) {
-	ShaderManager::GetInstance()->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
-	shader = ShaderManager::GetInstance()->GetShader("TextShader");
-	shader->Use();
-	shader->SetUniform("projMatrix", glm::ortho(0.0f, static_cast<GLfloat>(screenWidth), static_cast<GLfloat>(screenHeight), 0.0f));
-	shader->SetUniform("text", 0);
-	shader->SetUniform("textColour", colour);
+	SHADER_MANAGER->SetShader("TextShader");
+	SHADER_MANAGER->SetUniform("TextShader", "projMatrix", glm::ortho(0.0f, static_cast<GLfloat>(screenWidth), static_cast<GLfloat>(screenHeight), 0.0f));
+	SHADER_MANAGER->SetUniform("TextShader", "text", 0);
+	SHADER_MANAGER->SetUniform("TextShader", "textColour", colour);
 }

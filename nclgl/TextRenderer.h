@@ -66,9 +66,6 @@ private:
 	// Holds list of pre-compiled characters
 	std::map<GLchar, Character> characters;
 
-	// Text rendering shader
-	Shader* shader;
-
 	// Text colour
 	glm::vec3 colour;
 

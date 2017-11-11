@@ -7,7 +7,7 @@ SceneNode::SceneNode(Mesh* m, const std::string& shader)
 {	
 	this->shader = shader;
 	this->mesh = m;
-	this->colour = colour;
+	this->colour = glm::vec4(1.0f);
 	parent = nullptr;
 	modelScale = glm::vec3(1.0f, 1.0f, 1.0f);
 	worldTransform = glm::mat4();
@@ -29,14 +29,9 @@ void SceneNode::AddChild(SceneNode* s) {
 	s->parent = this;
 }
 
-//TODO: Does this still need to accept a renderer?
-void SceneNode::Draw() {
+void SceneNode::DrawNode() {
 	if (mesh) {
-		for (int i = 0; i < textures.size(); ++i) {
-			glActiveTexture(GL_TEXTURE0 + i);
-			Texture* tex = TextureManager::GetInstance()->GetTexture(textures[i]);
-			tex->Bind();
-		}
+		BindTextures();
 		mesh->Draw();
 	}
 }
@@ -54,3 +49,13 @@ void SceneNode::Update(float msec) {
 	}
 }
 
+void CalculateBoundingRadius(Mesh* m) {
+
+}
+
+void SceneNode::BindTextures() {
+	for (int i = 0; i < textures.size(); ++i) {
+		glActiveTexture(GL_TEXTURE0 + i);
+		TEXTURE_MANAGER->BindTexture(textures[i]);
+	}
+}

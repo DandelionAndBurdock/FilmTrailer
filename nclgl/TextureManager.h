@@ -5,14 +5,17 @@
 
 class Texture;
 
+#define TEXTURE_MANAGER TextureManager::Instance()
+
 class TextureManager
 {
 public:
-	static TextureManager* GetInstance();
+	static TextureManager* Instance();
 
-	Texture* GetTexture(std::string name) const;
-	bool AddTexture(std::string name, std::string path);
-	bool AddTexture(std::string name, float* data, int dimension); //TODO: Accept format as parameter
+	bool BindTexture(const std::string& name);
+	Texture* GetTexture(const std::string& name) const;
+	bool AddTexture(const std::string& name, const std::string& path);
+	bool AddTexture(const std::string& name, float* data, int dimension); //TODO: Accept format as parameter
 
 protected:
 	TextureManager();

@@ -15,7 +15,7 @@ ShaderManager::~ShaderManager()
 	}
 }
 
-Shader* ShaderManager::GetShader(std::string name) const {
+Shader* ShaderManager::GetShader(const std::string& name) const {
 	if (shaders.find(name) != shaders.end()) {
 		return shaders.at(name);
 	}
@@ -38,7 +38,69 @@ bool ShaderManager::AddShader(const std::string& name, const std::string& vertex
 }
 
 
-ShaderManager* ShaderManager::GetInstance() {
+ShaderManager* ShaderManager::Instance() {
 	static ShaderManager manager;
 	return &manager;
+}
+
+bool ShaderManager::SetShader(const std::string& name) const {
+	Shader* shader = GetShader(name);
+	if (shader) {
+		shader->Use();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, GLint i) {
+	Shader* s = GetShader(shader);
+	if (s) {
+		return (s->SetUniform(uniform, i) != -1);
+	}
+	else {
+		return false;
+	}
+}
+
+bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, GLfloat f) {
+	Shader* s = GetShader(shader);
+	if (s) {
+		return (s->SetUniform(uniform, f) != -1);
+	}
+	else {
+		return false;
+	}
+}
+
+bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, const glm::mat4& mat) {
+	Shader* s = GetShader(shader);
+	if (s) {
+		return (s->SetUniform(uniform, mat) != -1);
+	}
+	else {
+		return false;
+	}
+}
+
+bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, const glm::vec3& vec) {
+	Shader* s = GetShader(shader);
+	if (s) {
+		return (s->SetUniform(uniform, vec) != -1);
+	}
+	else {
+		return false;
+	}
+}
+
+std::vector<std::string> ShaderManager::GetUniformNames(const std::string& shader) {
+	Shader* s = GetShader(shader);
+	if (s) {
+		return s->GetUniformNames();
+	}
+	else {
+		return std::vector<std::string>();
+	}
+
 }

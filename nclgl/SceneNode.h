@@ -26,7 +26,7 @@ public:
 	void AddChild(SceneNode* s);
 
 	virtual void Update(float msec);
-	virtual void Draw();
+	virtual void DrawNode();
 
 	std::vector<SceneNode*>::const_iterator GetChildIteratorStart() { return children.cbegin(); }
 	std::vector<SceneNode*>::const_iterator GetChildIteratorEnd() { return children.cend(); }
@@ -41,11 +41,17 @@ public:
 	void SetShader(std::string name) { shader = name; }
 	const std::string& GetShaderName() { return shader; }
 
+
+
+
 	static bool CompareByCameraDistance(SceneNode* a, SceneNode* b) {
 		return a->distanceFromCamera < b->distanceFromCamera ? true : false;
 	}
 
 protected:
+	void BindTextures();
+	void CalculateBoundingRadius(Mesh* m);
+
 	SceneNode* parent;
 	Mesh* mesh;
 	glm::mat4 worldTransform;

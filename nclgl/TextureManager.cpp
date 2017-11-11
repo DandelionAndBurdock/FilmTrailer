@@ -16,7 +16,7 @@ TextureManager::~TextureManager()
 	}
 }
 
-Texture* TextureManager::GetTexture(std::string name) const {
+Texture* TextureManager::GetTexture(const std::string& name) const {
 	if (textures.find(name) != textures.end()) {
 		return textures.at(name);
 	}
@@ -25,21 +25,30 @@ Texture* TextureManager::GetTexture(std::string name) const {
 	}
 }
 
-bool TextureManager::AddTexture(std::string name, std::string path) {
+bool TextureManager::AddTexture(const std::string& name, const std::string& path) {
 	Texture* t = new Texture(path);
 	textures[name] = t;
 	return t->WasLoaded();
 }
 
 
+bool TextureManager::BindTexture(const std::string& name) {
+	Texture* tex = GetTexture(name);
+	if (tex) {
+		tex->Bind();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
 
-
-TextureManager* TextureManager::GetInstance() {
+TextureManager* TextureManager::Instance() {
 	static TextureManager manager;
 	return &manager;
 }
 
-bool TextureManager::AddTexture(std::string name, float* data, int dimension) { // TODO: Make const
+bool TextureManager::AddTexture(const std::string& name, float* data, int dimension) { // TODO: Make const
 	Texture* t = new Texture(data, dimension);
 	textures[name] = t;
 	return t->WasLoaded();
