@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Plane.h"
-#include "Matrix4.h"
+#include "../../glm/mat4x4.hpp"
 #include "SceneNode.h"
 
 class Matrix4;
@@ -12,7 +12,7 @@ public:
 	Frustum() {};
 	~Frustum() {};
 
-	void FromMatrix(const Matrix4& mvp);
+	void FromMatrix(const glm::mat4& mvp);
 	bool InsideFrustum(SceneNode& n);
 
 protected:

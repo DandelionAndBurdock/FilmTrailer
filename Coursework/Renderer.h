@@ -3,7 +3,7 @@
 #include "../../nclgl/OGLRenderer.h"
 #include "../../nclgl/Camera.h"
 #include "../../nclgl/SceneNode.h"
-//#include "../../nclgl/Frustum.h"
+#include "../../nclgl/Frustum.h"
 #include "nclgl\CameraController.h"
 #include "CubeRobot.h"
 
@@ -23,7 +23,6 @@ public:
 
 protected:
 	void UpdateUniforms();
-	void UpdateMVP();
 
 	void BuildNodeLists(SceneNode* from);
 	void SortNodeLists();
@@ -51,7 +50,7 @@ protected:
 	Mesh* quad;
 
 
-	//Frustum frameFrustum;
+	Frustum frameFrustum;
 	// List of shaders used in the current frame
 	std::set<std::string> activeShaders; 
 

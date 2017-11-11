@@ -1,3 +1,2 @@
-﻿  Shader.cpp
-c:\filmtrailer\nclgl\shader.cpp(180): warning C4244: 'argument': conversion from 'GLfloat' to 'GLint', possible loss of data
+﻿  Frustum.cpp
   nclgl.vcxproj -> C:\FilmTrailer\Coursework\Debug\nclgl.lib

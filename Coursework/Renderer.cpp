@@ -7,8 +7,9 @@
 #include "nclgl/TextRenderer.h"
 #include "nclgl\PerlinNoise.h"
 
-#include "nclgl\Texture.h" //TODO: Remove
 
+
+#include <iostream>
 #include <iomanip> // setprecision()
 
 
@@ -61,7 +62,7 @@ void Renderer::SetupSceneA() {
 	sceneARoot->AddChild(terrain);
 	terrain->UseTexture("Terrain");
 	terrain->SetShader("TerrainShader");
-
+	terrain->SetBoundingRadius(1000000.0f);
 
 	for (int i = 0; i < 5; ++i) {
 		SceneNode* s = new SceneNode();
@@ -86,37 +87,51 @@ void Renderer::SetupSceneA() {
 
 void Renderer::UpdateScene(float msec) {
 	CalculateFPS(msec); 
+
 	camera->UpdateCamera(msec);
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
-	//frameFrustum.FromMatrix(projMatrix * viewMatrix);
+	frameFrustum.FromMatrix(projMatrix * viewMatrix);
+
 	if (currentRoot) {
 		currentRoot->Update(msec);
+
+		BuildNodeLists(currentRoot);
+		SortNodeLists();
 	}
+
+	UpdateUniforms();
+
 	
 }
 
 void Renderer::BuildNodeLists(SceneNode* from) {
+	if (from->GetMesh() && frameFrustum.InsideFrustum(*from)) {
+		glm::vec3 translation = glm::vec3(from->GetWorldTransform()[3]);
+		glm::vec3 dir = translation - camera->GetPosition();
 
-	//if (frameFrustum.InsideFrustum(*from)) {
-	//	glm::vec3 dir = glm::vec3(from->GetWorldTransform()[3]) -
-	//		camera->GetPosition();
+		from->SetCameraDistance(glm::dot(dir, dir));
 
-	//	from->SetCameraDistance(glm::dot(dir, dir));
+		if (from->GetMesh()) {
+			activeShaders.insert(from->GetShaderName());
+		}
 
-	if (from->GetMesh()) {
-		activeShaders.insert(from->GetShaderName());
-	}
-
-	if (from->GetColour().w < 1.0f) {
-		transparentNodeList.push_back(from);
+		if (from->GetColour().w < 1.0f) {
+			transparentNodeList.push_back(from);
+		}
+		else {
+			opaqueNodeList.push_back(from);
+		}
+		std::cout << "Node remains" << std::endl;
 	}
 	else {
-		opaqueNodeList.push_back(from);
+		std::cout << "Node culled" << std::endl;
 	}
+
 	for (auto iter = from->GetChildIteratorStart(); iter != from->GetChildIteratorEnd(); ++iter) {
 		BuildNodeLists(*iter);
 	}
+	std::cout << "END" << std::endl;
 
 }
 
@@ -147,16 +162,11 @@ void Renderer::DrawNode(SceneNode* n) {
 
 
 void Renderer::RenderScene() {
-	if (currentRoot) {
-		BuildNodeLists(currentRoot);
-		SortNodeLists();
-	}
-
 	//currentShader = ShaderManager::GetInstance()->GetShader("LineShader");
 	//currentShader->Use();
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	UpdateUniforms();
+
 	DrawNodes();
 	//DrawFPS();
 	//DrawLine();
@@ -186,7 +196,6 @@ void Renderer::DrawFPS() {
 	text->RenderText(std::string("FPS: ") + ss.str(), 100, 100, 1.0f);
 }
 
-#include <iostream>
 void Renderer::SetupLine() {
 	GLuint VBOSample;
 	std::cout << glGetError() << std::endl;

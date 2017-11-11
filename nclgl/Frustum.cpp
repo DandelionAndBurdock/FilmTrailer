@@ -1,25 +1,27 @@
 #include "Frustum.h"
 
 bool Frustum::InsideFrustum(SceneNode& n) {
+	glm::vec3 nodePosition = glm::vec3(n.GetWorldTransform()[3]);
+	GLfloat nodeBoundingRadius = n.GetBoundingRadius();
 	for (int p = 0; p < 6; ++p) {
-		if (!planes[p].SphereInPlane(n.GetWorldTransform().GetPositionVector(), n.GetBoundingRadius()))
+		if (!planes[p].SphereInPlane(nodePosition, nodeBoundingRadius))
 			return false;
 	}
 
 	return true;
 }
 
-void Frustum::FromMatrix(const Matrix4& mat) {
-	Vector3 xaxis = Vector3(mat.values[0], mat.values[4], mat.values[8]);
-	Vector3 yaxis = Vector3(mat.values[1], mat.values[5], mat.values[9]);
-	Vector3 zaxis = Vector3(mat.values[2], mat.values[6], mat.values[10]);
-	Vector3 waxis = Vector3(mat.values[3], mat.values[7], mat.values[11]);
+void Frustum::FromMatrix(const glm::mat4& mat) {
+	glm::vec3 xaxis = glm::vec3(mat[0][0], mat[1][0], mat[2][0]);
+	glm::vec3 yaxis = glm::vec3(mat[0][1], mat[1][1], mat[2][1]);
+	glm::vec3 zaxis = glm::vec3(mat[0][2], mat[1][2], mat[2][2]);
+	glm::vec3 waxis = glm::vec3(mat[0][3], mat[1][3], mat[2][3]);
 
-	planes[0] = Plane(waxis - xaxis, (mat.values[15] - mat.values[12]), true); // right
-	planes[1] = Plane(waxis + xaxis, (mat.values[15] - mat.values[12]), true); // left
-	planes[2] = Plane(waxis + yaxis, (mat.values[15] - mat.values[13]), true); // bottom
-	planes[3] = Plane(waxis - yaxis, (mat.values[15] - mat.values[13]), true); // top
-	planes[4] = Plane(waxis - zaxis, (mat.values[15] - mat.values[14]), true); // far
-	planes[5] = Plane(waxis + zaxis, (mat.values[15] - mat.values[14]), true); // near
+	planes[0] = Plane(waxis - xaxis, (mat[3][3] - mat[3][0]), true); // right
+	planes[1] = Plane(waxis + xaxis, (mat[3][3] - mat[3][0]), true); // left
+	planes[2] = Plane(waxis + yaxis, (mat[3][3] - mat[3][1]), true); // bottom
+	planes[3] = Plane(waxis - yaxis, (mat[3][3] - mat[3][1]), true); // top
+	planes[4] = Plane(waxis - zaxis, (mat[3][3] - mat[3][2]), true); // far
+	planes[5] = Plane(waxis + zaxis, (mat[3][3] - mat[3][2]), true); // near
 }
 
