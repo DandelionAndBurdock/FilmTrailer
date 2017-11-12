@@ -18,7 +18,7 @@ out float outLifetime;
 uniform float deltaTime; // Time between consecutive frames in milliseconds
 uniform float time;		 // Total time since particle system was initialised in milliseconds (used as semi-random seed)
 uniform sampler1D randomTex; // Texture for sampling random directions for secondary shells
-								 //TODO: Add some noise
+//TODO: Add some noise
 uniform float launcherLifetime; // Time  in milliseconds between launcher spawning new shell
 uniform float shellLifetime;    // Time in milliseconds between shell creation and exploding into secondary shells
 uniform float secondaryShellLifetime; // Time in milliseconds between secondary shell creation and removal from scene
@@ -41,12 +41,13 @@ void main() {
 
 	// Hnadle Launcher (Unfortunately have to branch on particle type and lifetime)
 	if (type[0] == FIREWORK_LAUNCHER) {
-		if (lifetime[0] >= launcherLifetime) {			// Time to output another shell to the buffer
+		if (age >= launcherLifetime) {			// Time to output another shell to the buffer
 			outType = FIREWORK_SHELL;
 			outPosition = position[0];
 			vec3 dir = GetRandomDir(time / 1000.0);
 			dir.y = max(dir.y, 0.5);				// Cap y component so that always emitted upwards
-			outVelocity = normalize(dir) / 20.0f;	//TODO: Remove random number + add noise
+			//outVelocity = normalize(dir) / 20.0f;	//TODO: Remove random number + add noise
+			outVelocity = vec3(0.0, 10.0, 0.0);
 			outLifetime = 0.0;
 			EmitVertex();
 			EndPrimitive();
@@ -64,11 +65,13 @@ void main() {
 		   // Translate time into seconds for "physics" equations
 		float deltaTimeSecs = deltaTime / 1000.0f;
 		// Speed = distance / time
-		vec3 deltaP = deltaTimeSecs * velocity[0];
+		//vec3 deltaP = deltaTimeSecs * velocity[0];
+		vec3 deltaP = vec3(0.0, 1.0, 0.0);
 		// Gravity
-		vec3 deltaV = vec3(deltaTimeSecs) * vec3(0.0, -9.81, 0.0); // TODO: Remove magic number
+		//vec3 deltaV = vec3(deltaTimeSecs) * vec3(0.0, -9.81, 0.0); // TODO: Remove magic number
+		vec3 deltaV = vec3(0.0);
 		if (type[0] == FIREWORK_SHELL) {
-			if (lifetime[0] < shellLifetime) { // Shell has not expired update its "physics"
+			if (age < shellLifetime) { // Shell has not expired update its "physics"
 				outType = FIREWORK_SHELL;
 				outPosition = position[0] + deltaP;
 				outVelocity = velocity[0] + deltaV;
@@ -89,8 +92,8 @@ void main() {
 			}
 		}
 		else {	// Secondary shells update physics if still alive or expire
-			if (lifetime[0] < secondaryShellLifetime) {
-				outType = FIREWORK_SHELL;
+			if (age < secondaryShellLifetime) {
+				outType = FIREWORK_SECONDARY_SHELL;
 				outPosition = position[0] + deltaP;
 				outVelocity = velocity[0] + deltaV;
 				outLifetime = age;

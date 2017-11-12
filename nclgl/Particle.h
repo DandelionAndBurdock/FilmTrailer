@@ -2,15 +2,53 @@
 
 #include "../../GLEW/include/GL/glew.h"
 #include "../../glm/glm.hpp"
-struct Particle {
-	glm::vec3 pos;	  // Position of particle
-	glm::vec3 vel;	  // Velocity of particle
-	GLint lifetime; // Lifetime in milliseconds
 
-	Particle() : 
-		pos(glm::vec3(0.0f)), vel(glm::vec3(0.0f)), lifetime(0) 
-	{}
-};
+namespace Particles {
+	const int CHARS_PER_COLOUR = 4;  // r, g, b, a
+	const int FLOATS_PER_PARTICLE = 4; // x, y, z and size
+	struct Particle {
+		glm::vec3 pos;	  // Position of particle
+		glm::vec3 vel;	  // Velocity of particle
+						  // Remaining life of the particle in milliseconds. if <0 : dead and unused.
+		GLfloat lifeRemaining;
+		GLfloat size;
+		GLfloat angle;
+		GLfloat weight;
+		GLubyte colour[CHARS_PER_COLOUR];
+		// Squared distance to camera used for sorting with transparency
+		float cameraDistance;
+
+		Particle() :
+			pos(glm::vec3(0.0f)), vel(glm::vec3(0.0f)), lifeRemaining(0.0),
+			size(0.0f), angle(0.0f), weight(0.0f), cameraDistance(-1.0f)
+		{
+			for (int i = 0; i < CHARS_PER_COLOUR; ++i) {
+				colour[i] = 1;
+			}
+		}
+
+		bool operator<(const Particle& rhs) const {
+			// Reverse sort to draw particles farthest away from camera first
+			return (this->cameraDistance > rhs.cameraDistance);
+		}
+
+	};
+
+
+	// Vertices for a quad that can be textured //TODO: Could make 2D and save some memory?
+	const GLfloat billboardVerts[] = {
+		-0.5f, -0.5f, +0.0f,  // Bottom Left
+		+0.5f, -0.5f, +0.0f,  // Bottom Right
+		-0.5f, +0.5f, +0.0f,  // Top Left
+		+0.5f, +0.5f, +0.0f,  // Top Right
+	};
+	
+
+	const int MAX_PARTICLES = 100000;
+}
+
+
+
 
 
 namespace Fireworks {

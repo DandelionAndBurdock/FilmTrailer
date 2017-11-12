@@ -57,7 +57,7 @@ void ParticleSystem::Render(const glm::mat4& viewProj, const glm::vec3 cameraPos
 	RenderParticles(viewProj, cameraPos);
 
 	currentVBO = currentFBO;
-	currentFBO = ++currentFBO % 2;
+	//currentFBO = ++currentFBO % 2;
 	//currentFBO = (currentFBO + 1) & 0x1;
 }
 
@@ -65,8 +65,8 @@ void ParticleSystem::UpdateParticles(GLint msec) {
 	time += msec;
 	// Configure shader
 	SHADER_MANAGER->SetShader(updateShader);
-	SHADER_MANAGER->SetUniform(updateShader, "time", time);
-	SHADER_MANAGER->SetUniform(updateShader, "deltaTime", msec);
+	SHADER_MANAGER->SetUniform(updateShader, "time", float(time));
+	SHADER_MANAGER->SetUniform(updateShader, "deltaTime", float(msec));
 
 	glActiveTexture(GL_TEXTURE0);
 	TEXTURE_MANAGER->BindTexture1D("RandomTexture");
@@ -78,13 +78,13 @@ void ParticleSystem::UpdateParticles(GLint msec) {
 	//  Set up buffer attributes //TODO: Do we need to do this every frame?
 
 	glEnableVertexAttribArray(TYPE);											
-	glVertexAttribPointer(TYPE, 1, GL_FLOAT, GL_FALSE, sizeof(Particle), 0);
+	glVertexAttribPointer(TYPE, 1, GL_FLOAT, GL_FALSE, sizeof(Firework), 0);
 	glEnableVertexAttribArray(POSITION);
-	glVertexAttribPointer(POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)sizeof(GL_FLOAT));
+	glVertexAttribPointer(POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Firework), (GLvoid*)sizeof(GL_FLOAT));
 	glEnableVertexAttribArray(VELOCITY);
-	glVertexAttribPointer(VELOCITY, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)(sizeof(GL_FLOAT) + sizeof(glm::vec3)));
+	glVertexAttribPointer(VELOCITY, 3, GL_FLOAT, GL_FALSE, sizeof(Firework), (GLvoid*)(sizeof(GL_FLOAT) + sizeof(glm::vec3)));
 	glEnableVertexAttribArray(LIFETIME);
-	glVertexAttribPointer(LIFETIME, 1, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)(sizeof(GL_FLOAT) + 2 * sizeof(glm::vec3)));
+	glVertexAttribPointer(LIFETIME, 1, GL_FLOAT, GL_FALSE, sizeof(Firework), (GLvoid*)(sizeof(GL_FLOAT) + 2 * sizeof(glm::vec3)));
 
 	// Next draw call will write to the TF buffer so 
 	// don't want to spend time doing rasterisation
@@ -92,7 +92,6 @@ void ParticleSystem::UpdateParticles(GLint msec) {
 
 	// Redirect output to transform feedback buffer
 	glBeginTransformFeedback(GL_POINTS);
-
 	if (isFirst) { // Handle first draw call explicitly
 		glDrawArrays(GL_POINTS, 0, 1);
 		isFirst = false;
@@ -129,8 +128,7 @@ void ParticleSystem::RenderParticles(const glm::mat4& viewProj, const glm::vec3 
 	glBindVertexArray(billboardVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, particleBuffer[currentFBO]);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)sizeof(GL_FLOAT));
-
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Firework), (GLvoid*)sizeof(GL_FLOAT));
 	glDrawTransformFeedback(GL_POINTS, transfromFeedBackBuffer[currentFBO]);
 
 	glDisableVertexAttribArray(0);
@@ -158,7 +156,7 @@ void ParticleSystem::LoadShaders() {
 	}
 	SHADER_MANAGER->SetUniform(updateShader, "randomTex", 0);
 	SHADER_MANAGER->SetUniform(updateShader, "launcherLifetime", 100.0f);
-	SHADER_MANAGER->SetUniform(updateShader, "shellLifetime", 10000.0f);
+	SHADER_MANAGER->SetUniform(updateShader, "shellLifetime", 5000.0f);
 	SHADER_MANAGER->SetUniform(updateShader, "secondaryShellLifetime", 2500.0f);
 
 	//TODO: Move this to normal load	

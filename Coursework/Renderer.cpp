@@ -84,7 +84,7 @@ void Renderer::SetupSceneA() {
 	CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
 	terrain->AddChild(CR2);
 
-	particleSystem = new ParticleSystem(glm::vec3(300.0f, 0.0f, 300.0f));
+	particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
 
 }
 
