@@ -45,6 +45,8 @@ namespace Particles {
 	
 
 	const int MAX_PARTICLES = 100000;
+	// The number of new particles to generate per millisecond
+	const int NEW_PARTICLES_PER_MS = 10;
 }
 
 

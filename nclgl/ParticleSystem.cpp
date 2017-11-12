@@ -57,7 +57,7 @@ void ParticleSystem::Render(const glm::mat4& viewProj, const glm::vec3 cameraPos
 	RenderParticles(viewProj, cameraPos);
 
 	currentVBO = currentFBO;
-	//currentFBO = ++currentFBO % 2;
+	currentFBO = ++currentFBO % 2;
 	//currentFBO = (currentFBO + 1) & 0x1;
 }
 
@@ -154,6 +154,7 @@ void ParticleSystem::LoadShaders() {
 	else {
 		return;
 	}
+	SHADER_MANAGER->SetShader(updateShader);
 	SHADER_MANAGER->SetUniform(updateShader, "randomTex", 0);
 	SHADER_MANAGER->SetUniform(updateShader, "launcherLifetime", 100.0f);
 	SHADER_MANAGER->SetUniform(updateShader, "shellLifetime", 5000.0f);
@@ -162,5 +163,6 @@ void ParticleSystem::LoadShaders() {
 	//TODO: Move this to normal load	
 	billboardShader = "BillboardShader";
 	SHADER_MANAGER->AddShader(billboardShader, SHADERDIR"BillboardVertex.glsl", SHADERDIR"BillboardFrag.glsl", SHADERDIR"BillboardGeom.glsl");
+	SHADER_MANAGER->SetShader(billboardShader);
 	SHADER_MANAGER->SetUniform(updateShader, "diffuseTex", 0);
 }
