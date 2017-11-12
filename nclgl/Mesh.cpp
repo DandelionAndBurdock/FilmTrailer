@@ -1,6 +1,8 @@
 #include "Mesh.h"
 
 #include "../glm/glm.hpp"
+
+#include <cmath> // sqrt()
 Mesh::Mesh(){
 	for (int i = 0; i < MAX_BUFFER; ++i){
 		bufferObject[i] = 0;
@@ -233,4 +235,16 @@ void Mesh::GenerateNormals() {
 	for (GLuint i = 0; i < numVertices; ++i) {
 		glm::normalize(normals[i]);
 	}
+}
+
+
+GLfloat Mesh::CalculateBoundingRadius() {
+	GLfloat max = 0.0f;
+	for (GLuint i = 0; i < numVertices; ++i) {
+		float lengthSq = glm::dot(vertices[i], vertices[i]);
+		if (lengthSq > max) {
+			max = lengthSq;
+		}
+	}
+	return sqrt(max);
 }

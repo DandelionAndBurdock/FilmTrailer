@@ -31,7 +31,7 @@ public:
 	std::vector<SceneNode*>::const_iterator GetChildIteratorStart() { return children.cbegin(); }
 	std::vector<SceneNode*>::const_iterator GetChildIteratorEnd() { return children.cend(); }
 
-	float GetBoundingRadius() const { return boundingRadius; }
+	float GetBoundingRadius() const;
 	void SetBoundingRadius(float f) { boundingRadius = f; }
 
 	float GetCameraDistance() const { return distanceFromCamera; }
@@ -50,7 +50,6 @@ public:
 
 protected:
 	void BindTextures();
-	void CalculateBoundingRadius(Mesh* m);
 
 	SceneNode* parent;
 	Mesh* mesh;

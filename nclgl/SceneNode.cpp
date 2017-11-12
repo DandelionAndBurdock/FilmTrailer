@@ -12,8 +12,14 @@ SceneNode::SceneNode(Mesh* m, const std::string& shader)
 	modelScale = glm::vec3(1.0f, 1.0f, 1.0f);
 	worldTransform = glm::mat4();
 	transform = glm::mat4();
-	boundingRadius = 1.0f;
 	distanceFromCamera = 0.0f;
+
+	if (mesh) {
+		boundingRadius = m->CalculateBoundingRadius();
+	}
+	else {
+		boundingRadius = 0.0f;
+	}
 }
 
 
@@ -49,13 +55,16 @@ void SceneNode::Update(float msec) {
 	}
 }
 
-void CalculateBoundingRadius(Mesh* m) {
 
-}
 
 void SceneNode::BindTextures() {
 	for (int i = 0; i < textures.size(); ++i) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		TEXTURE_MANAGER->BindTexture(textures[i]);
 	}
+}
+
+float SceneNode::GetBoundingRadius() const {
+	float maxScale = glm::max(glm::max(modelScale.x, modelScale.y), modelScale.z);
+	return boundingRadius * maxScale;
 }

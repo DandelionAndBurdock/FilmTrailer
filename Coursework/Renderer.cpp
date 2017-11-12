@@ -6,7 +6,7 @@
 #include "nclgl/ShaderManager.h"
 #include "nclgl/TextRenderer.h"
 #include "nclgl\PerlinNoise.h"
-
+#include "nclgl\ParticleSystem.h"
 
 
 #include <iostream>
@@ -48,6 +48,7 @@ Renderer::~Renderer() {
 	delete quad;
 	delete camera;
 	delete cameraControl;
+	delete particleSystem;
 	CubeRobot::DeleteCube();
 }
 
@@ -62,7 +63,6 @@ void Renderer::SetupSceneA() {
 	sceneARoot->AddChild(terrain);
 	terrain->UseTexture("Terrain");
 	terrain->SetShader("TerrainShader");
-	terrain->SetBoundingRadius(1000000.0f);
 
 	for (int i = 0; i < 5; ++i) {
 		SceneNode* s = new SceneNode();
@@ -83,12 +83,16 @@ void Renderer::SetupSceneA() {
 	CubeRobot* CR2 = new CubeRobot();
 	CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
 	terrain->AddChild(CR2);
+
+	particleSystem = new ParticleSystem(glm::vec3(300.0f, 0.0f, 300.0f));
+
 }
 
 void Renderer::UpdateScene(float msec) {
 	CalculateFPS(msec); 
 
 	camera->UpdateCamera(msec);
+	particleSystem->UpdateParticles(msec);
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -122,16 +126,12 @@ void Renderer::BuildNodeLists(SceneNode* from) {
 		else {
 			opaqueNodeList.push_back(from);
 		}
-		std::cout << "Node remains" << std::endl;
 	}
-	else {
-		std::cout << "Node culled" << std::endl;
-	}
+
 
 	for (auto iter = from->GetChildIteratorStart(); iter != from->GetChildIteratorEnd(); ++iter) {
 		BuildNodeLists(*iter);
 	}
-	std::cout << "END" << std::endl;
 
 }
 
@@ -168,7 +168,9 @@ void Renderer::RenderScene() {
 
 
 	DrawNodes();
-	//DrawFPS();
+	DrawFPS();
+	//TODO: Add to uniforms
+	particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
 	//DrawLine();
 	//currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
 	//currentShader->Use();
@@ -224,6 +226,7 @@ void Renderer::SetupLine() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0); //point start, #
 	glEnableVertexAttribArray(1);
+
 }
 
 void Renderer::DrawLine() {

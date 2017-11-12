@@ -37,6 +37,16 @@ bool ShaderManager::AddShader(const std::string& name, const std::string& vertex
 	return false;
 }
 
+bool ShaderManager::AddShader(const std::string& name, Shader* shader) {
+	if (shader && shader->WasLoaded()) {
+		shaders[name] = shader;
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 
 ShaderManager* ShaderManager::Instance() {
 	static ShaderManager manager;

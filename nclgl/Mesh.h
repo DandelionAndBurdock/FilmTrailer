@@ -21,6 +21,9 @@ public:
 	static Mesh* GenerateLine();
 
 	void BufferVertices(glm::vec3* newVertices);
+
+	// Estimate the bounding radius based on the vertices of this mesh
+	GLfloat CalculateBoundingRadius();
 	
 protected:
 	void GenerateNormals();

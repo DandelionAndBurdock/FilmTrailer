@@ -16,6 +16,7 @@ _-_-_-_-_-_-_-""  ""
 #define USE_MD5MESH
 //#define WEEK_3_CODE
 
+
 //It's pi(ish)...
 static const float		PI = 3.14159265358979323846f;	
 
@@ -32,7 +33,9 @@ static inline double DegToRad(const double rad)	{
 	return rad * PI / 180.0;
 };
 
-
+//I blame Microsoft...
+#define max(a,b)    (((a) > (b)) ? (a) : (b))
+#define min(a,b)    (((a) < (b)) ? (a) : (b))
 
 #define SHADERDIR	"../Shaders/"
 #define MESHDIR		"../Meshes/"

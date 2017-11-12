@@ -8,7 +8,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 viewDir, glm::vec3 upDir) {
 	up = upDir;
 	viewDirection = viewDir;
 	right = glm::normalize(glm::cross(viewDirection, up));
-	cameraMoveSpeed = 2.0f;
+	cameraMoveSpeed = 0.5f;
 	cameraRotateSpeed = 1.0f;
 }
 /*

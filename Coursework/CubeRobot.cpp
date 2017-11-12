@@ -12,14 +12,12 @@ CubeRobot::CubeRobot()
 	body = new SceneNode(cube, "TerrainShader");
 	body->SetModelScale(glm::vec3(10.0f, 15.0f, 5.0f));
 	body->SetTransform(glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)));
-	body->SetBoundingRadius(15.0f);
 	AddChild(body);
 
 	//head = new SceneNode(cube, glm::vec4(0, 1, 0, 1));
 	head = new SceneNode(cube, "TerrainShader");
 	head->SetModelScale(glm::vec3(5, 5, 5));
 	head->SetTransform(glm::translate(glm::vec3(0, 30, 0)));
-	head->SetBoundingRadius(5.0f);
 	body->AddChild(head);
 
 	//leftArm = new SceneNode(cube, glm::vec4(0, 0, 1, 1));
@@ -34,14 +32,12 @@ CubeRobot::CubeRobot()
 	rightArm = new SceneNode(cube, "TerrainShader");
 	rightArm->SetModelScale(glm::vec3(3, -18, 3));
 	rightArm->SetTransform(glm::translate(glm::vec3(12, 30, -1)));
-	rightArm->SetBoundingRadius(18.0f);
 	body->AddChild(rightArm);
 
 	//leftLeg = new SceneNode(cube, glm::vec4(0, 0, 1, 1));
 	leftLeg = new SceneNode(cube, "TerrainShader");
 	leftLeg->SetModelScale(glm::vec3(3, -17.5, 3));
 	leftLeg->SetTransform(glm::translate(glm::vec3(-8, 0, 0)));
-	leftLeg->SetBoundingRadius(18.0f);
 	body->AddChild(leftLeg);
 
 
@@ -49,7 +45,6 @@ CubeRobot::CubeRobot()
 	rightLeg = new SceneNode(cube, "TerrainShader");
 	rightLeg->SetModelScale(glm::vec3(3, -17.5, 3));
 	rightLeg->SetTransform(glm::translate(glm::vec3(8, 0, 0)));
-	rightLeg->SetBoundingRadius(18.0f);
 	body->AddChild(rightLeg);
 }
 

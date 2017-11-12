@@ -12,6 +12,7 @@
 
 class HeightMap;
 class TextRenderer;
+class ParticleSystem;
 
 class Renderer : public OGLRenderer {
 public:
@@ -64,4 +65,6 @@ protected:
 	GLuint mapTexture;
 
 	TextRenderer* text;
+
+	ParticleSystem* particleSystem;
 };

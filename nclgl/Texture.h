@@ -13,7 +13,7 @@ public:
 	Texture(std::string path);	
 
 	// Constructs a
-	Texture(float* data, int dimension);//TODO: Add image format
+	Texture(float* data, int dimension, bool oneDimensional = false);//TODO: Add image format
 
 	// Cleans up
 	~Texture();
@@ -32,6 +32,9 @@ public:
 
 	// Bind the texture to active texture unit
 	void Bind() const;
+
+	// Bind one-dimensional texture to active texture unit
+	void Bind1D() const;
 
 protected:
 	// Loads texture at path
