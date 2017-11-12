@@ -7,6 +7,7 @@
 #include "nclgl/TextRenderer.h"
 #include "nclgl\PerlinNoise.h"
 #include "nclgl\ParticleSystem.h"
+#include "nclgl\ParticleManager.h"
 
 
 #include <iostream>
@@ -49,6 +50,7 @@ Renderer::~Renderer() {
 	delete camera;
 	delete cameraControl;
 	delete particleSystem;
+	//delete particleManager;
 	CubeRobot::DeleteCube();
 }
 
@@ -85,7 +87,7 @@ void Renderer::SetupSceneA() {
 	terrain->AddChild(CR2);
 
 	particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
-
+	//particleManager = new ParticleManager();
 }
 
 void Renderer::UpdateScene(float msec) {
@@ -93,6 +95,7 @@ void Renderer::UpdateScene(float msec) {
 
 	camera->UpdateCamera(msec);
 	particleSystem->UpdateParticles(msec);
+	//particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -169,6 +172,10 @@ void Renderer::RenderScene() {
 
 	DrawNodes();
 	DrawFPS();
+
+	//SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
+	//SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
+	//SHADER_MANAGER->SetUniform("Particle", "cameraPos", camera->GetPosition());
 	//TODO: Add to uniforms
 	particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
 	//DrawLine();
@@ -271,7 +278,6 @@ void Renderer::SetupCamera() {
 
 void Renderer::UpdateUniforms() {
 	for (const auto& shader : activeShaders) {
-		SHADER_MANAGER->SetShader(shader);
 		std::vector<std::string> uniforms = SHADER_MANAGER->GetUniformNames(shader);
 		for (const auto& uniform : uniforms) {
 			if (uniform.find("Tex") != std::string::npos) {

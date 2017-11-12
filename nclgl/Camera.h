@@ -42,6 +42,8 @@ public:
 	//Sets position in world space
 	void	SetViewDirection(glm::vec3 val) { viewDirection = val; }
 
+	glm::vec3 GetRight() const { return right; }
+
 protected:
 	void HandleMouseUpdates();  // Updates pitch, yaw, (roll) and view direction based on relative mouse movement since last called
 	void HandleKeyboardUpdates(float msec); // Moves camera position in response to keyboard input

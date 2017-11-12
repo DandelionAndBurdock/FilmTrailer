@@ -67,6 +67,7 @@ bool ShaderManager::SetShader(const std::string& name) const {
 bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, GLint i) {
 	Shader* s = GetShader(shader);
 	if (s) {
+		s->Use();
 		return (s->SetUniform(uniform, i) != -1);
 	}
 	else {
@@ -77,6 +78,7 @@ bool ShaderManager::SetUniform(const std::string& shader, const std::string& uni
 bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, GLfloat f) {
 	Shader* s = GetShader(shader);
 	if (s) {
+		s->Use();
 		return (s->SetUniform(uniform, f) != -1);
 	}
 	else {
@@ -87,6 +89,7 @@ bool ShaderManager::SetUniform(const std::string& shader, const std::string& uni
 bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, const glm::mat4& mat) {
 	Shader* s = GetShader(shader);
 	if (s) {
+		s->Use();
 		return (s->SetUniform(uniform, mat) != -1);
 	}
 	else {
@@ -97,6 +100,7 @@ bool ShaderManager::SetUniform(const std::string& shader, const std::string& uni
 bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, const glm::vec3& vec) {
 	Shader* s = GetShader(shader);
 	if (s) {
+		s->Use();
 		return (s->SetUniform(uniform, vec) != -1);
 	}
 	else {
@@ -107,6 +111,7 @@ bool ShaderManager::SetUniform(const std::string& shader, const std::string& uni
 std::vector<std::string> ShaderManager::GetUniformNames(const std::string& shader) {
 	Shader* s = GetShader(shader);
 	if (s) {
+		s->Use();
 		return s->GetUniformNames();
 	}
 	else {

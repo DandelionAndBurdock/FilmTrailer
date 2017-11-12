@@ -1,3 +1,0 @@
-﻿  ParticleSystem.cpp
-c:\filmtrailer\nclgl\particlesystem.cpp(43): warning C4244: '=': conversion from 'float' to 'GLint', possible loss of data
-  nclgl.vcxproj -> C:\FilmTrailer\Coursework\Debug\nclgl.lib

@@ -13,6 +13,7 @@
 class HeightMap;
 class TextRenderer;
 class ParticleSystem;
+//class ParticleManager;
 
 class Renderer : public OGLRenderer {
 public:
@@ -67,4 +68,5 @@ protected:
 	TextRenderer* text;
 
 	ParticleSystem* particleSystem;
+	//ParticleManager* particleManager;
 };
