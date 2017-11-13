@@ -43,6 +43,8 @@ public:
 	void	SetViewDirection(glm::vec3 val) { viewDirection = val; }
 
 	glm::vec3 GetRight() const { return right; }
+	glm::vec3 GetUp() const { return up; }
+
 
 protected:
 	void HandleMouseUpdates();  // Updates pitch, yaw, (roll) and view direction based on relative mouse movement since last called

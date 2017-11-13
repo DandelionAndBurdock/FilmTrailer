@@ -50,7 +50,7 @@ Renderer::~Renderer() {
 	delete camera;
 	delete cameraControl;
 	delete particleSystem;
-	//delete particleManager;
+	delete particleManager;
 	CubeRobot::DeleteCube();
 }
 
@@ -86,16 +86,16 @@ void Renderer::SetupSceneA() {
 	CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
 	terrain->AddChild(CR2);
 
-	particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
-	//particleManager = new ParticleManager();
+	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
+	particleManager = new ParticleManager();
 }
 
 void Renderer::UpdateScene(float msec) {
 	CalculateFPS(msec); 
 
 	camera->UpdateCamera(msec);
-	particleSystem->UpdateParticles(msec);
-	//particleManager->Update(msec, camera->GetPosition());
+	//particleSystem->UpdateParticles(msec);
+	particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -110,6 +110,35 @@ void Renderer::UpdateScene(float msec) {
 	UpdateUniforms();
 
 	
+}
+
+void Renderer::RenderScene() {
+	//currentShader = ShaderManager::GetInstance()->GetShader("LineShader");
+	//currentShader->Use();
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+
+	DrawNodes();
+	DrawFPS();
+
+	//TODO: Tidy
+	SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
+	SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
+	SHADER_MANAGER->SetUniform("Particle", "cameraUp", camera->GetUp());
+	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
+	particleManager->Render();
+	//DrawLine();
+	//currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
+	//currentShader->Use();
+	//UpdateShaderMatrices();
+	//Texture* tex = TextureManager::GetInstance()->GetTexture("Noise");
+	//tex->Bind();
+	//quad->Draw();
+	SwapBuffers();
+	glUseProgram(0);
+	ClearNodeLists();
+	activeShaders.clear();
+
 }
 
 void Renderer::BuildNodeLists(SceneNode* from) {
@@ -164,33 +193,7 @@ void Renderer::DrawNode(SceneNode* n) {
 }
 
 
-void Renderer::RenderScene() {
-	//currentShader = ShaderManager::GetInstance()->GetShader("LineShader");
-	//currentShader->Use();
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-
-	DrawNodes();
-	DrawFPS();
-
-	//SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
-	//SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
-	//SHADER_MANAGER->SetUniform("Particle", "cameraPos", camera->GetPosition());
-	//TODO: Add to uniforms
-	particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
-	//DrawLine();
-	//currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
-	//currentShader->Use();
-	//UpdateShaderMatrices();
-	//Texture* tex = TextureManager::GetInstance()->GetTexture("Noise");
-	//tex->Bind();
-	//quad->Draw();
-	SwapBuffers();
-	glUseProgram(0);
-	ClearNodeLists();
-	activeShaders.clear();
-
-}
 
 void Renderer::ClearNodeLists() {
 	transparentNodeList.clear();

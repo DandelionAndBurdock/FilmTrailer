@@ -7,7 +7,7 @@ in vec4 colour;		// RGBA
 out vec2 texCoords;
 out vec4 particleColour;
 
-uniform vec3 cameraPos;		// Camera position in world space
+uniform vec3 cameraUp;		// Camera position in world space
 uniform vec3 cameraRight;	// Camera right in world space
 uniform mat4 viewProjMatrix;// Camera view projection matrix
 
@@ -24,7 +24,7 @@ void main() {
 
 	gl_Position = viewProjMatrix * vec4(vertexPosition, 1.0f);
 
-	out particleColour = colour;
+	particleColour = colour;
 	// Model position defined from [-0.5, 0.5] so map it to the range [0, 1]
 	texCoords = modelPosition.xy + vec2(0.5);         
 }

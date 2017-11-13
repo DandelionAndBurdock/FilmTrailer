@@ -15,7 +15,9 @@ using namespace Particles;
 ParticleManager::ParticleManager()
 {
 	particles.reserve(MAX_PARTICLES);
-
+	particles = std::vector<Particle>(MAX_PARTICLES);
+	positionBuffer = new GLfloat[MAX_PARTICLES * FLOATS_PER_PARTICLE];
+	colourBuffer = new GLubyte[MAX_PARTICLES * CHARS_PER_COLOUR];
 
 	//TODO: Move to main loader
 	texture = "Particle";
@@ -34,7 +36,7 @@ ParticleManager::ParticleManager()
 
 	glGenBuffers(1, &billboardVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, billboardVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(billboardVerts), billboardVerts);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(billboardVerts), billboardVerts, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &positionVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
@@ -78,12 +80,12 @@ void ParticleManager::Rebuffer() {
 	// Driver will return the memory block once it's not used.
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
 	glBufferData(GL_ARRAY_BUFFER, MAX_PARTICLES * FLOATS_PER_PARTICLE * sizeof(GLfloat), nullptr, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, particles.size() * FLOATS_PER_PARTICLE * sizeof(GLfloat), &particles[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, particles.size() * FLOATS_PER_PARTICLE * sizeof(GLfloat), positionBuffer);
 
 	glBindBuffer(GL_ARRAY_BUFFER, colourVBO);
 	glBufferData(GL_ARRAY_BUFFER, MAX_PARTICLES * CHARS_PER_COLOUR * sizeof(GLubyte),
 		nullptr, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, particles.size() * CHARS_PER_COLOUR * sizeof(GLubyte), &particles[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, particles.size() * CHARS_PER_COLOUR * sizeof(GLubyte), colourBuffer);
 }
 
 
@@ -120,7 +122,7 @@ GLuint ParticleManager::NextUnusedParticle()
 			return i;
 		}
 	}
-	auto iter = std::find_if(particles.cbegin(), particles.cend(), [](const Particle& p) { p.lifeRemaining <= 0.0f; });
+	auto iter = std::find_if(particles.cbegin(), particles.cend(), [](const Particle& p) { return p.lifeRemaining <= 0.0f; });
 
 	if (iter != particles.cend()) {
 		lastUsedParticle = iter - particles.cbegin();
