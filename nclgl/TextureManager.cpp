@@ -79,9 +79,7 @@ bool  TextureManager::GenerateRandomTexture(const std::string name, int dimensio
 		data[i + 2] = RNG->GetRandFloat();
 	}
 
-
-
-	Texture* t = new Texture(&data[0], dimension, true);
+  	Texture* t = new Texture(&data[0], dimension, true);
 	textures[name] = t;
 
 	delete[] data;

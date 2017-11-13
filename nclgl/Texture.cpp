@@ -19,6 +19,8 @@ Texture::Texture(float* data, int dimension, bool oneDimensional) {
 		glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, dimension, 0.0f, GL_RGB, GL_FLOAT, data);
 		SetFiltering();
 		glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
 	else {
 		glBindTexture(GL_TEXTURE_2D, ID);

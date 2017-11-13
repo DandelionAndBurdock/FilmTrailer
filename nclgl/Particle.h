@@ -55,23 +55,27 @@ namespace Particles {
 
 namespace Fireworks {
 	// Define these as floats rather than enums since we will send them to a buffer
-	const GLfloat INVALID_TYPE = -1.0f;
-	const GLfloat FIREWORK_LAUNCHER = 0.0f;					// Static particle responsible for launching shells 
-	const GLfloat FIREWORK_SHELL = 1.0f;					// Flies upwards before creating secondary shells
-	const GLfloat FIREWORK_SECONDARY_SHELL = 2.0f;			// Moves in random direction and fades out
+	const GLint INVALID_TYPE = -1;
+	const GLint FIREWORK_LAUNCHER = 0;					// Static particle responsible for launching shells 
+	const GLint FIREWORK_SHELL = 1;					// Flies upwards before creating secondary shells
+	const GLint FIREWORK_SECONDARY_SHELL = 2;			// Moves in random direction and fades out
 
 	// Note: I don't derive from firework from particle to ensure the memory layout does not have
 	// any padding or unexpected
+#pragma pack(push, 4)
 	struct Firework {
-		GLfloat type;
+		GLint type;
 		glm::vec3 pos;	  // Position of particle
 		glm::vec3 vel;	  // Velocity of particle
-		GLint lifetime; // Lifetime in milliseconds
+		GLfloat lifetime; // Lifetime in milliseconds
+		glm::vec4 colour; // Firework colour
+		GLfloat size;	      // Size in world space
 
 		Firework() :
 			type(INVALID_TYPE), pos(glm::vec3(0.0f)), vel(glm::vec3(0.0f)), lifetime(0)
 		{}
 	};
+#pragma pack(pop)
 		
 		const int MAX_PARTICLES = 1000;
 		const float BASE_LIFETIME = 10.0f;
@@ -82,6 +86,8 @@ namespace Fireworks {
 			POSITION,
 			VELOCITY,
 			LIFETIME,
+			COLOUR,
+			FIREWORK_SIZE,
 			NUM_ATTRIBUTES
 		};
 };

@@ -35,6 +35,7 @@ bool	Shader::LoadShaderFile(std::string from, std::string &into)	{
 	file.open(from.c_str());
 	if (!file.is_open()){
 		std::cout << "File does not exist!" << std::endl;
+		__debugbreak();
 		return false;
 	}
 
@@ -76,6 +77,7 @@ GLuint	Shader::GenerateShader(std::string from, GLenum type)	{
 		glGetInfoLogARB(shader, sizeof(error), NULL, error);
 		std::cout << error;
 		loadFailed = true;
+		__debugbreak();
 		return 0;
 	}
 	std::cout << "Compiling success!" << std::endl << std::endl;
@@ -96,6 +98,7 @@ bool Shader::LinkProgram()	{
 		char error[512];
 		glGetProgramInfoLog(program, sizeof(error), NULL, error);
 		std::cout << "Linking failed\n" << error << std::endl;
+		__debugbreak();
 	}
 	else {
 		SetUniformLocations();
@@ -177,7 +180,7 @@ GLint Shader::SetUniform(const std::string& name, GLint i) {
 }
 
 GLint Shader::SetUniform(const std::string& name, GLfloat f) {
-	glUniform1i(GetLocation(name), f);
+	glUniform1f(GetLocation(name), f);
 	return GetLocation(name);
 }
 GLint Shader::SetUniform(const std::string& name, const glm::mat4& mat) {

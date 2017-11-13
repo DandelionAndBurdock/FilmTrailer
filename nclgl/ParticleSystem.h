@@ -16,7 +16,7 @@ public:
 	ParticleSystem(const glm::vec3& pos);
 	~ParticleSystem();
 
-	void UpdateParticles(GLint msec);
+	void UpdateParticles(GLfloat msec);
 	void Render(const glm::mat4& viewProj, const glm::vec3 cameraPos);
 protected:
 	void InitFireworks(const glm::vec3& pos);
@@ -32,7 +32,7 @@ protected:
 	GLuint particleBuffer[2];			// One particle buffer for each TF buffer
 
 	// Time in milliseconds
-	GLint time;
+	GLfloat time;
 
 	GLuint updateVAO;
 	GLuint billboardVAO;

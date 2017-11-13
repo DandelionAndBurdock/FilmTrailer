@@ -87,7 +87,7 @@ void Renderer::SetupSceneA() {
 	terrain->AddChild(CR2);
 
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
-	particleManager = new ParticleManager();
+	//particleManager = new ParticleManager();
 }
 
 void Renderer::UpdateScene(float msec) {
@@ -95,7 +95,7 @@ void Renderer::UpdateScene(float msec) {
 
 	camera->UpdateCamera(msec);
 	//particleSystem->UpdateParticles(msec);
-	particleManager->Update(msec, camera->GetPosition());
+	//particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -122,11 +122,11 @@ void Renderer::RenderScene() {
 	DrawFPS();
 
 	//TODO: Tidy
-	SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
-	SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
-	SHADER_MANAGER->SetUniform("Particle", "cameraUp", camera->GetUp());
+	//SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
+	//SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
+	//SHADER_MANAGER->SetUniform("Particle", "cameraUp", camera->GetUp());
 	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
-	particleManager->Render();
+	//particleManager->Render();
 	//DrawLine();
 	//currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
 	//currentShader->Use();
@@ -148,9 +148,7 @@ void Renderer::BuildNodeLists(SceneNode* from) {
 
 		from->SetCameraDistance(glm::dot(dir, dir));
 
-		if (from->GetMesh()) {
 			activeShaders.insert(from->GetShaderName());
-		}
 
 		if (from->GetColour().w < 1.0f) {
 			transparentNodeList.push_back(from);

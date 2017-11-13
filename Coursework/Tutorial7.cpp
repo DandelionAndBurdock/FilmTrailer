@@ -3,6 +3,8 @@
 
 #pragma comment(lib, "nclgl.lib")
 
+
+
 int main() {	
 	Window w("Scene Management!", 800,600,false);
 	if(!w.HasInitialised()) {
@@ -17,6 +19,7 @@ int main() {
 	w.LockMouseToWindow(true);
 	w.ShowOSPointer(false);
 
+	w.GetTimer()->GetTimedMS();
 	while(w.UpdateWindow() && !Window::GetKeyboard()->KeyDown(KEYBOARD_ESCAPE)){
 		renderer.UpdateScene(w.GetTimer()->GetTimedMS());
 		renderer.RenderScene();
