@@ -18,7 +18,7 @@ ParticleSystem::ParticleSystem(const glm::vec3& pos)
 	time = 0;
 	LoadShaders();
 	//TODO: Move to texture load
-	TEXTURE_MANAGER->AddTexture("Firework", TEXTUREDIR"firework.jpg");
+	TEXTURE_MANAGER->AddTexture("Firework", TEXTUREDIR"particle.jpg");
 	TEXTURE_MANAGER->GenerateRandomTexture("RandomTexture", 1000);
 
 	InitFireworks(pos);

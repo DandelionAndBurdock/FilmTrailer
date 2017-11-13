@@ -22,7 +22,7 @@
     <ProjectGuid>{8B6CAB4D-8928-4F1F-B011-88FA1DFDA21F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Coursework</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -93,7 +93,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\;$(SolutionDir)..\GLEW\lib\Release;$(SolutionDir)..\SOIL\Release;C:\FilmTrailer\FreeType\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\;$(SolutionDir)..\GLEW\lib\Release;$(SolutionDir)..\SOIL\Release;$(SolutionDir)..\FreeType\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>freeType.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
