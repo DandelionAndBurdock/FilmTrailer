@@ -66,6 +66,7 @@ void Renderer::SetupSceneA() {
 	sceneARoot = new SceneNode();
 	sceneARoot->AddChild(terrain);
 	terrain->UseTexture("Terrain");
+	terrain->UseTexture("TerrainBump");
 	terrain->SetShader("TerrainShader");
 
 	for (int i = 0; i < 5; ++i) {
@@ -92,6 +93,7 @@ void Renderer::SetupSceneA() {
 	lights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
 	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
 	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
+	lights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
 	
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
 	//particleManager = new ParticleManager();
@@ -269,6 +271,7 @@ void Renderer::LoadShaders() {
 void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("StainedGlass", TEXTUREDIR"stainedglass.tga");
 	TEXTURE_MANAGER->AddTexture("Terrain", TEXTUREDIR"Barren Reds.jpg");
+	TEXTURE_MANAGER->AddTexture("TerrainBump", TEXTUREDIR"Barren RedsDOT3.jpg");
 }
 
 void Renderer::ConfigureOpenGL() {
@@ -285,7 +288,7 @@ void Renderer::SetupCamera() {
 	cameraControl = new CameraController(camera, wps, lps);
 }
 
-
+//TODO: Refactor
 void Renderer::UpdateUniforms() {
 	for (const auto& shader : activeShaders) {
 		std::vector<std::string> uniforms = SHADER_MANAGER->GetUniformNames(shader);
@@ -319,7 +322,7 @@ void Renderer::UpdateUniforms() {
 					SHADER_MANAGER->SetUniform(shader, uniform, textureMatrix);
 				}
 				else if (uniform == "ambientStrength") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 0.2f);
+					SHADER_MANAGER->SetUniform(shader, uniform, 0.2f);//TOOD: Make variable
 				}
 				else if (uniform == "cameraPos") {
 					SHADER_MANAGER->SetUniform(shader, uniform, camera->GetPosition());

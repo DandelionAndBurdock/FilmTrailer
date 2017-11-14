@@ -4,6 +4,7 @@
 #define MAX_POINT_LIGHTS 4
 
 uniform sampler2D diffuseTex;
+uniform sampler2D bumpTex;
 
 struct PointLight {
     vec3 position;
@@ -18,9 +19,11 @@ uniform vec3 cameraPos;
 uniform float ambientStrength;
 
  in Vertex {
- vec2 texCoord;
- vec3 worldPos;
- vec3 normalWorld;
+	vec2 texCoord;
+	vec3 worldPos;
+	vec3 normalWorld;
+	vec3 tangentWorld;
+	vec3 binormalWorld;
  } IN;
 
 out vec4 gl_FragColor;
@@ -53,6 +56,13 @@ vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fr
 void main(){
 	// Normalise normal in case interpolation has messed it up
 	vec3 norm = normalize(IN.normalWorld);
+	vec3 binormal = normalize(IN.binormalWorld);
+	vec3 tangent = normalize(IN.tangentWorld);
+	
+	// Sample normal from bump map 
+	//mat3 TBN = mat3(IN.tangentWorld, IN.binormalWorld, IN.normalWorld);
+	mat3 TBN = mat3(tangent, binormal, norm);
+	vec3 normal = normalize(TBN * (texture(bumpTex, IN.texCoord).rgb * 2.0 - 1.0)); // Change from texture space of [0.0, 1.0] to direction space [-1.0, 1.0]
 	
 	// Unit vector pointing from fragment position to camera/eye
 	vec3 fragToCamera = normalize(cameraPos - IN.worldPos);
@@ -60,7 +70,7 @@ void main(){
 	vec3 fragColour = vec3(0.0);
 	// Point Lights
 	for (int i = 0; i < MAX_POINT_LIGHTS; i++){
-		fragColour += PointLightContribution(pointLights[i], norm, IN.worldPos, fragToCamera);
+		fragColour += PointLightContribution(pointLights[i], normal, IN.worldPos, fragToCamera);
 	}
 	
 	gl_FragColor = vec4(fragColour, 1.0);
