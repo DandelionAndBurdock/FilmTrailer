@@ -14,6 +14,7 @@ class HeightMap;
 class TextRenderer;
 class ParticleSystem;
 class ParticleManager;
+class Light;
 
 class Renderer : public OGLRenderer {
 public:
@@ -69,4 +70,7 @@ protected:
 
 	ParticleSystem* particleSystem;
 	ParticleManager* particleManager;
+
+	// List of lights in the world
+	std::vector<Light*> lights;
 };

@@ -1,6 +1,10 @@
 #include "Shader.h"
 
 #include <iostream>
+#include <sstream>
+
+#include "Light.h" // Just including this for MAX_LIGHTS...
+
 Shader::Shader(std::string vFile, std::string fFile, std::string gFile)	{
 	program = glCreateProgram();
 	objects[SHADER_VERTEX] = GenerateShader(vFile, GL_VERTEX_SHADER);
@@ -112,7 +116,7 @@ void	Shader::SetDefaultAttributes()	{
 	glBindAttribLocation(program, VERTEX_BUFFER, "position");
 	glBindAttribLocation(program, COLOUR_BUFFER, "colour");
 	glBindAttribLocation(program, NORMAL_BUFFER,  "normal");
-//	glBindAttribLocation(program, TANGENT_BUFFER, "tangent");
+	glBindAttribLocation(program, TANGENT_BUFFER, "tangent");
 	glBindAttribLocation(program, TEXTURE_BUFFER, "texCoord");
 }
 
@@ -141,12 +145,17 @@ void Shader::SetUniformLocations() {
 }
 
 void Shader::AddUniformLocation(const std::string& name) {
-	GLint location = glGetUniformLocation(program, name.c_str());
-	if (location < 0) {
-		std::cout << "Warning: Failed to find uniform " << name << std::endl;
+	if (name.find('[') != std::string::npos) {// Is it an array?
+		AddArrayUniformLocation();
 	}
 	else {
-		uniformLocations[name] = location;
+		GLint location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
 	}
 }
 
@@ -163,6 +172,40 @@ GLint Shader::GetLocation(const std::string& name) {
 		return -1;
 	}
 	
+}
+
+// Array uniforms are a little bit awkward. 
+// To save time will just be really ugly and hardcode them for now 
+void Shader::AddArrayUniformLocation() {
+	for (int i = 0; i < MAX_LIGHTS; ++i) {
+		std::stringstream ss;
+		ss << i;
+		std::string name = "pointLights[" + ss.str() + "].position";
+		GLint location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "pointLights[" + ss.str() + "].colour";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "pointLights[" + ss.str() + "].radius";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+	}
+
 }
 
 std::vector<std::string> Shader::GetUniformNames() {

@@ -3,7 +3,8 @@
 #include "OGLRenderer.h" //TODO: Why this include?
 
 enum MeshBuffer {
-	VERTEX_BUFFER, COLOUR_BUFFER, TEXTURE_BUFFER, NORMAL_BUFFER, INDEX_BUFFER, MAX_BUFFER
+	VERTEX_BUFFER, COLOUR_BUFFER, TEXTURE_BUFFER, NORMAL_BUFFER, 
+	TANGENT_BUFFER, INDEX_BUFFER, MAX_BUFFER
 };
 
 class Mesh
@@ -24,9 +25,13 @@ public:
 
 	// Estimate the bounding radius based on the vertices of this mesh
 	GLfloat CalculateBoundingRadius();
-	
 protected:
+	void GenerateTangents();
 	void GenerateNormals();
+
+	glm::vec3 GenerateTangent(const glm::vec3& a, const glm::vec3& b,
+		const glm::vec3& c, const glm::vec2& ta,
+		const glm::vec2& tb, const glm::vec2& tc);
 
 	void BufferData();
 
@@ -42,4 +47,6 @@ protected:
 	glm::vec4* colours;
 	glm::vec2* textureCoords;
 	unsigned int* indices;
+
+	glm::vec3* tangents;
 };

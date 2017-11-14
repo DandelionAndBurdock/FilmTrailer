@@ -7,6 +7,7 @@
  in vec3 position;
  in vec2 texCoord;
  in vec3 normal;
+in vec3 tangent;
  
  out Vertex {
  vec2 texCoord;
@@ -16,7 +17,7 @@
  
  void main() {
  OUT.texCoord = texCoord;
- OUT.normalWorld = mat3(transpose(inverse(model))) * normal;
+ OUT.normalWorld = transpose(inverse(mat3(modelMatrix))) * normal;
  OUT.worldPos = (modelMatrix * vec4(position, 1)).xyz;
   gl_Position = (projMatrix * viewMatrix * modelMatrix) * vec4(position, 1.0);
  }

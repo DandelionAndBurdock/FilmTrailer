@@ -8,8 +8,9 @@ PerlinNoise::PerlinNoise()
 	dimensions = 64;
 	noiseValues = new GLfloat[dimensions * dimensions];
 	numOctaves = 6;
-	amplitude = 1.0f;
+	baseAmplitude = 1.0f;
 	persistence = 0.3f;
+	baseFrequency = 4;
 }
 
 
@@ -33,6 +34,7 @@ void PerlinNoise::GenerateNoise() {
 			// at the end(then we can just multiply noiseValues by maximum height later)
 			float maxValue = 0.0f;
 			float frequency = baseFrequency;
+			float amplitude = baseAmplitude;
 			for (int octave = 0; octave < numOctaves; ++octave, frequency *= 2) {
 				// Periodic in range 0 - frequency
 				float sample = glm::perlin(glm::vec2(sampleX, sampleY) * frequency, glm::vec2(frequency));
@@ -45,7 +47,7 @@ void PerlinNoise::GenerateNoise() {
 				amplitude *= persistence;
 			}
 			// Normalise 
-			noiseValues[x * dimensions + y] /= maxValue;
+			noiseValues[x * dimensions + y] /= (float)maxValue;
 		}
 	}
 }

@@ -32,7 +32,7 @@ protected:
 	void	SetDefaultAttributes();
 	void SetUniformLocations();
 	void AddUniformLocation(const std::string& name);
-
+	void AddArrayUniformLocation();
 
 
 	GLuint objects[3];

@@ -1,8 +1,6 @@
 #include "Mesh.h"
 
 #include "../glm/glm.hpp"
-
-#include <cmath> // sqrt()
 Mesh::Mesh(){
 	for (int i = 0; i < MAX_BUFFER; ++i){
 		bufferObject[i] = 0;
@@ -18,6 +16,7 @@ Mesh::Mesh(){
 	type = GL_TRIANGLES;
 	textureCoords = nullptr;
 	normals = nullptr;
+	tangents = nullptr;
 }
 
 
@@ -30,6 +29,7 @@ Mesh::~Mesh(){
 	delete[] colours;
 	delete[] textureCoords;
 	delete[] normals;
+	delete[] tangents;
 }
 
 
@@ -83,6 +83,13 @@ Mesh* Mesh::GenerateQuad(){
 	m->textureCoords[1] = glm::vec2(0.0f, 0.0f);
 	m->textureCoords[2] = glm::vec2(1.0f, 1.0f);
 	m->textureCoords[3] = glm::vec2(1.0f, 0.0f);
+
+	m->normals = new glm::vec3[m->numVertices];
+	m->tangents = new glm::vec3[m->numVertices];
+	for (int i = 0; i < 4; ++i) {
+		m->normals[i] = glm::vec3(0.0f, 0.0f, -1.0f);
+		m->tangents[i] = glm::vec3(1.0f, 0.0f, 0.0f);
+	}
 
 	m->BufferData();
 
@@ -178,12 +185,18 @@ void Mesh::BufferData() {
 		glVertexAttribPointer(NORMAL_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		glEnableVertexAttribArray(NORMAL_BUFFER);
 	}
+	if (tangents) {
+		glGenBuffers(1, &bufferObject[TANGENT_BUFFER]);
+		glBindBuffer(GL_ARRAY_BUFFER, bufferObject[TANGENT_BUFFER]);
+		glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(glm::vec3), tangents, GL_STATIC_DRAW);
+		glVertexAttribPointer(TANGENT_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(TANGENT_BUFFER);
+	}
 
 	glBindVertexArray(0);
 }
 
 void Mesh::Draw() {
-
 	glBindVertexArray(arrayObject);
 	if (bufferObject[INDEX_BUFFER]) {
 		glDrawElements(type, numIndices, GL_UNSIGNED_INT, 0);
@@ -237,6 +250,61 @@ void Mesh::GenerateNormals() {
 	}
 }
 
+
+void Mesh::GenerateTangents() {
+	if (!tangents) {
+		tangents = new glm::vec3[numVertices];
+	}
+	for (GLuint i = 0; i < numVertices; ++i) {
+		tangents[i] = glm::vec3();
+	}
+
+	if (indices) {
+		for (GLuint i = 0; i < numIndices; i += 3) {
+			int a = indices[i];
+			int b = indices[i + 1];
+			int c = indices[i + 2];
+
+			glm::vec3 tangent = GenerateTangent(vertices[a], vertices[b],
+				vertices[c], textureCoords[a],
+				textureCoords[b], textureCoords[c]);
+
+			tangents[a] += tangent;
+			tangents[b] += tangent;
+			tangents[c] += tangent;
+		}
+	}
+	else {
+		for (GLuint i = 0; i < numVertices; i += 3) {
+			glm::vec3 tangent = GenerateTangent(vertices[i], vertices[i + 1],
+				vertices[i + 2], textureCoords[i], textureCoords[i + 1],
+				textureCoords[i + 2]);
+
+			tangents[i] += tangent;
+			tangents[i + 1] += tangent;
+			tangents[i + 2] += tangent;
+		}
+	}
+	for (GLuint i = 0; i < numVertices; ++i) {
+		glm::normalize(tangents[i]);
+	}
+}
+
+glm::vec3 Mesh::GenerateTangent(const glm::vec3& a, const glm::vec3& b,
+	const glm::vec3& c, const glm::vec2& ta,
+	const glm::vec2& tb, const glm::vec2& tc) {
+	glm::vec2 coord1 = tb - ta;
+	glm::vec2 coord2 = tc - ta;
+
+	glm::vec3 vertex1 = b - a;
+	glm::vec3 vertex2 = c - a;
+
+	glm::vec3 axis = glm::vec3(vertex1 * coord2.y - vertex2 * coord1.y);
+
+	float factor = 1.0f / (coord1.x * coord2.y - coord2.x * coord1.y);
+
+	return axis * factor;
+}
 
 GLfloat Mesh::CalculateBoundingRadius() {
 	GLfloat max = 0.0f;

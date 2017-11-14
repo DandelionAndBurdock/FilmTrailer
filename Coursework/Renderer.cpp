@@ -8,8 +8,10 @@
 #include "nclgl\PerlinNoise.h"
 #include "nclgl\ParticleSystem.h"
 #include "nclgl\ParticleManager.h"
+#include "nclgl\Light.h"
 
 
+#include <algorithm> // For min()
 #include <iostream>
 #include <iomanip> // setprecision()
 
@@ -86,6 +88,11 @@ void Renderer::SetupSceneA() {
 	CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
 	terrain->AddChild(CR2);
 
+	lights.clear();
+	lights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
+	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
+	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
+	
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
 	//particleManager = new ParticleManager();
 }
@@ -107,7 +114,9 @@ void Renderer::UpdateScene(float msec) {
 		SortNodeLists();
 	}
 
+	std::sort(lights.begin(), lights.end(), [](const Light* a, const Light* b) { return *a < *b;});
 	UpdateUniforms();
+	
 
 	
 }
@@ -251,7 +260,7 @@ void Renderer::SetupScenes() {
 
 void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
-	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"TexturedColourVertex.glsl", SHADERDIR"TexturedColourFragment.glsl");
+	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 
 	//ShaderManager::GetInstance()->AddShader("LineShader", SHADERDIR"BasicVertex.glsl", SHADERDIR"BasicFragment.glsl", SHADERDIR"LineGeometry.glsl");
@@ -280,26 +289,46 @@ void Renderer::SetupCamera() {
 void Renderer::UpdateUniforms() {
 	for (const auto& shader : activeShaders) {
 		std::vector<std::string> uniforms = SHADER_MANAGER->GetUniformNames(shader);
-		for (const auto& uniform : uniforms) {
+		for (const auto& uniform : uniforms) {//TODO: Refactor
 			if (uniform.find("Tex") != std::string::npos) {
 				continue; // Don't handle textures here
 			}
-			if (uniform == "modelMatrix") {
-				SHADER_MANAGER->SetUniform(shader, uniform, modelMatrix);
-			}
-			else if (uniform == "viewMatrix") {
-				SHADER_MANAGER->SetUniform(shader, uniform, viewMatrix);
-			}
-			else if (uniform == "projMatrix") {
-				SHADER_MANAGER->SetUniform(shader, uniform, projMatrix);
-			}
-			else if (uniform == "textureMatrix") {
-				SHADER_MANAGER->SetUniform(shader, uniform, textureMatrix);
+			if (uniform.find("Light") != std::string::npos) {
+				// Number of lights to render
+				int numLights = std::min(int(lights.size()), MAX_LIGHTS);
+				for (int i = 0; i < numLights; ++i) {
+					std::stringstream ss;
+					ss << i;
+					std::string s = ss.str();
+					SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].position", lights[i]->GetPosition());
+					SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].colour", lights[i]->GetColour());
+					SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].radius", lights[i]->GetRadius());
+				}
 			}
 			else {
-				std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+				if (uniform == "modelMatrix") {
+					SHADER_MANAGER->SetUniform(shader, uniform, modelMatrix);
+				}
+				else if (uniform == "viewMatrix") {
+					SHADER_MANAGER->SetUniform(shader, uniform, viewMatrix);
+				}
+				else if (uniform == "projMatrix") {
+					SHADER_MANAGER->SetUniform(shader, uniform, projMatrix);
+				}
+				else if (uniform == "textureMatrix") {
+					SHADER_MANAGER->SetUniform(shader, uniform, textureMatrix);
+				}
+				else if (uniform == "ambientStrength") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 0.2f);
+				}
+				else if (uniform == "cameraPos") {
+					SHADER_MANAGER->SetUniform(shader, uniform, camera->GetPosition());
+				}
+				else {
+					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+				}
 			}
 		}
-	}
 
+	}
 }

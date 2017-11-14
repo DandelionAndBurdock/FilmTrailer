@@ -44,10 +44,10 @@ vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fr
     specular *= attenuation;
 	
 	// Total:
-	vec3 diffuse = light.colour * diffuse * vec3(texture(material.diffuse, TexCoords));
-	vec3 ambient = (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(material.diffuse, TexCoords));
-    vec3 specular = light.colour * specular * vec3(texture(material.specular, TexCoords));
-    return (ambient + diffuse + specular);
+	vec3 diffuseLight = light.colour * diffuse * vec3(texture(diffuseTex, IN.texCoord));
+	vec3 ambientLight = (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord));
+    vec3 specularLight = light.colour * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
+    return (ambientLight + diffuseLight + specularLight);
 }
 
 void main(){
@@ -57,7 +57,7 @@ void main(){
 	// Unit vector pointing from fragment position to camera/eye
 	vec3 fragToCamera = normalize(cameraPos - IN.worldPos);
 	
-	fragColour = vec3(0.0);
+	vec3 fragColour = vec3(0.0);
 	// Point Lights
 	for (int i = 0; i < MAX_POINT_LIGHTS; i++){
 		fragColour += PointLightContribution(pointLights[i], norm, IN.worldPos, fragToCamera);

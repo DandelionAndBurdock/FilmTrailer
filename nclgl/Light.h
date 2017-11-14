@@ -6,7 +6,7 @@
 #include "../GLEW/include/GL/glew.h"
 
 // Maximum number of lights to be forward rendered at one time
-#define MAX_LIGHTS = 4
+#define MAX_LIGHTS  4
 
 class Light
 {
@@ -29,12 +29,12 @@ public:
 	float GetRadius() const {	return radius;}
 	void SetRadius(float val) {	radius = val; }
 
-	glm::vec4 GetColour() const {	return colour; }
-	void SetColour(glm::vec4 val) { colour = val; }
+	glm::vec3 GetColour() const {	return colour; }
+	void SetColour(glm::vec3 val) { colour = val; }
 
 protected:
 	glm::vec3 position;
-	glm::vec4 colour;
+	glm::vec3 colour;
 	GLfloat radius;
 
 	GLfloat cameraDistance;
