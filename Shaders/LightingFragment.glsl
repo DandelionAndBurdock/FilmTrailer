@@ -26,8 +26,8 @@ vec3 position;
 vec3 direction;
 vec3 colour;
 float radius;
-float outerCutOff;
-float innerCutOff;
+float outerCutOff; // Cosine
+float innerCutOff; // Cosine
 };
 
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
@@ -59,7 +59,7 @@ vec3 DirectionalLightContribution(DirectionalLight light, vec3 normal, vec3 frag
     
 	// Total:
 	vec3 diffuseLight = light.colour * diffuse * vec3(texture(diffuseTex, IN.texCoord));
-	vec3 ambientLight = (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord));
+	vec3 ambientLight = (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord)); //TODO: Should really have seperate ambient sttrength for spotlight, dirlight, pointlight
     vec3 specularLight = light.colour * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
     return (ambientLight + diffuseLight + specularLight);
 }
@@ -71,10 +71,12 @@ vec3 SpotLightContribution(SpotLight light, vec3 normal, vec3 fragPos, vec3 frag
 	
 	// Angle between the spotlight direction and the fragToLight direction
 	// If theta is less than the spotlight cutoff then the frament is inside the beam
-	float theta = acos(dot(fragToLight, -light.direction));
-	//if (theta > light.innerCutOff){
-	//	return (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord));
-	//}
+	float cosTheta = dot(fragToLight, -light.direction);
+	
+	// Angles greater than the outerCutOff contribute 0, angles less than the innerCutOff contribute 1.0
+	// Intermediate angles get interpolated value (in cosine space), this gives soft edges
+	float epsilon = (cosTheta - light.outerCutOff) / (light.innerCutOff - light.outerCutOff);
+	float intensity = clamp(epsilon, 0.0, 1.0); 
     // Diffuse contribution : Proportional to cosine between normal and incident light ray (Lambert)
 	float diffuse = max(dot(normal, fragToLight), 0.0);
     // Specular Contribution : Proportional to the cosine between the normal vector and 
@@ -85,15 +87,15 @@ vec3 SpotLightContribution(SpotLight light, vec3 normal, vec3 fragPos, vec3 frag
 	// Attenuate contribution  of this light based on distance of fragment from the camera (Simple linear contribution)
     float lightFragDistance = length(light.position - fragPos);
     float attenuation = 1.0 - clamp(lightFragDistance / light.radius, 0.0, 1.0);
-	diffuse *= attenuation;
-    specular *= attenuation;
+	diffuse *= attenuation * intensity;
+    specular *= attenuation * intensity;
 	
 	
 	// Total:
 	vec3 diffuseLight = light.colour * diffuse * vec3(texture(diffuseTex, IN.texCoord));
-	vec3 ambientLight = (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord));
+	vec3 ambientLight = light.colour * attenuation * ambientStrength  * vec3(texture(diffuseTex, IN.texCoord));
     vec3 specularLight = light.colour * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
-    return (ambientLight + diffuseLight + specularLight);
+   return (ambientLight + diffuseLight + specularLight);
 }
 
 // World space calculation of fragment colour contribution from a point light
@@ -138,12 +140,19 @@ void main(){
 	}
 	// Directional Lights 
 	for (int i = 0; i < MAX_DIR_LIGHTS; i++){
-		fragColour += DirectionalLightContribution(directionalLights[i], normal, IN.worldPos, fragToCamera);
+		if (directionalLights[i].colour.x > 0.0){
+				fragColour += DirectionalLightContribution(directionalLights[i], normal, IN.worldPos, fragToCamera);
+
+		}
 	}
 	
 	
 	for (int i = 0; i < MAX_SPOT_LIGHTS; i++){
-	fragColour += SpotLightContribution(spotLights[i], normal, IN.worldPos, fragToCamera);
+	if (spotLights[i].colour.x > 0.0){
+					fragColour += SpotLightContribution(spotLights[i], normal, IN.worldPos, fragToCamera);
+
+		}
+
 	}
 	
 	//gl_FragColor = vec4(IN.normalWorld, 1.0);

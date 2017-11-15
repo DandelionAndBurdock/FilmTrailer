@@ -16,6 +16,7 @@
     <ClCompile Include="DirectionalLight.cpp" />
     <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="GameTimer.cpp" />
+    <ClCompile Include="Grass.cpp" />
     <ClCompile Include="HeightMap.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Light.cpp" />
@@ -45,6 +46,7 @@
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="GameTimer.h" />
+    <ClInclude Include="Grass.h" />
     <ClInclude Include="HeightMap.h" />
     <ClInclude Include="InputDevice.h" />
     <ClInclude Include="Keyboard.h" />

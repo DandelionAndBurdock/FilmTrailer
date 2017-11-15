@@ -3,8 +3,7 @@
 #include <iostream>
 #include <fstream>
 
-HeightMap::HeightMap(std::string name) :
-	SceneNode(this)
+HeightMap::HeightMap(std::string name) 
 {
 
 	std::ifstream file(name.c_str(), std::ios::binary);
@@ -57,5 +56,18 @@ HeightMap::HeightMap(std::string name) :
 	GenerateNormals();
 	GenerateTangents();
 	BufferData();
+
+}
+
+float HeightMap::GetHeightAtPosition(float x, float z) {
+	int row = int(round(x / HEIGHTMAP_X)) % RAW_WIDTH;
+	int col = int(round(z / HEIGHTMAP_Z)) % RAW_HEIGHT;
+
+	if (row >= RAW_WIDTH || col >= RAW_HEIGHT) {
+		return 0.0f;
+	}
+	else {
+		return vertices[row + col].y;
+	}
 
 }

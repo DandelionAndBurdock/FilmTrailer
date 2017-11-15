@@ -126,7 +126,6 @@ OGLRenderer::OGLRenderer(Window &window)	{
 
 	glClearColor(0.2f,0.2f,0.2f,1.0f);			//When we clear the screen, we want it to be dark grey
 
-	currentShader = 0;							//0 is the 'null' object name for shader programs...
 
 	window.SetRenderer(this);					//Tell our window about the new renderer! (Which will in turn resize the renderer window to fit...)
 
@@ -184,24 +183,6 @@ void OGLRenderer::UpdateScene(float msec)	{
 
 }
 
-void OGLRenderer::SetCurrentShader(Shader*s) {
-	currentShader = s;
-
-	glUseProgram(s->GetProgram());
-}
-
-void OGLRenderer::SetTextureRepeating( GLuint target, bool repeating )	{
-	glBindTexture(GL_TEXTURE_2D, target);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeating ? GL_REPEAT : GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeating ? GL_REPEAT : GL_CLAMP);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void OGLRenderer::SetShaderLight(const Light &l) {
-	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos")   ,1,(float*)&l.GetPosition());
-	glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"),1,(float*)&l.GetColour());
-	glUniform1f(glGetUniformLocation(currentShader->GetProgram() , "lightRadius"),l.GetRadius());
-}
 
 void OGLRenderer::CalculateFPS(float msec) {
 	static int i = 0;

@@ -23,10 +23,9 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	dirLight = nullptr;
 	spotlight = nullptr;
 	CubeRobot::CreateCube();
-
+	Light::CreateLightMesh();
 	
 	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
-
 
 	SetupCamera();
 	LoadShaders();
@@ -37,7 +36,6 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	text = new TextRenderer(width, height, FONTSDIR"arial.ttf", 30, glm::vec3(1.0f, 1.0f, 1.0f));
 
-	//SetupLine();
 	//PerlinNoise p;
 	//p.GenerateTexture();
 
@@ -50,13 +48,12 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 
 Renderer::~Renderer() {
-	if (currentRoot)
-		delete currentRoot;
 	if (dirLight)
 		delete dirLight;
+	if (spotlight)
+		delete spotlight;
 
 	delete sceneARoot;
-	delete quad;
 	delete camera;
 	delete cameraControl;
 	delete particleSystem;
@@ -67,52 +64,39 @@ Renderer::~Renderer() {
 
 
 void Renderer::SetupSceneA() {
-	quad = Mesh::GenerateQuad();
-
 
 	terrain = new HeightMap(TEXTUREDIR"terrain.raw");
-
+	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
 	sceneARoot = new SceneNode();
-	sceneARoot->AddChild(terrain);
-	terrain->UseTexture("Terrain");
-	terrain->UseTexture("TerrainBump");
-	terrain->SetShader("TerrainShader");
+	sceneARoot->AddChild(heightMap);
+	heightMap->UseTexture("Terrain");
+	heightMap->UseTexture("TerrainBump");
 
-	for (int i = 0; i < 5; ++i) {
-		SceneNode* s = new SceneNode();
-		s->SetColour(glm::vec4(1.0f, 1.0f, 1.0f, 0.5f));
-		s->SetTransform(glm::translate(glm::vec3(0.0f, 100.0f, -200.0f + 100.0f * i)));
-		s->SetModelScale(glm::vec3(100.0f, 100.0f, 100.0f));
-		s->SetBoundingRadius(100.0f);
-		s->SetMesh(quad);
-		s->UseTexture("StainedGlass");
-		s->SetShader("QuadShader");
+	//heightMap->AddChild(new CubeRobot());
+	//
+	//CubeRobot* CR2 = new CubeRobot();
+	//CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
+	//heightMap->AddChild(CR2);
 
-		terrain->AddChild(s);
+
+	lights.clear();
+	lights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
+	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
+	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
+	lights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
+	for (auto& light : lights) {
+		heightMap->AddChild(light);
 	}
-
-
-	terrain->AddChild(new CubeRobot());
-
-	CubeRobot* CR2 = new CubeRobot();
-	CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
-	terrain->AddChild(CR2);
-
-	//lights.clear();
-	//lights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
-	//lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
-	//lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
-	//lights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
-	
 	if (dirLight) {
 		delete dirLight;
 	}
 	dirLight = new DirectionalLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0));
-
+	
 	if (spotlight) {
 		delete spotlight;
 	}
-	spotlight = new Spotlight(glm::vec3(100.0f, 100.0f, 100.0f), glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f)));
+	spotlight = new Spotlight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(0.0, 0.0,1.0),glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
+	heightMap->AddChild(spotlight);
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
 	//particleManager = new ParticleManager();
 }
@@ -126,7 +110,7 @@ void Renderer::UpdateScene(float msec) {
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
-	dirLight->Rotate(1.0 / 10.0 * msec, glm::vec3(0.0, 0.0, 1.0));
+	//dirLight->Rotate(1.0 / 10.0 * msec, glm::vec3(0.0, 0.0, 1.0));
 
 	if (currentRoot) {
 		currentRoot->Update(msec);
@@ -134,9 +118,15 @@ void Renderer::UpdateScene(float msec) {
 		BuildNodeLists(currentRoot);
 		SortNodeLists();
 	}
-
+	//spotlight->Randomise(msec);
 	std::sort(lights.begin(), lights.end(), [](const Light* a, const Light* b) { return *a < *b;});
 	UpdateUniforms();
+	if (spotlight) {
+		spotlight->UpdateTransform();
+	}
+	for (auto& light : lights) {
+		light->UpdateTransform();
+	}
 }
 
 void Renderer::RenderScene() {
@@ -243,8 +233,7 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
 	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
-
-	//ShaderManager::GetInstance()->AddShader("LineShader", SHADERDIR"BasicVertex.glsl", SHADERDIR"BasicFragment.glsl", SHADERDIR"LineGeometry.glsl");
+	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 }
 
 void Renderer::LoadTextures() {
@@ -308,18 +297,32 @@ void Renderer::UpdateUniforms() {
 
 void Renderer::UpdateLightUniforms(const std::string& shader, std::string uniform) {
 	if (uniform.find("directionalLights") != std::string::npos) {
-		if (uniform == "directionalLights[0].direction") {
-			SHADER_MANAGER->SetUniform(shader, uniform, dirLight->GetDirection());
-		}
-		else if (uniform == "directionalLights[0].colour") {
-			SHADER_MANAGER->SetUniform(shader, uniform, dirLight->GetColour());
+		if (dirLight) {
+			if (uniform == "directionalLights[0].direction") {
+				SHADER_MANAGER->SetUniform(shader, uniform, dirLight->GetDirection());
+			}
+			else if (uniform == "directionalLights[0].colour") {
+				SHADER_MANAGER->SetUniform(shader, uniform, dirLight->GetColour());
+			}
+			else {
+				std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+			}
 		}
 		else {
-			std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+			if (uniform == "directionalLights[0].direction") {
+				SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+			}
+			else if (uniform == "directionalLights[0].colour") {
+				SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+			}
+			else {
+				std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+			}
 		}
+	
 		 
 	}
-	else if (uniform.find("pointLights") != std::string::npos) {
+	else if (uniform.find("pointLights") != std::string::npos) {//TODO:Setting uniforms 9 times instead of 3!!
 		// Number of lights to render
 		int numLights = std::min(int(lights.size()), MAX_LIGHTS);
 		for (int i = 0; i < numLights; ++i) {
@@ -334,37 +337,60 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 			std::stringstream ss;
 			ss << i;
 			std::string s = ss.str();
-			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].position", glm::vec3(0.0f));
-			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].colour", glm::vec3(0.0f));
+			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].position", glm::vec3(-1.0f));
+			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].colour", glm::vec3(-1.0f));
 			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].radius", -1.0f);
 		}
 		
 	}
 	else if (uniform.find("spotLights") != std::string::npos) {
-	if (uniform == "spotLights[0].direction") {
-		SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetDirection());
-	}
-	else if (uniform == "spotLights[0].colour") {
-		SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetColour());
-	}
-	else if (uniform == "spotLights[0].innerCutOff") {
-		SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetCutOff());
-	}
-	else if (uniform == "spotLights[0].outerCutOff") {
-		SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetCutOff());
-	}
-	else if (uniform == "spotLights[0].position") {
-		SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetPosition());
-	}
-	else if (uniform == "spotLights[0].radius") {
-		SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetRadius());
-	}
-	else {
-			std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+		if (spotlight) {
+			if (uniform == "spotLights[0].direction") {
+				SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetDirection());
+			}
+			else if (uniform == "spotLights[0].colour") {
+				SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetColour());
+			}
+			else if (uniform == "spotLights[0].innerCutOff") {
+				SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetInnerCutOff());
+			}
+			else if (uniform == "spotLights[0].outerCutOff") {
+				SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetOuterCutOff());
+			}
+			else if (uniform == "spotLights[0].position") {
+				SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetPosition());
+			}
+			else if (uniform == "spotLights[0].radius") {
+				SHADER_MANAGER->SetUniform(shader, uniform, spotlight->GetRadius());
+			}
+			else {
+				std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+			}
 		}
 	}
 	else {
-		std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+		if (uniform == "spotLights[0].direction") {
+			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+		}
+		else if (uniform == "spotLights[0].colour") {
+			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+		}
+		else if (uniform == "spotLights[0].innerCutOff") {
+			SHADER_MANAGER->SetUniform(shader, uniform, -1.0f);
+		}
+		else if (uniform == "spotLights[0].outerCutOff") {
+			SHADER_MANAGER->SetUniform(shader, uniform, -1.0f);
+		}
+		else if (uniform == "spotLights[0].position") {
+			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+		}
+		else if (uniform == "spotLights[0].radius") {
+			SHADER_MANAGER->SetUniform(shader, uniform, -1.0f);
+		}
+		else {
+			std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+		}
 	}
+
 
 }

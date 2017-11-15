@@ -24,7 +24,6 @@ _-_-_-_-_-_-_-""  ""
 
 #include "SOIL.h"
 
-#include "Light.h"
 
 #include "../glm/vec3.hpp"
 #include "../glm/mat4x4.hpp"
@@ -56,23 +55,12 @@ public:
 	void			SwapBuffers();
 
 	bool			HasInitialised() const;	
-	
-
-	Shader*			GetCurrentShader() const {
-		return currentShader;
-	}
 
 protected:
 	// Calculate an average of the current frames per second rounded to the nearest integer
 	void CalculateFPS(float msec);
-	void SetShaderLight(const Light & l);
 
 	virtual void	Resize(int x, int y);	
-	void			SetCurrentShader(Shader*s);
-
-	void			SetTextureRepeating(GLuint target, bool state);
-
-	Shader* currentShader;
 	
 	int framesPerSecond;		  // Number of frames renderered to the screen per second
 	const int NUM_FPS_FRAMES = 120; // Number of frames to average the FPS over

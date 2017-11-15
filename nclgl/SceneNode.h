@@ -2,7 +2,7 @@
 
 
 #include "Mesh.h"
-
+#include "../glm/glm.hpp"
 #include <vector>
 
 class SceneNode {
@@ -40,9 +40,6 @@ public:
 	void UseTexture(std::string texture) { textures.push_back(texture); }
 	void SetShader(std::string name) { shader = name; }
 	const std::string& GetShaderName() { return shader; }
-
-
-
 
 	static bool CompareByCameraDistance(SceneNode* a, SceneNode* b) {
 		return a->distanceFromCamera < b->distanceFromCamera ? true : false;

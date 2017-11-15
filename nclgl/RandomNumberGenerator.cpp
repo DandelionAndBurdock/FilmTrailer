@@ -37,7 +37,6 @@ int RandomNumberGenerator::GetRandInt(int min, int max){
 	return min + (rand() % static_cast<int>(max - min));
 }
 
-#include <iostream>
 
 int RandomNumberGenerator::GetExcludedRandInt(int min, int max, int excluded){
 	if (max == min) return min;
@@ -65,4 +64,12 @@ bool RandomNumberGenerator::TrueOrFalse() {
 	else {
 		return false;
 	}
+}
+
+glm::vec3 RandomNumberGenerator::GetRandomVector() {
+	return glm::vec3(GetRandFloat(), GetRandFloat(), GetRandFloat());
+}
+
+glm::vec3 RandomNumberGenerator::GetRandomColour() {
+	return Random::RANDOM_COLOURS[GetRandInt(0, Random::NUM_RANDOM_COLOURS)];
 }

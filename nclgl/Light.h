@@ -8,19 +8,25 @@
 // Maximum number of lights to be forward rendered at one time
 #define MAX_LIGHTS  4
 
-class Light
+class Mesh;
+#include "SceneNode.h"
+
+class Light : public SceneNode
 {
 public:
-	Light(glm::vec3 position, glm::vec4 colour, float radius) {
+	Light(const glm::vec3& position, const glm::vec3& colour, float radius) :
+		SceneNode(cube, "LightShader")
+	{
+		SetModelScale(glm::vec3(7.5f));
 		this->position = position;
-		this->colour = colour;
+		this->lightColour = colour;
 		this->radius = radius;
 	}
 
 	~Light() {}
 
 	bool operator<(const Light& rhs) const {
-		return (this->cameraDistance > rhs.cameraDistance);
+		return (this->distanceFromCamera > rhs.distanceFromCamera);
 	}
 
 	glm::vec3 GetPosition() const {	return position; }
@@ -29,13 +35,15 @@ public:
 	float GetRadius() const {	return radius;}
 	void SetRadius(float val) {	radius = val; }
 
-	glm::vec3 GetColour() const {	return colour; }
-	void SetColour(glm::vec3 val) { colour = val; }
+	glm::vec3 GetColour() const {	return lightColour; }
+	void SetColour(glm::vec3 val) { lightColour = val; }
+
+	static bool CreateLightMesh();
+	void UpdateTransform(); 
 
 protected:
+	static Mesh* cube;
 	glm::vec3 position;
-	glm::vec3 colour;
+	glm::vec3 lightColour;
 	GLfloat radius;
-
-	GLfloat cameraDistance;
 };

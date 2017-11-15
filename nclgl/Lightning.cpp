@@ -3,14 +3,19 @@
 
 #include "ShaderManager.h"
 #include "common.h" //TODO: Remove
+#include "TextureManager.h"
 #include "RandomNumberGenerator.h"
 Lightning::Lightning(const glm::vec3& from, const glm::vec3& to)
 {
 	motherFrom = from;
 	motherTo = to;
 
+	bolt = std::vector<Point>();
+
+	Point points[] = { Point(glm::vec3(1.0f), 1.f), Point(glm::vec3(0.0f),1.f) };
+
 	Generate(from, to);
-	GLuint VBO;
+
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &lightningVAO);
 	glBindVertexArray(lightningVAO);
@@ -21,15 +26,18 @@ Lightning::Lightning(const glm::vec3& from, const glm::vec3& to)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point), 0);
 	glEnableVertexAttribArray(1); // Thickness
 	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(Point), (void*)sizeof(glm::vec3));
-	glDeleteBuffers(1, &VBO);
+
 
 	SHADER_MANAGER->AddShader("Lightning", SHADERDIR"LightningVertex.glsl", SHADERDIR"LightningFrag.glsl", SHADERDIR"LightningGeom.glsl");
-
+	SHADER_MANAGER->SetUniform("Lightning", "diffuseTex", 0);
+	//TODO: Move
+	//TEXTURE_MANAGER->AddTexture("Plasma", TEXTUREDIR"plasmaElectricity.jpg");
 }
 
 
 Lightning::~Lightning()
 {
+	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &lightningVAO);
 }
 
@@ -112,7 +120,7 @@ void Lightning::Draw(const glm::mat4& viewProj, const glm::vec3 cameraPos) {
 	SHADER_MANAGER->SetShader("Lightning");
 	SHADER_MANAGER->SetUniform("Lightning", "cameraPos", cameraPos);
 	SHADER_MANAGER->SetUniform("Lightning", "viewProjMatrix", viewProj);
-	//
+
 	////glDisable(GL_CULL_FACE);
 	glBindVertexArray(lightningVAO);
 	int startIndex = 0;
@@ -120,9 +128,6 @@ void Lightning::Draw(const glm::mat4& viewProj, const glm::vec3 cameraPos) {
 		glDrawArrays(GL_LINE_STRIP, startIndex, numVerts);
 		startIndex += numVerts;
 	}
-
-
-	
 }
 
 void Lightning::AddJitter(std::vector<glm::vec3>& verts) {

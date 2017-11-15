@@ -20,7 +20,7 @@ Mesh::Mesh(){
 }
 
 
-Mesh::~Mesh(){
+  Mesh::~Mesh(){
 	glDeleteVertexArrays(1, &arrayObject);
 	glDeleteBuffers(MAX_BUFFER, bufferObject);
 

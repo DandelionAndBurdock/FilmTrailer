@@ -8,7 +8,7 @@ class Lightning//TODO: Derive mesh
 {
 	const float BASE_THICKNESS = 2.5;
 	const float BASE_NEW_BRANCH = 0.05;
-	const int NUM_POINTS = 199;
+	const int NUM_POINTS = 99;
 #pragma pack(push, 4)
 	struct Point {
 		glm::vec3 point;
@@ -35,6 +35,7 @@ protected:
 
 	// Vertex Array Object
 	GLuint lightningVAO;
+	GLuint VBO;
 
 	glm::vec3 motherFrom;
 	glm::vec3 motherTo;

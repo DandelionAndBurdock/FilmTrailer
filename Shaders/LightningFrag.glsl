@@ -8,5 +8,6 @@ out vec4 gl_FragColor;
 
 void main()
 {
+	//gl_FragColor = texture(diffuseTex, texCoord);
 	gl_FragColor = vec4(1.0);
 }
