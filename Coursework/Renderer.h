@@ -15,6 +15,9 @@ class TextRenderer;
 class ParticleSystem;
 class ParticleManager;
 class Light;
+class DirectionalLight;
+class Lightning;
+class Spotlight;
 
 class Renderer : public OGLRenderer {
 public:
@@ -26,6 +29,7 @@ public:
 
 protected:
 	void UpdateUniforms();
+	void UpdateLightUniforms(const std::string& shader, std::string uniform);
 
 	void BuildNodeLists(SceneNode* from);
 	void SortNodeLists();
@@ -41,10 +45,6 @@ protected:
 	void ConfigureOpenGL();
 
 	void DrawFPS();
-
-	void DrawLine();
-	GLuint VAOSample;
-	void SetupLine();
 
 	SceneNode* currentRoot;
 	SceneNode* sceneARoot;
@@ -73,4 +73,8 @@ protected:
 
 	// List of lights in the world
 	std::vector<Light*> lights;
+	DirectionalLight* dirLight;
+
+	Lightning* lightning;
+	Spotlight* spotlight;
 };

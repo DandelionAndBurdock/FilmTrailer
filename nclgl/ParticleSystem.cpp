@@ -80,7 +80,6 @@ void ParticleSystem::Render(const glm::mat4& viewProj, const glm::vec3 cameraPos
 
 	currentVBO = currentFBO;
 	currentFBO = ++currentFBO % 2;
-	//currentFBO = (currentFBO + 1) & 0x1;
 }
 
 void ParticleSystem::UpdateParticles(GLfloat msec) {

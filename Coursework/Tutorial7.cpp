@@ -3,9 +3,7 @@
 
 #pragma comment(lib, "nclgl.lib")
 
-
-
-int main() {	
+int main() {
 	Window w("Scene Management!", 800,600,false);
 	if(!w.HasInitialised()) {
 		return -1;
@@ -15,7 +13,6 @@ int main() {
 	if(!renderer.HasInitialised()) {
 		return -1;
 	}
-
 	w.LockMouseToWindow(true);
 	w.ShowOSPointer(false);
 

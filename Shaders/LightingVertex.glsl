@@ -22,9 +22,11 @@ in vec3 tangent;
  
  // Transforms normals from model space to world space
  mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
- OUT.normalWorld = normalize(normalMatrix * normal);
+ OUT.normalWorld = normalize(normalMatrix * normalize(normal));
  OUT.tangentWorld = normalize(normalMatrix * normalize(tangent));
  OUT.binormalWorld = normalize(normalMatrix * normalize(cross(normal, tangent)));
+ 
  OUT.worldPos = (modelMatrix * vec4(position, 1)).xyz;
+ 
   gl_Position = (projMatrix * viewMatrix * modelMatrix) * vec4(position, 1.0);
  }

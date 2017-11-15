@@ -146,7 +146,7 @@ void Shader::SetUniformLocations() {
 
 void Shader::AddUniformLocation(const std::string& name) {
 	if (name.find('[') != std::string::npos) {// Is it an array?
-		AddArrayUniformLocation();
+		AddArrayUniformLocation(name);
 	}
 	else {
 		GLint location = glGetUniformLocation(program, name.c_str());
@@ -174,39 +174,25 @@ GLint Shader::GetLocation(const std::string& name) {
 	
 }
 
-// Array uniforms are a little bit awkward. 
+// Struct uniforms are a little bit awkward. 
 // To save time will just be really ugly and hardcode them for now 
-void Shader::AddArrayUniformLocation() {
-	for (int i = 0; i < MAX_LIGHTS; ++i) {
-		std::stringstream ss;
-		ss << i;
-		std::string name = "pointLights[" + ss.str() + "].position";
-		GLint location = glGetUniformLocation(program, name.c_str());
-		if (location < 0) {
-			std::cout << "Warning: Failed to find uniform " << name << std::endl;
-		}
-		else {
-			uniformLocations[name] = location;
-		}
-		name = "pointLights[" + ss.str() + "].colour";
-		location = glGetUniformLocation(program, name.c_str());
-		if (location < 0) {
-			std::cout << "Warning: Failed to find uniform " << name << std::endl;
-		}
-		else {
-			uniformLocations[name] = location;
-		}
-		name = "pointLights[" + ss.str() + "].radius";
-		location = glGetUniformLocation(program, name.c_str());
-		if (location < 0) {
-			std::cout << "Warning: Failed to find uniform " << name << std::endl;
-		}
-		else {
-			uniformLocations[name] = location;
-		}
+void Shader::AddArrayUniformLocation(const std::string& name) {
+	if (name.find("point") != std::string::npos) {
+		AddPointLightUniformLocation();
+	}
+	else if (name.find("direction") != std::string::npos) {
+		AddDirLightUniformLocation();
+	}
+	else if (name.find("spot") != std::string::npos) {
+		AddSpotLightUniformLocation();
+	}
+	else {
+		std::cout << "Warning: Failed to find uniform " << name << std::endl;
 	}
 
+
 }
+
 
 std::vector<std::string> Shader::GetUniformNames() {
 	std::vector<std::string> names;
@@ -235,3 +221,117 @@ GLint Shader::SetUniform(const std::string& name, const glm::vec3& vec) {
 	return GetLocation(name);
 }
 
+// Struct uniforms are a little bit awkward. 
+// To save time will just be really ugly and hardcode them for now 
+void Shader::AddPointLightUniformLocation() {
+	for (int i = 0; i < MAX_LIGHTS; ++i) {
+		std::stringstream ss;
+		ss << i;
+		std::string name = "pointLights[" + ss.str() + "].position";
+		GLint location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "pointLights[" + ss.str() + "].colour";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "pointLights[" + ss.str() + "].radius";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+	}
+}
+
+// Struct uniforms are a little bit awkward. 
+// To save time will just be really ugly and hardcode them for now 
+void Shader::AddDirLightUniformLocation() {
+	const int MAX_DIR_LIGHTS = 1; // TODO: Make a namespace
+	for (int i = 0; i < MAX_DIR_LIGHTS; ++i) {
+		std::stringstream ss;
+		ss << i;
+		std::string name = "directionalLights[" + ss.str() + "].direction";
+		GLint location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "directionalLights[" + ss.str() + "].colour";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+	}
+}
+
+void Shader::AddSpotLightUniformLocation() {
+	const int MAX_SPOTLIGHTS = 1; // TODO: Make a namespace
+	for (int i = 0; i < MAX_SPOTLIGHTS; ++i) {
+		std::stringstream ss;
+		ss << i;
+		std::string name = "spotLights[" + ss.str() + "].direction";
+		GLint location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "spotLights[" + ss.str() + "].colour";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "spotLights[" + ss.str() + "].radius";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "spotLights[" + ss.str() + "].innerCutOff";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "spotLights[" + ss.str() + "].outerCutOff";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+		name = "spotLights[" + ss.str() + "].position";
+		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+	}
+}

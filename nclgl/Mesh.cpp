@@ -214,7 +214,7 @@ void Mesh::GenerateNormals() {
 	}
 
 	for (GLuint i = 0; i < numVertices; ++i) {
-		normals[i] = glm::vec3();
+		normals[i] = glm::vec3(0.0f);
 	}
 
 	if (indices) {
@@ -256,7 +256,7 @@ void Mesh::GenerateTangents() {
 		tangents = new glm::vec3[numVertices];
 	}
 	for (GLuint i = 0; i < numVertices; ++i) {
-		tangents[i] = glm::vec3();
+		tangents[i] = glm::vec3(0.0f);
 	}
 
 	if (indices) {
