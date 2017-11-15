@@ -18,6 +18,7 @@ class Light;
 class DirectionalLight;
 class Lightning;
 class Spotlight;
+class Grass; //TODO: Move to heightmap
 
 class Renderer : public OGLRenderer {
 public:
@@ -77,4 +78,5 @@ protected:
 
 	Lightning* lightning;
 	Spotlight* spotlight;
+	Grass* grass;
 };

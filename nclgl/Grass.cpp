@@ -5,7 +5,7 @@
 #include "../glm/vec3.hpp"
 #include "RandomNumberGenerator.h"
 #include "HeightMap.h"
-#include "Shader.h"
+#include "ShaderManager.h"
 
 Grass::Grass(HeightMap* const terrain, std::string imagePath)
 {
@@ -17,10 +17,8 @@ Grass::Grass(HeightMap* const terrain, std::string imagePath)
 	}
 	BufferGrassPositions(terrain);
 
-	shader = new Shader(SHADERDIR"GrassVertex.glsl", SHADERDIR"GrassFragment.glsl", SHADERDIR"GrassGeometry.glsl");
-	if (!shader->LinkProgram()) {
-		return;
-	}
+	SHADER_MANAGER->AddShader("Grass", SHADERDIR"GrassVertex.glsl", SHADERDIR"GrassFragment.glsl", SHADERDIR"GrassGeometry.glsl");
+
 
 	time = 0.0f;
 }
@@ -28,17 +26,17 @@ Grass::Grass(HeightMap* const terrain, std::string imagePath)
 
 Grass::~Grass()
 {
-	//TODO: delete textures
-	delete shader;
 }
 
-
+void Grass::Update(GLfloat msec) {
+	time += msec;
+}
 void Grass::BufferGrassPositions(HeightMap* const terrain) {
 	// Each grass cluster is offset from the previous cluster by 
 	// a randomly generated offset between grassCusterOffsetMin 
 	// and grassCusterOffsetMax 
-	float grassClusterOffsetMin = 1.5f;
-	float grassClusterOffsetMax = 2.5f;
+	float grassClusterOffsetMin = 3.5f;
+	float grassClusterOffsetMax = 5.5f;
 	
 	// Each grass cluster has a height between grassPatchHeightMin
 	// and grassPatchHeightMax
@@ -51,10 +49,10 @@ void Grass::BufferGrassPositions(HeightMap* const terrain) {
 	std::vector<glm::vec3> vertices;
 
 	//TODO: Make a function InBounds()
-	while (currentClusterPosition.x + grassClusterOffsetMax < startingClusterPosition.x + 50.0f && 
-		   currentClusterPosition.x > startingClusterPosition.x - 50.0f &&
-		 currentClusterPosition.z + grassClusterOffsetMax < startingClusterPosition.z + 50.0f &&
-		currentClusterPosition.z > startingClusterPosition.z - 50.0f)
+	while (currentClusterPosition.x + grassClusterOffsetMax < startingClusterPosition.x + 500.0f && 
+		   currentClusterPosition.x > startingClusterPosition.x - 500.0f &&
+		 currentClusterPosition.z + grassClusterOffsetMax < startingClusterPosition.z + 500.0f &&
+		currentClusterPosition.z > startingClusterPosition.z - 500.0f)
 	{
 		++numClusters;
 		currentClusterPosition.x += RNG->GetRandOffset(grassClusterOffsetMin, grassClusterOffsetMax);
@@ -75,11 +73,15 @@ void Grass::BufferGrassPositions(HeightMap* const terrain) {
 }
 
 void Grass::Draw() {
-	glUseProgram(shader->GetProgram());
+	SHADER_MANAGER->SetShader("Grass");
+	SHADER_MANAGER->SetUniform("Grass", "time", time / 1000.0f);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glBindVertexArray(grassVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glDrawArrays(GL_POINTS, 0, numClusters);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUseProgram(0);
+	glDisable(GL_BLEND);
 }

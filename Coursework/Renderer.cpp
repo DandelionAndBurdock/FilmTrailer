@@ -12,7 +12,7 @@
 #include "nclgl\DirectionalLight.h"
 #include "nclgl\Lightning.h"
 #include "nclgl\Spotlight.h"
-
+#include "nclgl\Grass.h"
 
 #include <algorithm> // For min()
 #include <iostream>
@@ -58,7 +58,7 @@ Renderer::~Renderer() {
 	delete cameraControl;
 	delete particleSystem;
 	delete particleManager;
-	delete spotlight;
+	delete grass;
 	CubeRobot::DeleteCube();
 }
 
@@ -67,6 +67,7 @@ void Renderer::SetupSceneA() {
 
 	terrain = new HeightMap(TEXTUREDIR"terrain.raw");
 	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
+	grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	sceneARoot = new SceneNode();
 	sceneARoot->AddChild(heightMap);
 	heightMap->UseTexture("Terrain");
@@ -90,7 +91,7 @@ void Renderer::SetupSceneA() {
 	if (dirLight) {
 		delete dirLight;
 	}
-	dirLight = new DirectionalLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0));
+	dirLight = new DirectionalLight(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0));
 	
 	if (spotlight) {
 		delete spotlight;
@@ -111,7 +112,7 @@ void Renderer::UpdateScene(float msec) {
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
 	//dirLight->Rotate(1.0 / 10.0 * msec, glm::vec3(0.0, 0.0, 1.0));
-
+	grass->Update(msec);
 	if (currentRoot) {
 		currentRoot->Update(msec);
 
@@ -127,17 +128,22 @@ void Renderer::UpdateScene(float msec) {
 	for (auto& light : lights) {
 		light->UpdateTransform();
 	}
+
+	SHADER_MANAGER->SetUniform("Grass", "modelMatrix", modelMatrix);
+	SHADER_MANAGER->SetUniform("Grass", "viewMatrix", viewMatrix);
+	SHADER_MANAGER->SetUniform("Grass", "projMatrix", projMatrix);
 }
 
 void Renderer::RenderScene() {
 	//currentShader = ShaderManager::GetInstance()->GetShader("LineShader");
 	//currentShader->Use();
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
+	
 
 	DrawNodes();
 	DrawFPS();
 
+	grass->Draw();
 	lightning->Draw(projMatrix * viewMatrix, camera->GetPosition());
 	//TODO: Tidy
 	//SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);

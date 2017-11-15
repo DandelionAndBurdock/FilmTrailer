@@ -13,7 +13,7 @@ public:
 	~Grass();
 
 	void Draw();
-	Shader* GetShader() { return shader; }
+	void Update(GLfloat msec);
 protected:
 	void BufferGrassPositions(HeightMap* const terrain);
 	GLuint grassVAO;
@@ -28,7 +28,6 @@ protected:
 
 	GLuint textureID;
 
-	Shader* shader;
 
 	float time;
 
