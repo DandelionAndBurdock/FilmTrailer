@@ -9,9 +9,8 @@ public:
 	Spotlight(const glm::vec3& position, const glm::vec3& colour, const glm::vec3& direction);
 	~Spotlight();
 
-	glm::vec3 GetPosition() { return position; }
-	glm::vec3 GetDirection() { return direction; }
-	glm::vec3 GetColour() { return lightColour; }
+
+	glm::vec4 GetDirection() { return glm::vec4(direction, 1.0); }
 	float GetInnerCutOff() { return innerCutoff; }
 	float GetOuterCutOff() { return outerCutoff; }
 	float GetRadius() { return radius; }

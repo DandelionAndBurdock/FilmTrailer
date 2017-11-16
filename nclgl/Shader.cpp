@@ -221,6 +221,11 @@ GLint Shader::SetUniform(const std::string& name, const glm::vec3& vec) {
 	return GetLocation(name);
 }
 
+GLint Shader::SetUniform(const std::string& name, const glm::vec4& vec) {
+	glUniform4fv(GetLocation(name), 1, (float*)& vec);
+	return GetLocation(name);
+}
+
 // Struct uniforms are a little bit awkward. 
 // To save time will just be really ugly and hardcode them for now 
 void Shader::AddPointLightUniformLocation() {

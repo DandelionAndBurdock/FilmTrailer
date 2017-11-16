@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <set>
 
+//TODO: Forward declarations
 class HeightMap;
 class TextRenderer;
 class ParticleSystem;
@@ -19,6 +20,7 @@ class DirectionalLight;
 class Lightning;
 class Spotlight;
 class Grass; //TODO: Move to heightmap
+class Water;
 
 class Renderer : public OGLRenderer {
 public:
@@ -27,6 +29,7 @@ public:
 
 	virtual void UpdateScene(float msec);
 	virtual void RenderScene();
+	void RenderObjects();
 
 protected:
 	void UpdateUniforms();
@@ -79,4 +82,6 @@ protected:
 	Lightning* lightning;
 	Spotlight* spotlight;
 	Grass* grass;
+
+	Water* water;
 };

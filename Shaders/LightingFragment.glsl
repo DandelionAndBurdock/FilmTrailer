@@ -1,5 +1,5 @@
 //TODO: https://learnopengl.com/code_viewer_gh.php?code=src/2.lighting/6.multiple_lights/6.multiple_lights.fs
-#version 150 core
+#version 330 core
 
 #define MAX_POINT_LIGHTS 4
 #define MAX_DIR_LIGHTS 1
@@ -9,22 +9,22 @@ uniform sampler2D diffuseTex;
 uniform sampler2D bumpTex;
 
 struct PointLight {
-    vec3 position;
-	vec3 colour;
+    vec4 position;
+	vec4 colour;
 	float radius;
 };
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 
 struct DirectionalLight {
-	vec3 direction;
-	vec3 colour;
+	vec4 direction;
+	vec4 colour;
 };
 uniform DirectionalLight directionalLights[MAX_DIR_LIGHTS];
 
 struct SpotLight {
-vec3 position;
-vec3 direction;
-vec3 colour;
+vec4 position;
+vec4 colour;
+vec4 direction;
 float radius;
 float outerCutOff; // Cosine
 float innerCutOff; // Cosine
@@ -49,7 +49,7 @@ out vec4 gl_FragColor;
 // World space calculation of fragment colour contribution from a directional light
 vec3 DirectionalLightContribution(DirectionalLight light, vec3 normal, vec3 fragPos, vec3 fragToCamera){
 	// Unit vector from fragment position to light
-    vec3 fragToLight = normalize(-light.direction);
+    vec3 fragToLight = vec3(normalize(-light.direction));
     // Diffuse contribution : Proportional to cosine between normal and incident light ray (Lambert)
 	float diffuse = max(dot(normal, fragToLight), 0.0);
     // Specular Contribution : Proportional to the cosine between the normal vector and 
@@ -58,20 +58,20 @@ vec3 DirectionalLightContribution(DirectionalLight light, vec3 normal, vec3 frag
     float specular = pow(max(dot(normal, halfDir), 0.0), 50.0); //TODO: Map this
     
 	// Total:
-	vec3 diffuseLight = light.colour * diffuse * vec3(texture(diffuseTex, IN.texCoord));
-	vec3 ambientLight = (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord)); //TODO: Should really have seperate ambient sttrength for spotlight, dirlight, pointlight
-    vec3 specularLight = light.colour * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
+	vec3 diffuseLight = vec3(light.colour) * diffuse * vec3(texture(diffuseTex, IN.texCoord));
+	vec3 ambientLight = vec3(light.colour) * (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord)); //TODO: Should really have seperate ambient sttrength for spotlight, dirlight, pointlight
+    vec3 specularLight = vec3(light.colour) * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
     return (ambientLight + diffuseLight + specularLight);
 }
 
 // // World space calculation of fragment colour contribution from a spotlight
 vec3 SpotLightContribution(SpotLight light, vec3 normal, vec3 fragPos, vec3 fragToCamera){
 	// Unit vector from fragment position to light
-    vec3 fragToLight = normalize(light.position - fragPos);
+    vec3 fragToLight = normalize(vec3(light.position) - fragPos);
 	
 	// Angle between the spotlight direction and the fragToLight direction
 	// If theta is less than the spotlight cutoff then the frament is inside the beam
-	float cosTheta = dot(fragToLight, -light.direction);
+	float cosTheta = dot(fragToLight, -vec3(light.direction));
 	
 	// Angles greater than the outerCutOff contribute 0, angles less than the innerCutOff contribute 1.0
 	// Intermediate angles get interpolated value (in cosine space), this gives soft edges
@@ -85,16 +85,16 @@ vec3 SpotLightContribution(SpotLight light, vec3 normal, vec3 fragPos, vec3 frag
     float specular = pow(max(dot(normal, halfDir), 0.0), 50.0); //TODO: Map this
     
 	// Attenuate contribution  of this light based on distance of fragment from the camera (Simple linear contribution)
-    float lightFragDistance = length(light.position - fragPos);
+    float lightFragDistance = length(vec3(light.position) - fragPos);
     float attenuation = 1.0 - clamp(lightFragDistance / light.radius, 0.0, 1.0);
 	diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
 	
 	
 	// Total:
-	vec3 diffuseLight = light.colour * diffuse * vec3(texture(diffuseTex, IN.texCoord));
-	vec3 ambientLight = light.colour * attenuation * ambientStrength  * vec3(texture(diffuseTex, IN.texCoord));
-    vec3 specularLight = light.colour * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
+	vec3 diffuseLight = vec3(light.colour) * diffuse * vec3(texture(diffuseTex, IN.texCoord));
+	vec3 ambientLight = vec3(light.colour) * attenuation * ambientStrength  * vec3(texture(diffuseTex, IN.texCoord));
+    vec3 specularLight = vec3(light.colour) * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
    return (ambientLight + diffuseLight + specularLight);
 }
 
@@ -102,7 +102,7 @@ vec3 SpotLightContribution(SpotLight light, vec3 normal, vec3 fragPos, vec3 frag
 vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fragToCamera)
 {
 	// Unit vector from fragment position to light
-    vec3 fragToLight = normalize(light.position - fragPos);
+    vec3 fragToLight = normalize(vec3(light.position) - fragPos);
     // Diffuse contribution : Proportional to cosine between normal and incident light ray (Lambert)
 	float diffuse = max(dot(normal, fragToLight), 0.0);
     // Specular Contribution : Proportional to the cosine between the normal vector and 
@@ -111,15 +111,15 @@ vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fr
     float specular = pow(max(dot(normal, halfDir), 0.0), 50.0); //TODO: Map this
     
 	// Attenuate contribution  of this light based on distance of fragment from the camera (Simple linear contribution)
-    float lightFragDistance = length(light.position - fragPos);
+    float lightFragDistance = length(vec3(light.position) - fragPos);
     float attenuation = 1.0 - clamp(lightFragDistance / light.radius, 0.0, 1.0);
 	diffuse *= attenuation;
     specular *= attenuation;
 	
 	// Total:
-	vec3 diffuseLight = light.colour * diffuse * vec3(texture(diffuseTex, IN.texCoord));
-	vec3 ambientLight = (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord));
-    vec3 specularLight = light.colour * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
+	vec3 diffuseLight = vec3(light.colour) * diffuse * vec3(texture(diffuseTex, IN.texCoord));
+	vec3 ambientLight = vec3(light.colour) * (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord));
+    vec3 specularLight = vec3(light.colour) * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
     return (ambientLight + diffuseLight + specularLight);
 }
 

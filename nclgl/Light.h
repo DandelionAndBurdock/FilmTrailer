@@ -29,13 +29,13 @@ public:
 		return (this->distanceFromCamera > rhs.distanceFromCamera);
 	}
 
-	glm::vec3 GetPosition() const {	return position; }
+	glm::vec4 GetPosition() const {	return glm::vec4(position, 1.0); }
 	void SetPosition(glm::vec3 val) {	position = val; }
 
 	float GetRadius() const {	return radius;}
 	void SetRadius(float val) {	radius = val; }
 
-	glm::vec3 GetColour() const {	return lightColour; }
+	glm::vec4 GetColour() const {	return glm::vec4(lightColour, 1.0); }
 	void SetColour(glm::vec3 val) { lightColour = val; }
 
 	static bool CreateLightMesh();

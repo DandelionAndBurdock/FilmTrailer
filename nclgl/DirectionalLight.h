@@ -14,8 +14,8 @@ public:
 	// Rotates the direction theta degrees about axis
 	void Rotate(GLfloat theta, glm::vec3 axis);
 
-	glm::vec3 GetDirection() { return direction; }
-	glm::vec3 GetColour() { return colour; }
+	glm::vec4 GetDirection() { return glm::vec4(direction, 1.0f); }
+	glm::vec4 GetColour() { return glm::vec4(colour, 1.0f); }
 
 protected:
 	glm::vec3 direction;	// Direction of parallel light rays in world space

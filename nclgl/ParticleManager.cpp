@@ -139,6 +139,8 @@ void ParticleManager::Update(GLint msec, glm::vec3 cameraPos) {
 	UpdateParticles(msec, cameraPos);
 	Rebuffer();
 	GenerateNewParticles(msec);
+
+
 }
 
 void ParticleManager::GenerateNewParticles(GLint msec) {
@@ -146,7 +148,33 @@ void ParticleManager::GenerateNewParticles(GLint msec) {
 	// Cap number of new particles to 16ms (60 FPS) in case of frame rate spike
 	const int MAX_NEW_PARTICLES = 16 * NEW_PARTICLES_PER_MS;
 	numNewParticles = max(numNewParticles, MAX_NEW_PARTICLES);
+	for (int i = 0; i < numNewParticles; ++i) {
+		int particleIndex = NextUnusedParticle();
+		particles[particleIndex].lifeRemaining = 5000.0f;
+		particles[particleIndex].pos = glm::vec3(0.0, 0.0, -20.0f);
+
+		float spread = 1.5f;
+
+		glm::vec3 mainDir = glm::vec3(0.0f, 10.0f, 0.0f);
+
+		glm::vec3 randDir = glm::vec3( // [-1000, 1000]
+			(rand() % 2000 - 1000.0f) / 1000.0f,
+			(rand() % 2000 - 1000.0f) / 1000.0f,
+			(rand() % 2000 - 1000.0f) / 1000.0f
+		);
+
+		particles[particleIndex].vel = mainDir + randDir * spread;
+
+
+		particles[particleIndex].colour[0] = rand() % 256;
+		particles[particleIndex].colour[1] = rand() % 256;
+		particles[particleIndex].colour[2] = rand() % 256;
+		particles[particleIndex].colour[3] = (rand() % 256) / 3;
+
+		particles[particleIndex].size = (rand() % 1000) / 2000.0f + 0.1f; //TODO: Use RNG make better rand generation
+	}
 }
+
 
 void ParticleManager::UpdateParticles(GLint msec, glm::vec3 cameraPos) {
 
@@ -171,7 +199,6 @@ void ParticleManager::UpdateParticles(GLint msec, glm::vec3 cameraPos) {
 			colourBuffer[CHARS_PER_COLOUR * i + 1] = p.colour[1];
 			colourBuffer[CHARS_PER_COLOUR * i + 2] = p.colour[2];
 			colourBuffer[CHARS_PER_COLOUR * i + 3] = p.colour[3];//TODO: Try fading out with time?
-
 		}
 		else {
 			p.cameraDistance = -1.0f;

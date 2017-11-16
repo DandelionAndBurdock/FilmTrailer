@@ -23,6 +23,7 @@ public:
 	GLint SetUniform(const std::string& name, GLfloat f);
 	GLint SetUniform(const std::string& name, const glm::mat4& mat);
 	GLint SetUniform(const std::string& name, const glm::vec3& vec);
+	GLint SetUniform(const std::string& name, const glm::vec4& vec);
 
 	std::vector<std::string> GetUniformNames();
 

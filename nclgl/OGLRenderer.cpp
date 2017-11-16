@@ -31,6 +31,8 @@ OGLRenderer::OGLRenderer(Window &window)	{
 
 	HWND windowHandle = window.GetHandle();
 
+	screenSize = window.GetScreenSize();
+	
 	// Did We Get A Device Context?
 	if (!(deviceContext=GetDC(windowHandle)))		{					
 		std::cout << "OGLRenderer::OGLRenderer(): Failed to create window!" << std::endl;
@@ -193,4 +195,8 @@ void OGLRenderer::CalculateFPS(float msec) {
 	// Calculate average
 	int sum = std::accumulate(fps.begin(), fps.end(), 0.0);
 	framesPerSecond = sum / NUM_FPS_FRAMES;
+}
+
+glm::vec2 OGLRenderer::GetScreenSize() {
+	return screenSize;
 }

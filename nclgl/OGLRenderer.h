@@ -56,6 +56,8 @@ public:
 
 	bool			HasInitialised() const;	
 
+	glm::vec2 GetScreenSize();
+
 protected:
 	// Calculate an average of the current frames per second rounded to the nearest integer
 	void CalculateFPS(float msec);
@@ -71,13 +73,12 @@ protected:
 	glm::mat4 viewMatrix;		//View matrix
 	glm::mat4 textureMatrix;	//Texture matrix
 
+	glm::vec2 screenSize;
+
 	int		width;			//Render area width (not quite the same as window width)
 	int		height;			//Render area height (not quite the same as window height)
 	bool	init;			//Did the renderer initialise properly?
 
 	HDC		deviceContext;	//...Device context?
 	HGLRC	renderContext;	//Permanent Rendering Context
-
-
-	
 };

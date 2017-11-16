@@ -108,6 +108,17 @@ bool ShaderManager::SetUniform(const std::string& shader, const std::string& uni
 	}
 }
 
+bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, const glm::vec4& vec) {
+	Shader* s = GetShader(shader);
+	if (s) {
+		s->Use();
+		return (s->SetUniform(uniform, vec) != -1);
+	}
+	else {
+		return false;
+	}
+}
+
 std::vector<std::string> ShaderManager::GetUniformNames(const std::string& shader) {
 	Shader* s = GetShader(shader);
 	if (s) {

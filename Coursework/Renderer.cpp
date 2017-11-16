@@ -13,6 +13,7 @@
 #include "nclgl\Lightning.h"
 #include "nclgl\Spotlight.h"
 #include "nclgl\Grass.h"
+#include "nclgl\Water.h"
 
 #include <algorithm> // For min()
 #include <iostream>
@@ -25,7 +26,6 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CubeRobot::CreateCube();
 	Light::CreateLightMesh();
 	
-	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
 
 	SetupCamera();
 	LoadShaders();
@@ -44,6 +44,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	ConfigureOpenGL();
 
 	init = true;
+
+	quad = Mesh::GenerateQuad();
 }
 
 
@@ -59,6 +61,7 @@ Renderer::~Renderer() {
 	delete particleSystem;
 	delete particleManager;
 	delete grass;
+	delete quad;
 	CubeRobot::DeleteCube();
 }
 
@@ -73,6 +76,8 @@ void Renderer::SetupSceneA() {
 	heightMap->UseTexture("Terrain");
 	heightMap->UseTexture("TerrainBump");
 
+	
+
 	//heightMap->AddChild(new CubeRobot());
 	//
 	//CubeRobot* CR2 = new CubeRobot();
@@ -81,10 +86,10 @@ void Renderer::SetupSceneA() {
 
 
 	lights.clear();
-	lights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
-	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
-	lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
-	lights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
+	//lights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
+	//lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
+	//lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
+	//lights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
 	for (auto& light : lights) {
 		heightMap->AddChild(light);
 	}
@@ -98,16 +103,22 @@ void Renderer::SetupSceneA() {
 	}
 	spotlight = new Spotlight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(0.0, 0.0,1.0),glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
 	heightMap->AddChild(spotlight);
+	water = new Water(GetScreenSize().x, GetScreenSize().y);//TODO: Should water/height map be scene nodes then initialise ?->memory problem
+	SceneNode* waterNode = new SceneNode(water, "LightShader");
+	waterNode->SetTransform(glm::translate(glm::vec3(500.0f, 100.0f, 500.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	waterNode->SetModelScale(glm::vec3(200.0f, 200.0f, 200.0f));
+	heightMap->AddChild(waterNode);
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
-	//particleManager = new ParticleManager();
+//	particleManager = new ParticleManager();
 }
 
 void Renderer::UpdateScene(float msec) {
+	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
 	CalculateFPS(msec); 
 
 	camera->UpdateCamera(msec);
 	//particleSystem->UpdateParticles(msec);
-	//particleManager->Update(msec, camera->GetPosition());
+//	particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -134,21 +145,24 @@ void Renderer::UpdateScene(float msec) {
 	SHADER_MANAGER->SetUniform("Grass", "projMatrix", projMatrix);
 }
 
-void Renderer::RenderScene() {
-	//currentShader = ShaderManager::GetInstance()->GetShader("LineShader");
-	//currentShader->Use();
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	
-
+void Renderer::RenderObjects() {
 	DrawNodes();
-	DrawFPS();
-
 	grass->Draw();
 	lightning->Draw(projMatrix * viewMatrix, camera->GetPosition());
+}
+void Renderer::RenderScene() {
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	
+	water->BindReflectionFramebuffer();
+	RenderObjects();
+	water->UnbindFramebuffer();
+
+	RenderObjects();
 	//TODO: Tidy
 	//SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
 	//SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
 	//SHADER_MANAGER->SetUniform("Particle", "cameraUp", camera->GetUp());
+
 	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
 	//particleManager->Render();
 	//DrawLine();
@@ -157,7 +171,22 @@ void Renderer::RenderScene() {
 	//UpdateShaderMatrices();
 	//Texture* tex = TextureManager::GetInstance()->GetTexture("Noise");
 	//tex->Bind();
-	//quad->Draw();
+	
+	projMatrix = glm::ortho(-1, 1, -1, 1);
+	viewMatrix = glm::mat4();
+	glViewport(0, 0, 300, 300);
+	SHADER_MANAGER->SetShader("QuadShader");
+	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", viewMatrix);
+	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", projMatrix);
+
+	SHADER_MANAGER->SetUniform("QuadShader", "diffuseTex", 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, water->GetReflectionTex());
+	
+	quad->Draw();
+	glViewport(0, 0, screenSize.x, screenSize.y);
+	DrawFPS();
 	SwapBuffers();
 	glUseProgram(0);
 	ClearNodeLists();
@@ -238,7 +267,7 @@ void Renderer::SetupScenes() {
 void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
 	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
-	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
+	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 }
 
@@ -316,10 +345,10 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 		}
 		else {
 			if (uniform == "directionalLights[0].direction") {
-				SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+				SHADER_MANAGER->SetUniform(shader, uniform, glm::vec4(-1.0f));
 			}
 			else if (uniform == "directionalLights[0].colour") {
-				SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+				SHADER_MANAGER->SetUniform(shader, uniform, glm::vec4(-1.0f));
 			}
 			else {
 				std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
@@ -343,8 +372,8 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 			std::stringstream ss;
 			ss << i;
 			std::string s = ss.str();
-			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].position", glm::vec3(-1.0f));
-			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].colour", glm::vec3(-1.0f));
+			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].position", glm::vec4(-1.0f));
+			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].colour", glm::vec4(-1.0f));
 			SHADER_MANAGER->SetUniform(shader, "pointLights[" + ss.str() + "].radius", -1.0f);
 		}
 		
@@ -376,10 +405,10 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 	}
 	else {
 		if (uniform == "spotLights[0].direction") {
-			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec4(-1.0f));
 		}
 		else if (uniform == "spotLights[0].colour") {
-			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec4(-1.0f));
 		}
 		else if (uniform == "spotLights[0].innerCutOff") {
 			SHADER_MANAGER->SetUniform(shader, uniform, -1.0f);
@@ -388,7 +417,7 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 			SHADER_MANAGER->SetUniform(shader, uniform, -1.0f);
 		}
 		else if (uniform == "spotLights[0].position") {
-			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec3(-1.0f));
+			SHADER_MANAGER->SetUniform(shader, uniform, glm::vec4(-1.0f));
 		}
 		else if (uniform == "spotLights[0].radius") {
 			SHADER_MANAGER->SetUniform(shader, uniform, -1.0f);
