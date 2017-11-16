@@ -15,6 +15,7 @@ void main() {
 
 	// TODO: Change this horrible notation
 	float particleSize = xyzs.w;
+
 	vec3 particleCentre = xyzs.zyz; // Particle centre in world space
 
 	// Vertex position in world space

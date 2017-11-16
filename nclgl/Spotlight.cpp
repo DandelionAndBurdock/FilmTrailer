@@ -19,21 +19,25 @@ Spotlight::~Spotlight()
 {
 }
 
-
+#include <iostream>
 void Spotlight::Randomise(float msec) {
 	lastChangedTime += msec;
-	if (lastChangedTime > colourChangeTime) {
-		lastChangedTime -= colourChangeTime;
-		lightColour = RNG->GetRandomColour();
-		colourChangeTime = RNG->GetRandFloat(500.0f, 1500.0f);
-	}
+	//if (lastChangedTime > colourChangeTime) {
+	//	lastChangedTime -= colourChangeTime;
+	//	lightColour = RNG->GetRandomColour();
+	//	colourChangeTime = RNG->GetRandFloat(500.0f, 1500.0f);
+	//}
 	//TODO: Remove magic number
-	//std::cout << "Pre-" << outerCutoffDegrees << std::endl;
-	//outerCutoffDegrees += msec * RNG->GetRandFloat(-2 / 1000.0f, 2 / 1000.0f);
-	//std::cout << "Post" << outerCutoffDegrees << std::endl;
-	//innerCutoffDegrees = outerCutoffDegrees * 0.4;
-	//innerCutoff = glm::cos(glm::radians(3.0f));
-	//outerCutoff = glm::cos(glm::radians(7.0f));
+	//TODO: Make function
+	const float outerCutoffDegreesMax = 50.0f;
+	const float outerCutoffDegreesMin = 10.0f;
+
+
+	outerCutoffDegrees = RNG->GetRandFloat(10.0f, 40.0f);
+	std::cout << outerCutoffDegrees << std::endl;
+	innerCutoffDegrees = outerCutoffDegrees * 0.4;
+	innerCutoff = glm::cos(glm::radians(3.0f));
+	outerCutoff = glm::cos(glm::radians(7.0f));
 
 	//direction.x += msec * RNG->GetRandFloat(0.0, 0.001);
 	//direction.z += msec * RNG->GetRandFloat(0.0, 0.001);

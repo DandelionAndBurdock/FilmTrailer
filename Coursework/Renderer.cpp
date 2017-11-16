@@ -39,13 +39,15 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//PerlinNoise p;
 	//p.GenerateTexture();
 
-	lightning = new Lightning(glm::vec3(-500.0, 500.0, 0.0), glm::vec3(0.0, 0.0, 0.0));
+	lightning = new Lightning(glm::vec3(500.0, 500.0, 0.0), glm::vec3(200.0, 0.0, 200.0));
 
 	ConfigureOpenGL();
 
 	init = true;
 
 	quad = Mesh::GenerateQuad();
+
+	ambientStrength = 0.2;
 }
 
 
@@ -85,23 +87,23 @@ void Renderer::SetupSceneA() {
 	//heightMap->AddChild(CR2);
 
 
-	lights.clear();
-	//lights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
-	//lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
-	//lights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
-	//lights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
+	//permanentLights.clear();
+	//permanentLights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
+	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
+	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
+	//permanentLights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
 	for (auto& light : lights) {
 		heightMap->AddChild(light);
 	}
 	if (dirLight) {
 		delete dirLight;
 	}
-	dirLight = new DirectionalLight(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0));
+	//dirLight = new DirectionalLight(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0));
 	
 	if (spotlight) {
 		delete spotlight;
 	}
-	spotlight = new Spotlight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(0.0, 0.0,1.0),glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
+	spotlight = new Spotlight(glm::vec3(100.0f, 500.0f, 500.0f), glm::vec3(1.0),glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
 	heightMap->AddChild(spotlight);
 	water = new Water(GetScreenSize().x, GetScreenSize().y);//TODO: Should water/height map be scene nodes then initialise ?->memory problem
 	SceneNode* waterNode = new SceneNode(water, "LightShader");
@@ -109,7 +111,7 @@ void Renderer::SetupSceneA() {
 	waterNode->SetModelScale(glm::vec3(200.0f, 200.0f, 200.0f));
 	heightMap->AddChild(waterNode);
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
-//	particleManager = new ParticleManager();
+	particleManager = new ParticleManager();
 }
 
 void Renderer::UpdateScene(float msec) {
@@ -118,7 +120,7 @@ void Renderer::UpdateScene(float msec) {
 
 	camera->UpdateCamera(msec);
 	//particleSystem->UpdateParticles(msec);
-//	particleManager->Update(msec, camera->GetPosition());
+	particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -130,15 +132,28 @@ void Renderer::UpdateScene(float msec) {
 		BuildNodeLists(currentRoot);
 		SortNodeLists();
 	}
-	//spotlight->Randomise(msec);
+
+	if (lightning) {
+		lightning->Update(msec);
+		ambientStrength = 0.2f * lightning->GetDimRatio();
+		tempLights = lightning->GetLights();
+	}
+	lights.clear();
+	lights.insert(lights.end(), tempLights.begin(), tempLights.end());
+	lights.insert(lights.end(), permanentLights.begin(), permanentLights.end());
+	spotlight->Randomise(msec);
 	std::sort(lights.begin(), lights.end(), [](const Light* a, const Light* b) { return *a < *b;});
 	UpdateUniforms();
 	if (spotlight) {
 		spotlight->UpdateTransform();
 	}
+
+
+
 	for (auto& light : lights) {
 		light->UpdateTransform();
 	}
+
 
 	SHADER_MANAGER->SetUniform("Grass", "modelMatrix", modelMatrix);
 	SHADER_MANAGER->SetUniform("Grass", "viewMatrix", viewMatrix);
@@ -148,11 +163,17 @@ void Renderer::UpdateScene(float msec) {
 void Renderer::RenderObjects() {
 	DrawNodes();
 	grass->Draw();
-	lightning->Draw(projMatrix * viewMatrix, camera->GetPosition());
+	if (lightning->ShouldFire()) {
+		lightning->Draw(projMatrix * viewMatrix, camera->GetPosition());
+	}
+
 }
 void Renderer::RenderScene() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	
+	// Enable clipping planes so that we don't have to process geometry
+	// above/below the water for refraction/reflection
+	glEnable(GL_CLIP_DISTANCE0);
+
 	water->BindReflectionFramebuffer();
 	RenderObjects();
 	water->UnbindFramebuffer();
@@ -164,7 +185,7 @@ void Renderer::RenderScene() {
 	//SHADER_MANAGER->SetUniform("Particle", "cameraUp", camera->GetUp());
 
 	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
-	//particleManager->Render();
+	particleManager->Render();
 	//DrawLine();
 	//currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
 	//currentShader->Use();
@@ -291,6 +312,7 @@ void Renderer::SetupCamera() {
 	cameraControl = new CameraController(camera, wps, lps);
 }
 
+
 //TODO: Refactor
 void Renderer::UpdateUniforms() {
 	for (const auto& shader : activeShaders) {
@@ -316,7 +338,7 @@ void Renderer::UpdateUniforms() {
 					SHADER_MANAGER->SetUniform(shader, uniform, textureMatrix);
 				}
 				else if (uniform == "ambientStrength") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 0.2f);//TOOD: Make variable
+					SHADER_MANAGER->SetUniform(shader, uniform, ambientStrength);
 				}
 				else if (uniform == "cameraPos") {
 					SHADER_MANAGER->SetUniform(shader, uniform, camera->GetPosition());
@@ -426,6 +448,5 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 			std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
 		}
 	}
-
 
 }

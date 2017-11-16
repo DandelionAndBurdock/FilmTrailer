@@ -5,6 +5,8 @@
 #include "common.h" //TODO: Remove
 #include "TextureManager.h"
 #include "RandomNumberGenerator.h"
+#include "Light.h"
+
 Lightning::Lightning(const glm::vec3& from, const glm::vec3& to)
 {
 	motherFrom = from;
@@ -42,6 +44,9 @@ Lightning::~Lightning()
 }
 
 void Lightning::Generate(const glm::vec3& from, const glm::vec3& to) {
+	for (auto& light : lights) {
+		delete light;
+	}
 	AddBranch(from, to, BASE_THICKNESS, NUM_POINTS);
 
 }
@@ -56,14 +61,15 @@ void Lightning::AddBranch(const glm::vec3& from, const glm::vec3& to, float thic
 		bolt.push_back(Point(vertex, thickness));
 	}
 	drawVertices.push_back(straightLine.size());
-
+	if (lights.size() < MAX_LIGHTS) {
+		lights.push_back(new Light(straightLine[straightLine.size() -1], glm::vec3(1.0f), 300.0f));
+	}
 	// Recursively add more forks
 	std::vector<int> forkPoints = GetForkPoints(straightLine.size(), BASE_NEW_BRANCH);
 	for(int i : forkPoints){
 		glm::vec3 dest = GetForkDestination(from, to, straightLine[i]);
 		AddBranch(straightLine[i], dest, thickness * 0.75f, numPoints / 2);
 	}
-
 }
 
 std::vector<int> Lightning::GetForkPoints(int size, float prob) {
@@ -136,5 +142,22 @@ void Lightning::AddJitter(std::vector<glm::vec3>& verts) {
 		verts[i].x += RNG->GetRandInt(-3, 3);
 		verts[i].y += RNG->GetRandInt(-3, 3);
 		verts[i].z += RNG->GetRandInt(-3, 3);
+	}
+}
+
+
+void Lightning::Update(GLfloat msec) {
+	lastBoltTime += msec;
+	
+	dimRatio = 1.0f - lastBoltTime / BOLT_RATE;
+
+	if (lastBoltTime > BOLT_RATE) {
+		lastBoltTime -= BOLT_RATE;
+		shouldFire = true;
+		Generate(glm::vec3(500.0, 500.0, 0.0), glm::vec3(200.0, 0.0, 200.0));
+	}
+	else if (lastBoltTime > DISPLAY_TIME){
+		lights.clear();
+		shouldFire = false;
 	}
 }

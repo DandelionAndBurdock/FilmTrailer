@@ -28,7 +28,6 @@ way to do it - but it kept the Tutorial code down to a minimum!
 OGLRenderer::OGLRenderer(Window &window)	{
 	init					= false;
 
-
 	HWND windowHandle = window.GetHandle();
 
 	screenSize = window.GetScreenSize();
@@ -188,6 +187,7 @@ void OGLRenderer::UpdateScene(float msec)	{
 
 void OGLRenderer::CalculateFPS(float msec) {
 	static int i = 0;
+
 	// Store current value
 	fps[i % NUM_FPS_FRAMES] = int(std::round(1000.0f / msec));
 	++i;

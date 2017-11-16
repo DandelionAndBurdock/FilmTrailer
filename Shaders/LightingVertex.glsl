@@ -4,6 +4,9 @@
  uniform mat4 viewMatrix;
  uniform mat4 projMatrix;
  
+ // Normal x, y, z and distance from the origin
+ uniform vec4 clipPlane;
+ 
 in vec3 position;
 in vec2 texCoord;
 in vec3 normal;
@@ -18,6 +21,13 @@ in vec3 tangent;
  } OUT;
  
  void main() {
+ vec4 worldPos = modelMatrix * vec4(position, 1);
+ // gl_ClipDistance[0] = dot(worldPos, clipPlane);
+ 
+ 
+ OUT.worldPos = worldPos.xyz;
+
+ 
  OUT.texCoord = texCoord;
  
  // Transforms normals from model space to world space
@@ -26,7 +36,7 @@ in vec3 tangent;
  OUT.tangentWorld = normalize(normalMatrix * normalize(tangent));
  OUT.binormalWorld = normalize(normalMatrix * normalize(cross(normal, tangent)));
  
- OUT.worldPos = (modelMatrix * vec4(position, 1)).xyz;
+ 
  
   gl_Position = (projMatrix * viewMatrix * modelMatrix) * vec4(position, 1.0);
  }

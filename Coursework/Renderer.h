@@ -75,8 +75,13 @@ protected:
 	ParticleSystem* particleSystem;
 	ParticleManager* particleManager;
 
-	// List of lights in the world
+	// List of all lights in the world
 	std::vector<Light*> lights;
+	// List of permanent lights in the world
+	std::vector<Light*> permanentLights;
+	// List of temporary lights in the world e.g. lightning
+	std::vector<Light*> tempLights;
+
 	DirectionalLight* dirLight;
 
 	Lightning* lightning;
@@ -84,4 +89,7 @@ protected:
 	Grass* grass;
 
 	Water* water;
+
+	// Modify ambient strenght of the scene to change mood
+	GLfloat ambientStrength;
 };

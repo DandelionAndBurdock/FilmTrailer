@@ -33,6 +33,7 @@ ParticleManager::ParticleManager()
 	colourBuffer = new GLubyte[CHARS_PER_COLOUR * MAX_PARTICLES];
 
 	glGenVertexArrays(1, &particleVAO);
+	glBindVertexArray(particleVAO);
 
 	glGenBuffers(1, &billboardVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, billboardVBO);
@@ -53,7 +54,6 @@ ParticleManager::ParticleManager()
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	glBindVertexArray(particleVAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
 	glEnableVertexAttribArray(1);
@@ -69,13 +69,14 @@ ParticleManager::ParticleManager()
 	glVertexAttribDivisor(0, 0); // vertices : never update
 	glVertexAttribDivisor(1, 1); // position : update per instance
 	glVertexAttribDivisor(2, 1); // colour : update per instance   
+
+	GenerateNewParticles(100);
 }
 
 
 void ParticleManager::Rebuffer() {
 
-	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
-
+	glBindVertexArray(particleVAO);
 	// In openGL allocating storage may be faster than the synchronization -> 	https://www.khronos.org/opengl/wiki/Buffer_Object_Streaming
 	// Driver will return the memory block once it's not used.
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
@@ -102,13 +103,12 @@ ParticleManager::~ParticleManager()
 }
 
 void ParticleManager::Render() {
-	glBindVertexArray(particleVAO);
-	SHADER_MANAGER->SetShader("Particle");
 
+	SHADER_MANAGER->SetShader("Particle");
+	glBindVertexArray(particleVAO);
 	// Bind our texture in Texture Unit 0
 	glActiveTexture(GL_TEXTURE0);
 	TEXTURE_MANAGER->BindTexture(texture);
-
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0,	4, particles.size()); //TODO: Remove magic numbers
 }
 
@@ -170,7 +170,6 @@ void ParticleManager::GenerateNewParticles(GLint msec) {
 		particles[particleIndex].colour[1] = rand() % 256;
 		particles[particleIndex].colour[2] = rand() % 256;
 		particles[particleIndex].colour[3] = (rand() % 256) / 3;
-
 		particles[particleIndex].size = (rand() % 1000) / 2000.0f + 0.1f; //TODO: Use RNG make better rand generation
 	}
 }
