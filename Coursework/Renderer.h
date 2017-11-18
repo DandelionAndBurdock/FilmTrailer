@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <set>
+#include <limits> // For numeric_limits<float>::max()
 
 //TODO: Forward declarations
 class HeightMap;
@@ -21,6 +22,7 @@ class Lightning;
 class Spotlight;
 class Grass; //TODO: Move to heightmap
 class Water;
+class OmniShadow;
 
 class Renderer : public OGLRenderer {
 public:
@@ -29,9 +31,11 @@ public:
 
 	virtual void UpdateScene(float msec);
 	virtual void RenderScene();
-	void RenderObjects();
+	void RenderObjects(const glm::vec4& clipPlane);
 
 protected:
+	void DrawSkybox();
+
 	void UpdateUniforms();
 	void UpdateLightUniforms(const std::string& shader, std::string uniform);
 
@@ -48,12 +52,16 @@ protected:
 	void SetupSceneA();
 	void ConfigureOpenGL();
 
+	void ShadowMapFirstPass();
+
 	void DrawFPS();
 
 	SceneNode* currentRoot;
 	SceneNode* sceneARoot;
 	CameraController* cameraControl;
 	Camera* camera;
+	Mesh* reflectionQuad;
+	Mesh* refractionQuad;
 	Mesh* quad;
 
 
@@ -64,7 +72,7 @@ protected:
 	std::vector<SceneNode*> transparentNodeList;
 	std::vector<SceneNode*> opaqueNodeList;
 
-	GLuint quadTexture;
+	GLuint quadTexture;//TODO: remove
 
 	HeightMap* terrain;
 
@@ -89,7 +97,19 @@ protected:
 	Grass* grass;
 
 	Water* water;
+	SceneNode* waterNode;
 
 	// Modify ambient strenght of the scene to change mood
 	GLfloat ambientStrength;
+
+	Mesh* tree; 
+	GLuint cubeMap;
+
+	OmniShadow* omniShadow;
+
+	// Disable Clip Plane doesn't work on all drives plus we still need to pass something to the function anyway
+	const glm::vec4 NO_CLIP_PLANE = glm::vec4(0.0, 1.0, 0.0, std::numeric_limits<float>::max()); // A little bit hacky but this clip plane should result in no culling
+
+	std::vector<std::string> uniformNames;
+
 };

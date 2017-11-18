@@ -11,14 +11,20 @@ class Water : public Mesh
 	const int REFRACTION_WIDTH = 1280;
 	const int REFRACTION_HEIGHT = 720;
 
+	const float WATER_HEIGHT = 100.0f;
+
 public:
 	Water(GLint screenWidth, GLint screenHeight);
 	~Water();
 
+	float GetHeight() { return WATER_HEIGHT; }
 	void BindReflectionFramebuffer();
 	void BindRefractionFramebuffer();
 	void UnbindFramebuffer();
 	GLuint GetReflectionTex() { return reflectionColourTexFBO; }
+	GLuint GetRefractionTex() { return refractionColourTexFBO; }
+
+	void Update(GLfloat msec);
 protected:
 	void SetupQuad();
 	void SetupFramebuffers();
@@ -35,7 +41,7 @@ protected:
 	GLuint reflectionColourTexFBO; //TODO: Move to texture manager
 	// TODO: Render Buffer Object
 	GLuint refractionDepthTexFBO; //TODO: Move to texture manager
-	GLuint reflectionDepthTexRBO; //TODO: Move to texture manager
+	GLuint reflectionDepthTexFBO; //TODO: Move to texture manager
 
 
 	GLint displayWidth;

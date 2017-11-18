@@ -181,11 +181,13 @@ that - it's just asking for trouble! Strictly speaking, even the camera
 shouldn't be in here...(I'm lazy)
 */
 void OGLRenderer::UpdateScene(float msec)	{
-
+	
 }
 
 
 void OGLRenderer::CalculateFPS(float msec) {
+	time += msec;
+
 	static int i = 0;
 
 	// Store current value

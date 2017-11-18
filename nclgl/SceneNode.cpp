@@ -20,6 +20,7 @@ SceneNode::SceneNode(Mesh* m, const std::string& shader)
 	else {
 		boundingRadius = 0.0f;
 	}
+	isActive = true;
 }
 
 
@@ -36,13 +37,17 @@ void SceneNode::AddChild(SceneNode* s) {
 }
 
 void SceneNode::DrawNode() {
-	if (mesh) {
+	if (isActive && mesh) {
 		BindTextures();
 		mesh->Draw();
 	}
 }
 
 void SceneNode::Update(float msec) {
+	if (!isActive) {
+		return;
+	}
+	
 	if (parent) {
 		worldTransform = parent->worldTransform * transform;
 	}
@@ -67,4 +72,17 @@ void SceneNode::BindTextures() {
 float SceneNode::GetBoundingRadius() const {
 	float maxScale = glm::max(glm::max(modelScale.x, modelScale.y), modelScale.z);
 	return boundingRadius * maxScale;
+}
+
+void SceneNode::SetInactive() {
+	isActive = false;
+	for (auto iter = children.begin(); iter != children.end(); ++iter) {
+		(*iter)->SetInactive();
+	}
+}
+void SceneNode::SetActive() {
+	isActive = true;
+	for (auto iter = children.begin(); iter != children.end(); ++iter) {
+		(*iter)->SetInactive();
+	}
 }

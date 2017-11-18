@@ -15,6 +15,9 @@ public:
 	// Constructs a
 	Texture(float* data, int dimension, bool oneDimensional = false);//TODO: Add image format
 
+	// Hold a pre-loaded texture
+	Texture(GLuint ID);
+
 	// Cleans up
 	~Texture();
 

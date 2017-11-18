@@ -45,6 +45,10 @@ public:
 		return a->distanceFromCamera < b->distanceFromCamera ? true : false;
 	}
 
+	void SetInactive();
+	void SetActive();
+	bool IsActive() { return isActive; }
+
 protected:
 	void BindTextures();
 
@@ -61,4 +65,7 @@ protected:
 
 	float distanceFromCamera;
 	float boundingRadius;
+
+	// Only active nodes are drawn and updated
+	bool isActive;
 };

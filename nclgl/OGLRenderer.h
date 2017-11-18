@@ -81,4 +81,6 @@ protected:
 
 	HDC		deviceContext;	//...Device context?
 	HGLRC	renderContext;	//Permanent Rendering Context
+
+	GLfloat time; //Time in msec since start
 };

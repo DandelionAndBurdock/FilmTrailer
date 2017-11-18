@@ -10,6 +10,8 @@ Camera::Camera(glm::vec3 pos, glm::vec3 viewDir, glm::vec3 upDir) {
 	right = glm::normalize(glm::cross(viewDirection, up));
 	cameraMoveSpeed = 0.5f;
 	cameraRotateSpeed = 1.0f;
+
+	reflectionMatrix = glm::mat4();
 }
 /*
 Polls the camera for keyboard / mouse movement.
@@ -27,11 +29,14 @@ void Camera::HandleMouseUpdates() {
 	float deltaPitch = Window::GetMouse()->GetRelativePosition().y;
 	float deltaYaw = Window::GetMouse()->GetRelativePosition().x;
 
-	right = glm::normalize(glm::cross(viewDirection, up));
+	
 	viewDirection = glm::mat3(glm::rotate(glm::radians(-deltaYaw * cameraRotateSpeed), 
 					up)) * viewDirection;
-	viewDirection = glm::mat3(glm::rotate(glm::radians(-deltaPitch* cameraRotateSpeed), 
-						right)) * viewDirection;
+	viewDirection = glm::normalize(glm::mat3(glm::rotate(glm::radians(-deltaPitch* cameraRotateSpeed), 
+						right)) * viewDirection);
+
+	right = glm::normalize(glm::cross(viewDirection, worldUp));
+	up = glm::normalize(glm::cross(right, viewDirection));
 }
 
 void Camera::HandleKeyboardUpdates(float msec) {
@@ -66,3 +71,12 @@ straight to the shader...it's already an 'inverse camera' matrix.
 glm::mat4 Camera::BuildViewMatrix()	{
 	return glm::lookAt(position, position + viewDirection, up);
 };
+
+
+void Camera::Reflect(GLfloat distance, const glm::vec3& normal) {
+	position -= 2 * distance * normal;
+	viewDirection = glm::reflect(viewDirection, normal);
+	right = glm::normalize(glm::cross(viewDirection, worldUp));
+	up = glm::normalize(glm::cross(right, viewDirection));
+}
+

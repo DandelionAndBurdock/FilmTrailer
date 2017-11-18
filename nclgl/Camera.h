@@ -45,6 +45,8 @@ public:
 	glm::vec3 GetRight() const { return right; }
 	glm::vec3 GetUp() const { return up; }
 
+	// Reflect the camera in a horizontal plane a distance d below the camera
+	void Reflect(GLfloat d, const glm::vec3& normal = glm::vec3(0.0, 1.0, 0.0));
 
 protected:
 	void HandleMouseUpdates();  // Updates pitch, yaw, (roll) and view direction based on relative mouse movement since last called
@@ -57,4 +59,9 @@ protected:
 	glm::vec3 up;				// Points vertically upwards from the camera
 	glm::vec3 viewDirection;	// Direction camera is pointing
 	glm::vec3 right;			// Direction orthogonal to the up vector and view direction
+
+	const glm::vec3 worldUp = glm::vec3(0.0, 1.0, 0.0);
+
+	// For reflecting camera about a horizontal plane
+	glm::mat4 reflectionMatrix;
 };

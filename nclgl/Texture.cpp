@@ -33,7 +33,10 @@ Texture::Texture(float* data, int dimension, bool oneDimensional) {
 	loadSuccess = true;
 }
 
-
+Texture::Texture(GLuint ID) {
+	this->ID = ID;
+	loadSuccess = true;
+}
 
 Texture::~Texture() {
 	glDeleteTextures(1, &ID);

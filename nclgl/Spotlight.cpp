@@ -7,11 +7,10 @@
 Spotlight::Spotlight(const glm::vec3& position, const glm::vec3& colour, const glm::vec3& direction) :
 	Light(position, colour, 1000.0f), direction(direction)
 {
-	innerCutoffDegrees = 5.0f;
-	outerCutoffDegrees = 10.0f;
+	outerCutoffDegrees = 50.0f;
+	innerCutoffDegrees = 0.4 * outerCutoffDegrees;
 	innerCutoff = glm::cos(glm::radians(innerCutoffDegrees)); //TODO: Remove magic number
 	outerCutoff = glm::cos(glm::radians(outerCutoffDegrees));
-
 }
 
 

@@ -79,10 +79,10 @@ Mesh* Mesh::GenerateQuad(){
 	m->colours[3] = glm::vec4(+0.0f, +1.0f, +0.0f, +1.0f);
 
 	m->textureCoords = new glm::vec2[m->numVertices];
-	m->textureCoords[0] = glm::vec2(0.0f, 1.0f);
-	m->textureCoords[1] = glm::vec2(0.0f, 0.0f);
-	m->textureCoords[2] = glm::vec2(1.0f, 1.0f);
-	m->textureCoords[3] = glm::vec2(1.0f, 0.0f);
+	m->textureCoords[0] = glm::vec2(0.0f, 0.0f);
+	m->textureCoords[1] = glm::vec2(0.0f, 1.0f);
+	m->textureCoords[2] = glm::vec2(1.0f, 0.0f);
+	m->textureCoords[3] = glm::vec2(1.0f, 1.0f);
 
 	m->normals = new glm::vec3[m->numVertices];
 	m->tangents = new glm::vec3[m->numVertices];

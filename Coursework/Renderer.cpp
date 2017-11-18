@@ -14,6 +14,7 @@
 #include "nclgl\Spotlight.h"
 #include "nclgl\Grass.h"
 #include "nclgl\Water.h"
+#include "nclgl\OmniShadow.h"
 
 #include <algorithm> // For min()
 #include <iostream>
@@ -45,13 +46,16 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	init = true;
 
-	quad = Mesh::GenerateQuad();
-
+	reflectionQuad = Mesh::GenerateQuad();
+	refractionQuad = Mesh::GenerateQuad();
 	ambientStrength = 0.2;
+
+	//omniShadow = new OmniShadow(screenSize.x, screenSize.y);
 }
 
 
 Renderer::~Renderer() {
+	//Functions delete meshes...
 	if (dirLight)
 		delete dirLight;
 	if (spotlight)
@@ -63,7 +67,8 @@ Renderer::~Renderer() {
 	delete particleSystem;
 	delete particleManager;
 	delete grass;
-	delete quad;
+	delete refractionQuad;
+	delete reflectionQuad;
 	CubeRobot::DeleteCube();
 }
 
@@ -79,6 +84,15 @@ void Renderer::SetupSceneA() {
 	heightMap->UseTexture("TerrainBump");
 
 	
+	//Load meshes function
+	OBJMesh* m = new OBJMesh;
+	if (m->LoadOBJMesh(MESHDIR"tree_oak.obj")) {
+		tree = m;
+	}
+	else {
+		__debugbreak();
+	}
+
 
 	//heightMap->AddChild(new CubeRobot());
 	//
@@ -87,8 +101,8 @@ void Renderer::SetupSceneA() {
 	//heightMap->AddChild(CR2);
 
 
-	//permanentLights.clear();
-	//permanentLights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 2000.0f));
+	permanentLights.clear();
+	//permanentLights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
@@ -98,18 +112,30 @@ void Renderer::SetupSceneA() {
 	if (dirLight) {
 		delete dirLight;
 	}
-	//dirLight = new DirectionalLight(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0));
+	dirLight = new DirectionalLight(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0,1.0,1.0));
 	
 	if (spotlight) {
 		delete spotlight;
 	}
-	spotlight = new Spotlight(glm::vec3(100.0f, 500.0f, 500.0f), glm::vec3(1.0),glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
-	heightMap->AddChild(spotlight);
-	water = new Water(GetScreenSize().x, GetScreenSize().y);//TODO: Should water/height map be scene nodes then initialise ?->memory problem
-	SceneNode* waterNode = new SceneNode(water, "LightShader");
-	waterNode->SetTransform(glm::translate(glm::vec3(500.0f, 100.0f, 500.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	//spotlight = new Spotlight(glm::vec3(100.0f, 500.0f, 500.0f), glm::vec3(0.0, 0.0, 1.0),glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
+	//heightMap->AddChild(spotlight);
+	water = new Water(GetScreenSize().x, GetScreenSize().y);//TODO: Should water/height map be scene nodes then initialise ?->memory problem //TODO: Not true water height fix
+	waterNode = new SceneNode(water, "WaterShader");
+	waterNode->SetTransform(glm::translate(glm::vec3(500.0f, water->GetHeight(), 500.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
 	waterNode->SetModelScale(glm::vec3(200.0f, 200.0f, 200.0f));
+	waterNode->UseTexture("Reflection");
+	waterNode->UseTexture("Refraction");
+	waterNode->UseTexture("dudvMap");
 	heightMap->AddChild(waterNode);
+	SceneNode* t = new SceneNode(tree, "TerrainShader");
+	t->SetModelScale(glm::vec3(50.0f));
+	t->SetColour(glm::vec4(0.0f));// Add to transparent list
+	t->SetTransform(glm::translate(glm::vec3(900.0f, terrain->GetHeightAtPosition(50.0f, 50.0f), 900.0f)));
+	heightMap->AddChild(t);
+//	heightMap->SetInactive();
+
+	quad = Mesh::GenerateQuad();
+	
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
 	particleManager = new ParticleManager();
 }
@@ -120,7 +146,7 @@ void Renderer::UpdateScene(float msec) {
 
 	camera->UpdateCamera(msec);
 	//particleSystem->UpdateParticles(msec);
-	particleManager->Update(msec, camera->GetPosition());
+	//particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -133,15 +159,15 @@ void Renderer::UpdateScene(float msec) {
 		SortNodeLists();
 	}
 
-	if (lightning) {
-		lightning->Update(msec);
-		ambientStrength = 0.2f * lightning->GetDimRatio();
-		tempLights = lightning->GetLights();
-	}
+	//if (lightning) {
+	//	lightning->Update(msec);
+	//	ambientStrength = 0.2f * lightning->GetDimRatio();
+	//	tempLights = lightning->GetLights();
+	//}
 	lights.clear();
 	lights.insert(lights.end(), tempLights.begin(), tempLights.end());
 	lights.insert(lights.end(), permanentLights.begin(), permanentLights.end());
-	spotlight->Randomise(msec);
+	//spotlight->Randomise(msec);
 	std::sort(lights.begin(), lights.end(), [](const Light* a, const Light* b) { return *a < *b;});
 	UpdateUniforms();
 	if (spotlight) {
@@ -160,25 +186,48 @@ void Renderer::UpdateScene(float msec) {
 	SHADER_MANAGER->SetUniform("Grass", "projMatrix", projMatrix);
 }
 
-void Renderer::RenderObjects() {
+void Renderer::RenderObjects(const glm::vec4& clipPlane) {
+	for (const auto& shader : activeShaders) {
+		SHADER_MANAGER->SetUniform(shader, "clipPlane", clipPlane);
+		SHADER_MANAGER->SetUniform(shader, "viewMatrix", camera->BuildViewMatrix()); //TODO: Store
+	}
 	DrawNodes();
 	grass->Draw();
 	if (lightning->ShouldFire()) {
-		lightning->Draw(projMatrix * viewMatrix, camera->GetPosition());
+		//lightning->Draw(projMatrix * viewMatrix, camera->GetPosition());
 	}
 
 }
 void Renderer::RenderScene() {
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	
 	// Enable clipping planes so that we don't have to process geometry
 	// above/below the water for refraction/reflection
 	glEnable(GL_CLIP_DISTANCE0);
 
+	//TODO: Reflection Pass
 	water->BindReflectionFramebuffer();
-	RenderObjects();
-	water->UnbindFramebuffer();
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	// To get correct reflection sample we need to mirror (reflect) the camera position/pitch relative to the water plane
+	float cameraMirrorShift = camera->GetPosition().y - water->GetHeight(); // Height of camera above the water plane
+	camera->Reflect(cameraMirrorShift);
+	DrawSkybox();
+  	waterNode->SetInactive();
+	RenderObjects(glm::vec4(0.0, 1.0, 0.0, -water->GetHeight()));
+	camera->Reflect(-cameraMirrorShift);
+	water->BindRefractionFramebuffer();
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	DrawSkybox();
+	RenderObjects(glm::vec4(0.0, -1.0, 0.0, water->GetHeight()));
+	water->UnbindFramebuffer(); //Binds Window FBO
+	glDisable(GL_CLIP_DISTANCE0);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	//ShadowMapFirstPass();
 
-	RenderObjects();
+
+	//omniShadow->BindForReading();
+	DrawSkybox();
+	waterNode->SetActive();
+	RenderObjects(NO_CLIP_PLANE);
 	//TODO: Tidy
 	//SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
 	//SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
@@ -195,17 +244,23 @@ void Renderer::RenderScene() {
 	
 	projMatrix = glm::ortho(-1, 1, -1, 1);
 	viewMatrix = glm::mat4();
-	glViewport(0, 0, 300, 300);
+	glViewport(0, 0, 200, 200);
 	SHADER_MANAGER->SetShader("QuadShader");
 	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", viewMatrix);
 	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", projMatrix);
-
+	
 	SHADER_MANAGER->SetUniform("QuadShader", "diffuseTex", 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, water->GetReflectionTex());
+	reflectionQuad->Draw(); //TODO: Don't need two quads unless for naming
 	
-	quad->Draw();
+	glViewport(300, 0, 200, 200);
+	glBindTexture(GL_TEXTURE_2D, water->GetRefractionTex());
+	reflectionQuad->Draw();
+
+
+	// Reset view port
 	glViewport(0, 0, screenSize.x, screenSize.y);
 	DrawFPS();
 	SwapBuffers();
@@ -234,7 +289,9 @@ void Renderer::BuildNodeLists(SceneNode* from) {
 
 
 	for (auto iter = from->GetChildIteratorStart(); iter != from->GetChildIteratorEnd(); ++iter) {
-		BuildNodeLists(*iter);
+		if ((*iter)->IsActive()) {
+			BuildNodeLists(*iter);
+		}
 	}
 
 }
@@ -258,7 +315,6 @@ void Renderer::DrawNodes() {
 
 void Renderer::DrawNode(SceneNode* n) {
 	if (n->GetMesh()) {
-		SHADER_MANAGER->SetShader(n->GetShaderName());
 		SHADER_MANAGER->SetUniform(n->GetShaderName(), "modelMatrix", n->GetWorldTransform() * glm::scale(n->GetModelScale()));
 		n->DrawNode();
 	}
@@ -290,18 +346,36 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
+	SHADER_MANAGER->AddShader("WaterShader", SHADERDIR"WaterVertex.glsl", SHADERDIR"WaterFragment.glsl");
+	SHADER_MANAGER->AddShader("CubeMapShader", SHADERDIR"skyboxVertex.glsl", SHADERDIR"skyboxFragment.glsl");
 }
 
 void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("StainedGlass", TEXTUREDIR"stainedglass.tga");
 	TEXTURE_MANAGER->AddTexture("Terrain", TEXTUREDIR"Barren Reds.jpg");
 	TEXTURE_MANAGER->AddTexture("TerrainBump", TEXTUREDIR"Barren RedsDOT3.jpg");
+	TEXTURE_MANAGER->AddTexture("dudvMap", TEXTUREDIR"waterDUDV.png");
+	cubeMap = SOIL_load_OGL_cubemap(
+		TEXTUREDIR"lake1_lf.jpg",
+		TEXTUREDIR"lake1_rt.jpg",
+		TEXTUREDIR"lake1_up.jpg",
+		TEXTUREDIR"lake1_dn.jpg",
+		TEXTUREDIR"lake1_ft.jpg",
+		TEXTUREDIR"lake1_bk.jpg",
+		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0
+	);
+
+	if (!cubeMap) {
+		std::cout << SOIL_last_result() << std::endl;
+		__debugbreak();
+	}
 }
 
 void Renderer::ConfigureOpenGL() {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void Renderer::SetupCamera() {
@@ -313,15 +387,37 @@ void Renderer::SetupCamera() {
 }
 
 
-//TODO: Refactor
+// This was an attempt to make setting uniforms nicer but spiralled into a horrible mess
 void Renderer::UpdateUniforms() {
+	activeShaders.insert("CubeMapShader");
 	for (const auto& shader : activeShaders) {
 		std::vector<std::string> uniforms = SHADER_MANAGER->GetUniformNames(shader);
 		for (const auto& uniform : uniforms) {//TODO: Refactor
 			if (uniform.find("Tex") != std::string::npos) {
-				continue; // Don't handle textures here
+				if (uniform == "diffuseTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 0);
+				}
+				else if (uniform == "bumpTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 1);
+				}
+				else if (uniform == "reflectionTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 0);
+				}
+				else if (uniform == "refractionTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 1);
+				}
+				else if (uniform == "dudvMapTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 1);
+				}
+				else if (uniform == "cubeTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 0);
+				}
+				else {
+					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
+				}
 			}
-			if (uniform.find("Light") != std::string::npos) {
+		
+			else if (uniform.find("Light") != std::string::npos) {
 				UpdateLightUniforms(shader, uniform);
 			}
 			else {
@@ -342,6 +438,12 @@ void Renderer::UpdateUniforms() {
 				}
 				else if (uniform == "cameraPos") {
 					SHADER_MANAGER->SetUniform(shader, uniform, camera->GetPosition());
+				}
+				else if (uniform == "time") {
+					SHADER_MANAGER->SetUniform(shader, uniform, time / 1000.0f);
+				}
+				else if (uniform == "clipPlane") {
+					// Do nothing will set on the fly
 				}
 				else {
 					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
@@ -449,4 +551,20 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 		}
 	}
 
+}
+
+void Renderer::ShadowMapFirstPass() {
+	omniShadow->BindForWriting();
+	omniShadow->SetUniforms(lights[0]);
+	projMatrix = glm::perspective(glm::radians(90.0f), screenSize.x / screenSize.y, 1.0f, 100.0f);
+	RenderObjects(NO_CLIP_PLANE);
+	omniShadow->Unbind();
+}
+
+void Renderer::DrawSkybox() {
+	glDepthMask(GL_FALSE);
+	SHADER_MANAGER->SetShader("CubeMapShader");
+	quad->Draw();
+	glUseProgram(0);
+	glDepthMask(GL_TRUE);
 }

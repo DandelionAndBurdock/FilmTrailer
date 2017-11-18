@@ -139,8 +139,6 @@ void ParticleManager::Update(GLint msec, glm::vec3 cameraPos) {
 	UpdateParticles(msec, cameraPos);
 	Rebuffer();
 	GenerateNewParticles(msec);
-
-
 }
 
 void ParticleManager::GenerateNewParticles(GLint msec) {

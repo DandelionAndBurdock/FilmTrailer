@@ -85,3 +85,10 @@ bool  TextureManager::GenerateRandomTexture(const std::string name, int dimensio
 	delete[] data;
 	return t->WasLoaded();
 }
+
+
+bool TextureManager::AddTexture(const std::string& name, int ID) {
+	Texture* t = new Texture(ID);
+	textures[name] = t;
+	return t->WasLoaded();
+}

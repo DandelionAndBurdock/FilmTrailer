@@ -257,6 +257,13 @@ automatically be used by this overloaded function. Once 'this' has been drawn,
 all of the children of 'this' will be drawn
 */
 void OBJMesh::Draw() {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	//glActiveTexture(GL_TEXTURE1);
+	//glBindTexture(GL_TEXTURE_2D, bumpTexture);
+
 	Mesh::Draw();
 	for(unsigned int i = 0; i < children.size(); ++i) {
 		children.at(i)->Draw();
@@ -272,7 +279,7 @@ void	OBJMesh::SetTexturesFromMTL(std::string &mtlFile, std::string &mtlType) {
 
 	if(i != materials.end()) {
 		if(!i->second.diffuse.empty())	{
-			//texture = i->second.diffuseNum;
+			texture = i->second.diffuseNum;
 		}
 #ifdef OBJ_USE_TANGENTS_BUMPMAPS
 		if(!i->second.bump.empty())	{
@@ -326,7 +333,7 @@ void	OBJMesh::SetTexturesFromMTL(std::string &mtlFile, std::string &mtlType) {
 			}
 
 			if(!currentMTL.diffuse.empty()) {
-				currentMTL.diffuseNum = SOIL_load_OGL_texture(std::string(TEXTUREDIR + currentMTL.diffuse).c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y | SOIL_FLAG_TEXTURE_REPEATS);
+				currentMTL.diffuseNum = SOIL_load_OGL_texture(std::string(TEXTUREDIR + currentMTL.diffuse).c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y | SOIL_FLAG_MIPMAPS);
 			}
 		}
 		else if(currentLine == MTLBUMPMAP || currentLine == MTLBUMPMAPALT) {
@@ -342,7 +349,7 @@ void	OBJMesh::SetTexturesFromMTL(std::string &mtlFile, std::string &mtlType) {
 			}
 
 			if(!currentMTL.bump.empty()) {
-				currentMTL.bumpNum = SOIL_load_OGL_texture(std::string(TEXTUREDIR + currentMTL.bump).c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y | SOIL_FLAG_TEXTURE_REPEATS);
+				currentMTL.bumpNum = SOIL_load_OGL_texture(std::string(TEXTUREDIR + currentMTL.bump).c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y | SOIL_FLAG_MIPMAPS);
 			}
 		}
 	}
@@ -374,7 +381,7 @@ void	OBJMesh::FixTextures(MTLInfo &info) {
 
 		info.bump = temp;
 
-		info.bumpNum = SOIL_load_OGL_texture(std::string(TEXTUREDIR + info.bump).c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y |  SOIL_FLAG_TEXTURE_REPEATS);
+		info.bumpNum = SOIL_load_OGL_texture(std::string(TEXTUREDIR + info.bump).c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y |  SOIL_FLAG_MIPMAPS);
 	}
 }
 #endif

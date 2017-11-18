@@ -66,8 +66,8 @@ time lighting tutorial, uncomment both OBJ_USE_NORMALS and OBJ_USE_TANGENTS_BUMP
 
 #include "common.h"
 #ifdef WEEK_2_CODE
-//#define OBJ_USE_NORMALS
-//#define OBJ_USE_TANGENTS_BUMPMAPS
+#define OBJ_USE_NORMALS
+#define OBJ_USE_TANGENTS_BUMPMAPS
 
 //New! 
 
@@ -152,6 +152,9 @@ protected:
 	void	FixTextures(MTLInfo &info);
 
 	std::map<std::string, MTLInfo> materials;
+
+	GLint texture;
+	GLint bumpTexture;
 };
 
 #endif

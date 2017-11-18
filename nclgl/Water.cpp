@@ -2,6 +2,8 @@
 
 #include "Window.h"
 
+#include "TextureManager.h"
+
 Water::Water(GLint screenWidth, GLint screenHeight)
 {
 	SetupQuad();
@@ -21,7 +23,7 @@ Water::~Water()
 	glDeleteTextures(1, &reflectionColourTexFBO);
 
 	glDeleteRenderbuffers(1, &refractionDepthTexFBO);
-	glDeleteRenderbuffers(1, &reflectionDepthTexRBO);
+	glDeleteRenderbuffers(1, &reflectionDepthTexFBO);
 }
 
 //TODO: This is just Mesh::GenerateQuad()
@@ -59,7 +61,6 @@ void Water::SetupQuad() {
 	BufferData();
 }
 
-
 void Water::SetupFramebuffers() {
 	SetupReflectionFrameBuffer();
 	SetupRefractionFrameBuffer();
@@ -75,18 +76,25 @@ void Water::SetupReflectionFrameBuffer() {
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 	glGenTextures(1, &reflectionColourTexFBO);
-	glGenRenderbuffers(1, &reflectionDepthTexRBO);
-
+	TEXTURE_MANAGER->AddTexture("Reflection", reflectionColourTexFBO);
 	glBindTexture(GL_TEXTURE_2D, reflectionColourTexFBO);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, REFLECTION_WIDTH, REFLECTION_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, reflectionColourTexFBO, 0);
 
-	glGenRenderbuffers(1, &reflectionDepthTexRBO); //TODO: RBO or texture?
-	glBindRenderbuffer(GL_RENDERBUFFER, reflectionDepthTexRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, REFLECTION_WIDTH, REFLECTION_HEIGHT);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, reflectionDepthTexRBO);
+
+	glGenTextures(1, &reflectionDepthTexFBO); 
+	glBindTexture(GL_TEXTURE_2D, reflectionDepthTexFBO);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, REFLECTION_WIDTH, REFLECTION_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, reflectionDepthTexFBO, 0);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		__debugbreak();
 		return;
@@ -99,12 +107,15 @@ void Water::SetupRefractionFrameBuffer() {
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 	glGenTextures(1, &refractionColourTexFBO);
+	TEXTURE_MANAGER->AddTexture("Refraction", reflectionColourTexFBO);
 	glGenTextures(1, &refractionDepthTexFBO);
 
 	glBindTexture(GL_TEXTURE_2D, refractionColourTexFBO);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, REFRACTION_WIDTH, REFRACTION_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, refractionColourTexFBO, 0);
 
 	glGenTextures(1, &refractionDepthTexFBO); //TODO: RBO or texture?
@@ -117,21 +128,21 @@ void Water::SetupRefractionFrameBuffer() {
 		__debugbreak();
 		return;
 	}
+
 }
 
-//TODO: Tex Check?
 void Water::BindReflectionFramebuffer() {
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
-	//glViewport(0, 0, REFLECTION_WIDTH, REFLECTION_HEIGHT);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	glViewport(0, 0, REFLECTION_WIDTH, REFLECTION_HEIGHT);
 }
 
 void Water::BindRefractionFramebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, refractionFBO);
-	//glViewport(0, 0, REFRACTION_WIDTH, REFRACTION_HEIGHT);
+	glViewport(0, 0, REFRACTION_WIDTH, REFRACTION_HEIGHT);
 }
 
 void Water::UnbindFramebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glViewport(0, 0, displayWidth, displayHeight);
+	glViewport(0, 0, displayWidth, displayHeight);
 }
