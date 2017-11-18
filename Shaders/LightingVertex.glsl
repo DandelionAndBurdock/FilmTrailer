@@ -5,6 +5,9 @@
  uniform mat4 projMatrix;
  
  // Normal x, y, z and distance from the origin
+ // Since we are only dealing with horizontal 
+ // planes the normal will be either (0, 1, 0)
+ // or (0, -1, 0) and d is the height above the origin 
  uniform vec4 clipPlane;
  
 in vec3 position;
@@ -21,8 +24,12 @@ in vec3 tangent;
  } OUT;
  
  void main() {
- vec4 worldPos = modelMatrix * vec4(position, 1);
- // gl_ClipDistance[0] = dot(worldPos, clipPlane);
+ vec4 worldPos = modelMatrix * vec4(position, 1.0);
+
+ // Distance of the vertex from the clip plane
+  gl_ClipDistance[0] = dot(worldPos, clipPlane);
+  
+
  
  
  OUT.worldPos = worldPos.xyz;

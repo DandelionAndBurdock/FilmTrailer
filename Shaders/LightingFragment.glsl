@@ -71,7 +71,7 @@ vec3 SpotLightContribution(SpotLight light, vec3 normal, vec3 fragPos, vec3 frag
 	
 	// Angle between the spotlight direction and the fragToLight direction
 	// If theta is less than the spotlight cutoff then the frament is inside the beam
-	float cosTheta = dot(fragToLight, -vec3(light.direction));
+	float cosTheta = max(dot(fragToLight, -vec3(light.direction)), 0.0);
 	
 	// Angles greater than the outerCutOff contribute 0, angles less than the innerCutOff contribute 1.0
 	// Intermediate angles get interpolated value (in cosine space), this gives soft edges
@@ -140,7 +140,7 @@ void main(){
 	}
 	// Directional Lights 
 	for (int i = 0; i < MAX_DIR_LIGHTS; i++){
-		if (directionalLights[i].colour.x > 0.0){
+		if (directionalLights[i].colour.x >= 0.0){
 				fragColour += DirectionalLightContribution(directionalLights[i], normal, IN.worldPos, fragToCamera);
 
 		}
@@ -148,7 +148,7 @@ void main(){
 	
 	
 	for (int i = 0; i < MAX_SPOT_LIGHTS; i++){
-	if (spotLights[i].colour.x > 0.0){
+	if (spotLights[i].radius > 0.0){
 					fragColour += SpotLightContribution(spotLights[i], normal, IN.worldPos, fragToCamera);
 
 		}
