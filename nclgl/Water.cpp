@@ -107,7 +107,7 @@ void Water::SetupRefractionFrameBuffer() {
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 	glGenTextures(1, &refractionColourTexFBO);
-	TEXTURE_MANAGER->AddTexture("Refraction", reflectionColourTexFBO);
+	TEXTURE_MANAGER->AddTexture("Refraction", refractionColourTexFBO);
 	glGenTextures(1, &refractionDepthTexFBO);
 
 	glBindTexture(GL_TEXTURE_2D, refractionColourTexFBO);
@@ -118,7 +118,8 @@ void Water::SetupRefractionFrameBuffer() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, refractionColourTexFBO, 0);
 
-	glGenTextures(1, &refractionDepthTexFBO); //TODO: RBO or texture?
+	glGenTextures(1, &refractionDepthTexFBO); 
+	TEXTURE_MANAGER->AddTexture("DepthMap", refractionDepthTexFBO);
 	glBindTexture(GL_TEXTURE_2D, refractionDepthTexFBO);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, REFRACTION_WIDTH, REFRACTION_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

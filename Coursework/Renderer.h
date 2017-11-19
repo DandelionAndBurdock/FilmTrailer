@@ -110,6 +110,7 @@ protected:
 	// Disable Clip Plane doesn't work on all drives plus we still need to pass something to the function anyway
 	const glm::vec4 NO_CLIP_PLANE = glm::vec4(0.0, 1.0, 0.0, std::numeric_limits<float>::max()); // A little bit hacky but this clip plane should result in no culling
 
-	std::vector<std::string> uniformNames;
+	GLfloat nearPlane;
+	GLfloat farPlane;
 
 };

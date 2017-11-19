@@ -11,7 +11,7 @@ class Water : public Mesh
 	const int REFRACTION_WIDTH = 1280;
 	const int REFRACTION_HEIGHT = 720;
 
-	const float WATER_HEIGHT = 100.0f;
+	const float WATER_HEIGHT = 250.0f;
 
 public:
 	Water(GLint screenWidth, GLint screenHeight);

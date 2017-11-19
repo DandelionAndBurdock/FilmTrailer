@@ -50,6 +50,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	refractionQuad = Mesh::GenerateQuad();
 	ambientStrength = 0.2;
 
+	nearPlane = 1.0f;
+	farPlane = 10000.0f;
 	//omniShadow = new OmniShadow(screenSize.x, screenSize.y);
 }
 
@@ -121,11 +123,14 @@ void Renderer::SetupSceneA() {
 	//heightMap->AddChild(spotlight);
 	water = new Water(GetScreenSize().x, GetScreenSize().y);//TODO: Should water/height map be scene nodes then initialise ?->memory problem //TODO: Not true water height fix
 	waterNode = new SceneNode(water, "WaterShader");
-	waterNode->SetTransform(glm::translate(glm::vec3(500.0f, water->GetHeight(), 500.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	waterNode->SetTransform(glm::translate(glm::vec3(200.0f, water->GetHeight(), 500.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
 	waterNode->SetModelScale(glm::vec3(200.0f, 200.0f, 200.0f));
+	waterNode->SetColour(glm::vec4(0.0f));// Add to transparent list
 	waterNode->UseTexture("Reflection");
+	waterNode->UseTexture("WaterBump");
 	waterNode->UseTexture("Refraction");
 	waterNode->UseTexture("dudvMap");
+	waterNode->UseTexture("DepthMap");
 	heightMap->AddChild(waterNode);
 	SceneNode* t = new SceneNode(tree, "TerrainShader");
 	t->SetModelScale(glm::vec3(50.0f));
@@ -141,7 +146,7 @@ void Renderer::SetupSceneA() {
 }
 
 void Renderer::UpdateScene(float msec) {
-	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 10000.0f);
+	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);
 	CalculateFPS(msec); 
 
 	camera->UpdateCamera(msec);
@@ -204,16 +209,22 @@ void Renderer::RenderScene() {
 	// above/below the water for refraction/reflection
 	glEnable(GL_CLIP_DISTANCE0);
 
+	//*************** WATER**************************
 	//TODO: Reflection Pass
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	water->BindReflectionFramebuffer();
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	// To get correct reflection sample we need to mirror (reflect) the camera position/pitch relative to the water plane
 	float cameraMirrorShift = camera->GetPosition().y - water->GetHeight(); // Height of camera above the water plane
 	camera->Reflect(cameraMirrorShift);
+	SHADER_MANAGER->SetUniform("CubeMapShader", "viewMatrix", camera->BuildViewMatrix());
 	DrawSkybox();
   	waterNode->SetInactive();
 	RenderObjects(glm::vec4(0.0, 1.0, 0.0, -water->GetHeight()));
+	//TODO: Refraction Pass
 	camera->Reflect(-cameraMirrorShift);
+	SHADER_MANAGER->SetUniform("CubeMapShader", "viewMatrix", camera->BuildViewMatrix());
 	water->BindRefractionFramebuffer();
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	DrawSkybox();
@@ -355,6 +366,7 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("Terrain", TEXTUREDIR"Barren Reds.jpg");
 	TEXTURE_MANAGER->AddTexture("TerrainBump", TEXTUREDIR"Barren RedsDOT3.jpg");
 	TEXTURE_MANAGER->AddTexture("dudvMap", TEXTUREDIR"waterDUDV.png");
+	TEXTURE_MANAGER->AddTexture("waterBump", TEXTUREDIR"waterNormalMap.png");
 	cubeMap = SOIL_load_OGL_cubemap(
 		TEXTUREDIR"lake1_lf.jpg",
 		TEXTUREDIR"lake1_rt.jpg",
@@ -373,8 +385,6 @@ void Renderer::LoadTextures() {
 
 void Renderer::ConfigureOpenGL() {
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
@@ -404,10 +414,13 @@ void Renderer::UpdateUniforms() {
 					SHADER_MANAGER->SetUniform(shader, uniform, 0);
 				}
 				else if (uniform == "refractionTex") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 1);
+					SHADER_MANAGER->SetUniform(shader, uniform, 2);
 				}
 				else if (uniform == "dudvMapTex") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 1);
+					SHADER_MANAGER->SetUniform(shader, uniform, 3);
+				}
+				else if (uniform == "depthMapTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 4);
 				}
 				else if (uniform == "cubeTex") {
 					SHADER_MANAGER->SetUniform(shader, uniform, 0);
@@ -444,6 +457,12 @@ void Renderer::UpdateUniforms() {
 				}
 				else if (uniform == "clipPlane") {
 					// Do nothing will set on the fly
+				}
+				else if (uniform == "nearPlane") {
+					SHADER_MANAGER->SetUniform(shader, uniform, nearPlane);
+				}
+				else if (uniform == "farPlane") {
+					SHADER_MANAGER->SetUniform(shader, uniform, farPlane);
 				}
 				else {
 					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
@@ -556,7 +575,7 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 void Renderer::ShadowMapFirstPass() {
 	omniShadow->BindForWriting();
 	omniShadow->SetUniforms(lights[0]);
-	projMatrix = glm::perspective(glm::radians(90.0f), screenSize.x / screenSize.y, 1.0f, 100.0f);
+	projMatrix = glm::perspective(glm::radians(90.0f), screenSize.x / screenSize.y, 1.0f, 100.0f);//TODO: Check far plane
 	RenderObjects(NO_CLIP_PLANE);
 	omniShadow->Unbind();
 }

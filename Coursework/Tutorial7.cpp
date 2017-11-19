@@ -4,10 +4,14 @@
 #pragma comment(lib, "nclgl.lib")
 
 int main() {
-	Window w("Scene Management!", 800,600,false);
-	if(!w.HasInitialised()) {
+	Window w("Scene Management!", 800, 600, false);
+	if (!w.HasInitialised()) {
 		return -1;
 	}
+
+	std::vector<float> coords = { 0.0, 2.0, 4.0, 5.0, 0.0 };
+	std::vector<float> time = { 0.0, 1.0, 2.0, 3.0, 4.0 };
+
 
 	Renderer renderer(w);
 	if(!renderer.HasInitialised()) {
