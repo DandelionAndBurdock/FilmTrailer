@@ -38,8 +38,9 @@ const float DEEP_WATER = 10000.0f;
 
 const vec4 BLUE_GREEN_COLOUR = vec4(0.0, 0.4, 0.6, 1.0);
 const vec4 DEEP_WATER_COLOUR = vec4(0.0, 0.47, 0.75, 1.0);
-// Uncomment if don't want deep water effect
-const float REFLECTIVE_POWER = 0.5; // Strength of reflection in the Fresnel effect
+
+// Strength of reflection in the Fresnel effect
+const float REFLECTIVE_POWER = 0.5; 
 void main(){
 
 // Position in normalised device coordinates
@@ -74,6 +75,8 @@ float distortDistance = time * WAVE_SPEED;
 vec2 distortTexCoords = 0.1 * texture(dudvMapTex, vec2(texCoord.x + distortDistance, texCoord.y)).rg;
 distortTexCoords = texCoord + vec2(distortTexCoords.x, distortTexCoords.y + distortDistance);
 vec2 totalDistortion = WAVE_STRENGTH * (texture(dudvMapTex, distortTexCoords).rg * 2.0 - 1.0); // Convert dudv colours to range[-1, 1]
+// Remove sampling around edges
+totalDistortion *= clamp(waterDepth / MAX_EDGE_DEPTH, 0.0, 1.0);
 
 refractSampleCoords += totalDistortion;
 reflectSampleCoords += totalDistortion;
@@ -92,7 +95,7 @@ DirectionalLight light = directionalLights[0];
 
 vec3 normal = texture(bumpTex, distortTexCoords).rgb;
 // Assume quad is flat so can avoid TBN matrix
-normal = normalize(vec3(normal.r * 2.0 - 1.0, normal.b, normal.g * 2.0 - 1.0));
+normal = normalize(vec3(normal.r * 2.0 - 1.0, normal.b * 3.0f, normal.g * 2.0 - 1.0)); // Scale y-component to make water a little bit less bumpy
 
 // Unit vector from fragment position to light
 vec3 fragToLight = vec3(normalize(-light.direction));
@@ -105,9 +108,13 @@ vec3 fragToCamera = normalize(cameraPos - fragWorldPos);
 vec3 halfDir = normalize(fragToLight + fragToCamera);
 float specular = pow(max(dot(normal, halfDir), 0.0), 50.0); //If time: Map this //vec3(texture(material.specular, IN.texCoord));
 vec3 specularLight = vec3(light.colour) * specular * 0.33;
+// Soften specular highlights close to edges
+specularLight *= clamp(waterDepth / MAX_EDGE_DEPTH, 0.0, 1.0);
 
 // Calculate Fresnel component -> Water more transparent from deep angles and more reflective from shallow angles
-float refractWeighting = dot(fragToCamera, vec3(0, 1, 0));
+float refractWeighting = dot(fragToCamera, normal);
+refractWeighting = clamp(pow(refractWeighting, REFLECTIVE_POWER), 0.0, 1.0);
+
 
 vec4 fragColor = mix(reflectColour, refractColour, refractWeighting);
 // Give blue-green tint

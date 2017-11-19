@@ -71,6 +71,7 @@ Renderer::~Renderer() {
 	delete grass;
 	delete refractionQuad;
 	delete reflectionQuad;
+	delete sun;
 	CubeRobot::DeleteCube();
 }
 
@@ -114,8 +115,13 @@ void Renderer::SetupSceneA() {
 	if (dirLight) {
 		delete dirLight;
 	}
-	dirLight = new DirectionalLight(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0,1.0,1.0));
-	
+	dirLight = new DirectionalLight(glm::vec3(0.5f, -1.0f, 0.0f), glm::vec3(1.0,1.0,1.0));
+	sun = new SceneNode(Mesh::GenerateSimpleQuad(), "SunShader"); 
+	sunPosition = -dirLight->GetDirection() * 1000.0f; //TODO: Sun distance
+	sun->SetTransform(glm::translate(sunPosition));
+	sun->UseTexture("Sun");
+	heightMap->AddChild(sun);
+
 	if (spotlight) {
 		delete spotlight;
 	}
@@ -139,6 +145,7 @@ void Renderer::SetupSceneA() {
 	heightMap->AddChild(t);
 //	heightMap->SetInactive();
 
+
 	quad = Mesh::GenerateQuad();
 	
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
@@ -151,7 +158,7 @@ void Renderer::UpdateScene(float msec) {
 
 	camera->UpdateCamera(msec);
 	//particleSystem->UpdateParticles(msec);
-	//particleManager->Update(msec, camera->GetPosition());
+	particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -359,6 +366,7 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 	SHADER_MANAGER->AddShader("WaterShader", SHADERDIR"WaterVertex.glsl", SHADERDIR"WaterFragment.glsl");
 	SHADER_MANAGER->AddShader("CubeMapShader", SHADERDIR"skyboxVertex.glsl", SHADERDIR"skyboxFragment.glsl");
+	SHADER_MANAGER->AddShader("SunShader", SHADERDIR"SimpleBillBoardVertex.glsl", SHADERDIR"SimpleBillBoardFrag.glsl");
 }
 
 void Renderer::LoadTextures() {
@@ -367,6 +375,7 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("TerrainBump", TEXTUREDIR"Barren RedsDOT3.jpg");
 	TEXTURE_MANAGER->AddTexture("dudvMap", TEXTUREDIR"waterDUDV.png");
 	TEXTURE_MANAGER->AddTexture("waterBump", TEXTUREDIR"waterNormalMap.png");
+	TEXTURE_MANAGER->AddTexture("Sun", TEXTUREDIR"sun.png");
 	cubeMap = SOIL_load_OGL_cubemap(
 		TEXTUREDIR"lake1_lf.jpg",
 		TEXTUREDIR"lake1_rt.jpg",
@@ -400,6 +409,7 @@ void Renderer::SetupCamera() {
 // This was an attempt to make setting uniforms nicer but spiralled into a horrible mess
 void Renderer::UpdateUniforms() {
 	activeShaders.insert("CubeMapShader");
+	activeShaders.insert("Particle");
 	for (const auto& shader : activeShaders) {
 		std::vector<std::string> uniforms = SHADER_MANAGER->GetUniformNames(shader);
 		for (const auto& uniform : uniforms) {//TODO: Refactor
@@ -443,6 +453,9 @@ void Renderer::UpdateUniforms() {
 				else if (uniform == "projMatrix") {
 					SHADER_MANAGER->SetUniform(shader, uniform, projMatrix);
 				}
+				else if (uniform == "viewProjMatrix") {
+					SHADER_MANAGER->SetUniform(shader, uniform, projMatrix * viewMatrix);
+				}
 				else if (uniform == "textureMatrix") {
 					SHADER_MANAGER->SetUniform(shader, uniform, textureMatrix);
 				}
@@ -451,6 +464,12 @@ void Renderer::UpdateUniforms() {
 				}
 				else if (uniform == "cameraPos") {
 					SHADER_MANAGER->SetUniform(shader, uniform, camera->GetPosition());
+				}
+				else if (uniform == "cameraRight") {
+					SHADER_MANAGER->SetUniform(shader, uniform, camera->GetRight());
+				}
+				else if (uniform == "cameraUp") {
+					SHADER_MANAGER->SetUniform(shader, uniform, camera->GetUp());
 				}
 				else if (uniform == "time") {
 					SHADER_MANAGER->SetUniform(shader, uniform, time / 1000.0f);
@@ -463,6 +482,9 @@ void Renderer::UpdateUniforms() {
 				}
 				else if (uniform == "farPlane") {
 					SHADER_MANAGER->SetUniform(shader, uniform, farPlane);
+				}
+				else if (uniform == "particleCentre") { // Should remove this one if time allows
+					SHADER_MANAGER->SetUniform(shader, uniform, sunPosition); 
 				}
 				else {
 					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;

@@ -21,7 +21,7 @@ ParticleManager::ParticleManager()
 
 	//TODO: Move to main loader
 	texture = "Particle";
-	TEXTURE_MANAGER->AddTexture(texture, TEXTUREDIR"particle.DDS");
+	TEXTURE_MANAGER->AddTexture(texture, TEXTUREDIR"particle.png");
 
 	// Create and compile our GLSL program from the shaders
 	SHADER_MANAGER->AddShader("Particle", SHADERDIR"ParticleVertex.glsl", SHADERDIR"ParticleFragment.glsl");
@@ -38,56 +38,43 @@ ParticleManager::ParticleManager()
 	glGenBuffers(1, &billboardVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, billboardVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(billboardVerts), billboardVerts, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
 
 	glGenBuffers(1, &positionVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
 	glBufferData(GL_ARRAY_BUFFER, MAX_PARTICLES * FLOATS_PER_PARTICLE * sizeof(GL_FLOAT),
 		nullptr, GL_STREAM_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, FLOATS_PER_PARTICLE, GL_FLOAT, GL_FALSE, 0, 0);
 
 	glGenBuffers(1, &colourVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, colourVBO);
 	glBufferData(GL_ARRAY_BUFFER, MAX_PARTICLES * CHARS_PER_COLOUR * sizeof(GLubyte),
 		nullptr, GL_STREAM_DRAW);
 
-	glBindVertexArray(particleVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, billboardVBO);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-
-	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, FLOATS_PER_PARTICLE, GL_FLOAT, GL_FALSE, 0, 0);
-
-	
-	glBindBuffer(GL_ARRAY_BUFFER, colourVBO);
 	glEnableVertexAttribArray(2);
 	// Note: Normalised is true: This will map our unsigned chars [0, 255] to floats in [0, 1]
 	glVertexAttribPointer(2, CHARS_PER_COLOUR, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
-
+	
 	// Set up instancing
 	glVertexAttribDivisor(0, 0); // vertices : never update
 	glVertexAttribDivisor(1, 1); // position : update per instance
 	glVertexAttribDivisor(2, 1); // colour : update per instance   
 
-	GenerateNewParticles(100);
 }
 
 
 void ParticleManager::Rebuffer() {
 
 	glBindVertexArray(particleVAO);
-	// In openGL allocating storage may be faster than the synchronization -> 	https://www.khronos.org/opengl/wiki/Buffer_Object_Streaming
-	// Driver will return the memory block once it's not used.
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
-	glBufferData(GL_ARRAY_BUFFER, MAX_PARTICLES * FLOATS_PER_PARTICLE * sizeof(GLfloat), nullptr, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, particles.size() * FLOATS_PER_PARTICLE * sizeof(GLfloat), positionBuffer);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, numParticles * FLOATS_PER_PARTICLE * sizeof(GLfloat), positionBuffer);
 
 	glBindBuffer(GL_ARRAY_BUFFER, colourVBO);
-	glBufferData(GL_ARRAY_BUFFER, MAX_PARTICLES * CHARS_PER_COLOUR * sizeof(GLubyte),
-		nullptr, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, particles.size() * CHARS_PER_COLOUR * sizeof(GLubyte), colourBuffer);
-}
+	glBufferSubData(GL_ARRAY_BUFFER, 0, numParticles * CHARS_PER_COLOUR * sizeof(GLubyte), colourBuffer);
+} 
 
 
 
@@ -103,13 +90,14 @@ ParticleManager::~ParticleManager()
 }
 
 void ParticleManager::Render() {
-
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	SHADER_MANAGER->SetShader("Particle");
 	glBindVertexArray(particleVAO);
 	// Bind our texture in Texture Unit 0
 	glActiveTexture(GL_TEXTURE0);
 	TEXTURE_MANAGER->BindTexture(texture);
-	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0,	4, particles.size()); //TODO: Remove magic numbers
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0,	4, numParticles); //TODO: Remove magic numbers
 }
 
 // Returns index of the last used particle
@@ -135,17 +123,17 @@ GLuint ParticleManager::NextUnusedParticle()
 
 }
 
-void ParticleManager::Update(GLint msec, glm::vec3 cameraPos) {
+void ParticleManager::Update(GLfloat msec, glm::vec3 cameraPos) {
+	GenerateNewParticles(msec);
 	UpdateParticles(msec, cameraPos);
 	Rebuffer();
-	GenerateNewParticles(msec);
 }
 
-void ParticleManager::GenerateNewParticles(GLint msec) {
+void ParticleManager::GenerateNewParticles(GLfloat msec) {
 	int numNewParticles = msec * NEW_PARTICLES_PER_MS;
 	// Cap number of new particles to 16ms (60 FPS) in case of frame rate spike
 	const int MAX_NEW_PARTICLES = 16 * NEW_PARTICLES_PER_MS;
-	numNewParticles = max(numNewParticles, MAX_NEW_PARTICLES);
+	numNewParticles = min(numNewParticles, MAX_NEW_PARTICLES);
 	for (int i = 0; i < numNewParticles; ++i) {
 		int particleIndex = NextUnusedParticle();
 		particles[particleIndex].lifeRemaining = 5000.0f;
@@ -155,26 +143,26 @@ void ParticleManager::GenerateNewParticles(GLint msec) {
 
 		glm::vec3 mainDir = glm::vec3(0.0f, 10.0f, 0.0f);
 
-		glm::vec3 randDir = glm::vec3( // [-1000, 1000]
+		glm::vec3 randDir = glm::vec3( // [-1, 1]
 			(rand() % 2000 - 1000.0f) / 1000.0f,
 			(rand() % 2000 - 1000.0f) / 1000.0f,
 			(rand() % 2000 - 1000.0f) / 1000.0f
 		);
 
 		particles[particleIndex].vel = mainDir + randDir * spread;
+		particles[particleIndex].size = (rand() % 1000) / 100.0f + 20.0f; //TODO: Use RNG make better rand generation
 
+		particles[particleIndex].colour[0] = (GLubyte) rand() % 256;
+		particles[particleIndex].colour[1] = (GLubyte) rand() % 256;
+		particles[particleIndex].colour[2] = (GLubyte) rand() % 256;
+		particles[particleIndex].colour[3] = (GLubyte) (rand() % 256) / 3;
 
-		particles[particleIndex].colour[0] = rand() % 256;
-		particles[particleIndex].colour[1] = rand() % 256;
-		particles[particleIndex].colour[2] = rand() % 256;
-		particles[particleIndex].colour[3] = (rand() % 256) / 3;
-		particles[particleIndex].size = (rand() % 1000) / 2000.0f + 0.1f; //TODO: Use RNG make better rand generation
 	}
 }
 
 
-void ParticleManager::UpdateParticles(GLint msec, glm::vec3 cameraPos) {
-
+void ParticleManager::UpdateParticles(GLfloat msec, glm::vec3 cameraPos) {
+	numParticles = 0;
 	for (int i = 0; i < particles.size(); ++i) {
 		Particle& p = particles[i];
 		p.lifeRemaining -= msec;
@@ -187,15 +175,16 @@ void ParticleManager::UpdateParticles(GLint msec, glm::vec3 cameraPos) {
 			p.pos += p.vel * deltaTimeSec;
 			p.cameraDistance = glm::length2(p.pos - cameraPos);
 
-			positionBuffer[FLOATS_PER_PARTICLE * i + 0] = p.pos.x;
-			positionBuffer[FLOATS_PER_PARTICLE * i + 1] = p.pos.y;
-			positionBuffer[FLOATS_PER_PARTICLE * i + 2] = p.pos.z;
-			positionBuffer[FLOATS_PER_PARTICLE * i + 3] = p.size;
+			positionBuffer[FLOATS_PER_PARTICLE * numParticles + 0] = p.pos.x;
+			positionBuffer[FLOATS_PER_PARTICLE * numParticles + 1] = p.pos.y;
+			positionBuffer[FLOATS_PER_PARTICLE * numParticles + 2] = p.pos.z;
+			positionBuffer[FLOATS_PER_PARTICLE * numParticles + 3] = p.size;
 
-			colourBuffer[CHARS_PER_COLOUR * i + 0] = p.colour[0];
-			colourBuffer[CHARS_PER_COLOUR * i + 1] = p.colour[1];
-			colourBuffer[CHARS_PER_COLOUR * i + 2] = p.colour[2];
-			colourBuffer[CHARS_PER_COLOUR * i + 3] = p.colour[3];//TODO: Try fading out with time?
+			colourBuffer[CHARS_PER_COLOUR * numParticles + 0] = p.colour[0];
+			colourBuffer[CHARS_PER_COLOUR * numParticles + 1] = p.colour[1];
+			colourBuffer[CHARS_PER_COLOUR * numParticles + 2] = p.colour[2];
+			colourBuffer[CHARS_PER_COLOUR * numParticles + 3] = p.colour[3];
+			++numParticles;
 		}
 		else {
 			p.cameraDistance = -1.0f;

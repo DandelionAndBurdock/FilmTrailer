@@ -16,7 +16,7 @@ public:
 	~ParticleManager();
 
 	
-	void Update(GLint msec, glm::vec3 cameraPos);
+	void Update(GLfloat msec, glm::vec3 cameraPos);
 	void Render();
 protected:
 
@@ -25,9 +25,9 @@ protected:
 	GLuint NextUnusedParticle();
 
 	// Generate new particles
-	void GenerateNewParticles(GLint msec);
+	void GenerateNewParticles(GLfloat msec);
 
-	void UpdateParticles(GLint msec, glm::vec3 cameraPos);
+	void UpdateParticles(GLfloat msec, glm::vec3 cameraPos);
 
 
 	// Buffer for base quad
@@ -50,5 +50,8 @@ protected:
 
 	// Index of last u
 	GLuint lastUsedParticle;
+
+	// Number of active particles in the current frame
+	GLuint numParticles;
 };
 

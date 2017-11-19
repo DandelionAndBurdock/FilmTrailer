@@ -8,7 +8,7 @@ class DirectionalLight
 {
 public:
 	DirectionalLight(glm::vec3 dir, glm::vec3 col) :
-		direction(dir), colour(col) {}
+		direction(glm::normalize(dir)), colour(col) {}
 	~DirectionalLight() {}
 
 	// Rotates the direction theta degrees about axis

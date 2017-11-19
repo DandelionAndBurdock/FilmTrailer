@@ -316,3 +316,23 @@ GLfloat Mesh::CalculateBoundingRadius() {
 	}
 	return sqrt(max);
 }
+
+
+Mesh* Mesh::GenerateSimpleQuad() {
+	const int VERTS_PER_QUAD = 4;
+	Mesh* m = new Mesh();
+
+	m->type = GL_TRIANGLE_STRIP;
+	m->numVertices = VERTS_PER_QUAD;
+
+	m->vertices = new glm::vec3[m->numVertices];
+	m->vertices[0] = glm::vec3(-0.5f, -0.5f, +0.0f); // Bottom Left
+	m->vertices[1] = glm::vec3(+0.5f, -0.5f, +0.0f); // Bottom Right
+	m->vertices[2] = glm::vec3(-0.5f, +0.5f, +0.0f); // Top Left
+	m->vertices[3] = glm::vec3(+0.5f, +0.5f, +0.0f); // Top Right
+
+
+	m->BufferData();
+
+	return m;
+}

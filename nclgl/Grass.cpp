@@ -83,5 +83,5 @@ void Grass::Draw() {
 	glDrawArrays(GL_POINTS, 0, numClusters);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUseProgram(0);
-	glDisable(GL_BLEND);
+	//glDisable(GL_BLEND);
 }

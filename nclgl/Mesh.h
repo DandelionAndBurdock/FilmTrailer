@@ -18,6 +18,7 @@ public:
 
 	static Mesh* GenerateTriangle();
 	static Mesh* GenerateQuad();
+	static Mesh* GenerateSimpleQuad();
 	static Mesh* GenerateNullQuad();
 
 	void BufferVertices(glm::vec3* newVertices);

@@ -102,7 +102,9 @@ protected:
 	// Modify ambient strenght of the scene to change mood
 	GLfloat ambientStrength;
 
-	Mesh* tree; 
+	OBJMesh* tree; 
+	SceneNode* sun;
+	glm::vec3 sunPosition;
 	GLuint cubeMap;
 
 	OmniShadow* omniShadow;
