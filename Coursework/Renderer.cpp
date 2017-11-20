@@ -15,6 +15,8 @@
 #include "nclgl\Grass.h"
 #include "nclgl\Water.h"
 #include "nclgl\OmniShadow.h"
+#include "nclgl\FlareManager.h"
+#include "nclgl\Sun.h"
 
 #include <algorithm> // For min()
 #include <iostream>
@@ -42,6 +44,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	lightning = new Lightning(glm::vec3(500.0, 500.0, 0.0), glm::vec3(200.0, 0.0, 200.0));
 
+	flareManager = new FlareManager();
+
 	ConfigureOpenGL();
 
 	init = true;
@@ -52,7 +56,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	nearPlane = 1.0f;
 	farPlane = 10000.0f;
-	//omniShadow = new OmniShadow(screenSize.x, screenSize.y);
+	omniShadow = new OmniShadow(screenSize.x, screenSize.y);
 }
 
 
@@ -66,7 +70,7 @@ Renderer::~Renderer() {
 	delete sceneARoot;
 	delete camera;
 	delete cameraControl;
-	delete particleSystem;
+//	delete particleSystem;
 	delete particleManager;
 	delete grass;
 	delete refractionQuad;
@@ -105,20 +109,20 @@ void Renderer::SetupSceneA() {
 
 
 	permanentLights.clear();
-	//permanentLights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(1.0f), 2000.0f));
+	permanentLights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
-	for (auto& light : lights) {
-		heightMap->AddChild(light);
+	for (auto& permanentLight : permanentLights) {
+		heightMap->AddChild(permanentLight);
 	}
 	if (dirLight) {
 		delete dirLight;
 	}
-	dirLight = new DirectionalLight(glm::vec3(0.5f, -1.0f, 0.0f), glm::vec3(1.0,1.0,1.0));
-	sun = new SceneNode(Mesh::GenerateSimpleQuad(), "SunShader"); 
-	sunPosition = -dirLight->GetDirection() * 1000.0f; //TODO: Sun distance
-	sun->SetTransform(glm::translate(sunPosition));
+
+	sun = new Sun(glm::vec3(0.5f, -1.0f, 0.0f), glm::vec3(1.0, 1.0, 1.0), 1000.0f);
+	dirLight = sun->GetLight();
+	sun->SetTransform(glm::translate(sun->GetPosition()));
 	sun->UseTexture("Sun");
 	heightMap->AddChild(sun);
 
@@ -191,7 +195,7 @@ void Renderer::UpdateScene(float msec) {
 	for (auto& light : lights) {
 		light->UpdateTransform();
 	}
-
+	flareManager->PrepareToRender(camera->GetPosition(), projMatrix * viewMatrix, sun->GetPosition());
 
 	SHADER_MANAGER->SetUniform("Grass", "modelMatrix", modelMatrix);
 	SHADER_MANAGER->SetUniform("Grass", "viewMatrix", viewMatrix);
@@ -211,75 +215,32 @@ void Renderer::RenderObjects(const glm::vec4& clipPlane) {
 
 }
 void Renderer::RenderScene() {
-	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//*************** WATER**************************
 	// Enable clipping planes so that we don't have to process geometry
 	// above/below the water for refraction/reflection
 	glEnable(GL_CLIP_DISTANCE0);
-
-	//*************** WATER**************************
-	//TODO: Reflection Pass
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	water->BindReflectionFramebuffer();
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	// To get correct reflection sample we need to mirror (reflect) the camera position/pitch relative to the water plane
-	float cameraMirrorShift = camera->GetPosition().y - water->GetHeight(); // Height of camera above the water plane
-	camera->Reflect(cameraMirrorShift);
-	SHADER_MANAGER->SetUniform("CubeMapShader", "viewMatrix", camera->BuildViewMatrix());
-	DrawSkybox();
-  	waterNode->SetInactive();
-	RenderObjects(glm::vec4(0.0, 1.0, 0.0, -water->GetHeight()));
-	//TODO: Refraction Pass
-	camera->Reflect(-cameraMirrorShift);
-	SHADER_MANAGER->SetUniform("CubeMapShader", "viewMatrix", camera->BuildViewMatrix());
-	water->BindRefractionFramebuffer();
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	DrawSkybox();
-	RenderObjects(glm::vec4(0.0, -1.0, 0.0, water->GetHeight()));
-	water->UnbindFramebuffer(); //Binds Window FBO
+	SetupReflectionBuffer();
+	SetupRefractionBuffer();
 	glDisable(GL_CLIP_DISTANCE0);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	//ShadowMapFirstPass();
 
-
-	//omniShadow->BindForReading();
+	//*************** SHADOW *****************************
+	ShadowMapFirstPass();
+	omniShadow->BindForReading();
+	//*************RENDER SCENE**************************
 	DrawSkybox();
-	waterNode->SetActive();
+	//waterNode->SetActive();
 	RenderObjects(NO_CLIP_PLANE);
-	//TODO: Tidy
-	//SHADER_MANAGER->SetUniform("Particle", "viewProjMatrix", projMatrix * viewMatrix);
-	//SHADER_MANAGER->SetUniform("Particle", "cameraRight", camera->GetRight());
-	//SHADER_MANAGER->SetUniform("Particle", "cameraUp", camera->GetUp());
-
 	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
 	particleManager->Render();
-	//DrawLine();
-	//currentShader = ShaderManager::GetInstance()->GetShader("QuadShader");
-	//currentShader->Use();
-	//UpdateShaderMatrices();
-	//Texture* tex = TextureManager::GetInstance()->GetTexture("Noise");
-	//tex->Bind();
-	
-	projMatrix = glm::ortho(-1, 1, -1, 1);
-	viewMatrix = glm::mat4();
-	glViewport(0, 0, 200, 200);
-	SHADER_MANAGER->SetShader("QuadShader");
-	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
-	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", viewMatrix);
-	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", projMatrix);
-	
-	SHADER_MANAGER->SetUniform("QuadShader", "diffuseTex", 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, water->GetReflectionTex());
-	reflectionQuad->Draw(); //TODO: Don't need two quads unless for naming
-	
-	glViewport(300, 0, 200, 200);
-	glBindTexture(GL_TEXTURE_2D, water->GetRefractionTex());
-	reflectionQuad->Draw();
+	flareManager->Render();
 
-
-	// Reset view port
-	glViewport(0, 0, screenSize.x, screenSize.y);
+	//*************RENDER GUI**************************
+	//RenderReflectionQuad();
+	//RenderRefractionQuad();
 	DrawFPS();
 	SwapBuffers();
 	glUseProgram(0);
@@ -361,12 +322,14 @@ void Renderer::SetupScenes() {
 
 void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
-	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
+	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
+//	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 	SHADER_MANAGER->AddShader("WaterShader", SHADERDIR"WaterVertex.glsl", SHADERDIR"WaterFragment.glsl");
 	SHADER_MANAGER->AddShader("CubeMapShader", SHADERDIR"skyboxVertex.glsl", SHADERDIR"skyboxFragment.glsl");
 	SHADER_MANAGER->AddShader("SunShader", SHADERDIR"SimpleBillBoardVertex.glsl", SHADERDIR"SimpleBillBoardFrag.glsl");
+	SHADER_MANAGER->AddShader("FlareShader", SHADERDIR"FlareVertex.glsl", SHADERDIR"FlareFragment.glsl");
 }
 
 void Renderer::LoadTextures() {
@@ -376,6 +339,10 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("dudvMap", TEXTUREDIR"waterDUDV.png");
 	TEXTURE_MANAGER->AddTexture("waterBump", TEXTUREDIR"waterNormalMap.png");
 	TEXTURE_MANAGER->AddTexture("Sun", TEXTUREDIR"sun.png");
+	for (int i = 1; i <= 8; ++i) {
+		TEXTURE_MANAGER->AddTexture(std::string("Flare") + std::to_string(i), TEXTUREDIR + std::string("Flare") + std::to_string(i) + std::string(".png"));
+	}
+	
 	cubeMap = SOIL_load_OGL_cubemap(
 		TEXTUREDIR"lake1_lf.jpg",
 		TEXTUREDIR"lake1_rt.jpg",
@@ -484,7 +451,7 @@ void Renderer::UpdateUniforms() {
 					SHADER_MANAGER->SetUniform(shader, uniform, farPlane);
 				}
 				else if (uniform == "particleCentre") { // Should remove this one if time allows
-					SHADER_MANAGER->SetUniform(shader, uniform, sunPosition); 
+					SHADER_MANAGER->SetUniform(shader, uniform, sun->GetPosition()); 
 				}
 				else {
 					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
@@ -595,6 +562,9 @@ void Renderer::UpdateLightUniforms(const std::string& shader, std::string unifor
 }
 
 void Renderer::ShadowMapFirstPass() {
+	if (lights.empty()) {
+		return;
+	}
 	omniShadow->BindForWriting();
 	omniShadow->SetUniforms(lights[0]);
 	projMatrix = glm::perspective(glm::radians(90.0f), screenSize.x / screenSize.y, 1.0f, 100.0f);//TODO: Check far plane
@@ -603,9 +573,60 @@ void Renderer::ShadowMapFirstPass() {
 }
 
 void Renderer::DrawSkybox() {
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMap);
 	glDepthMask(GL_FALSE);
 	SHADER_MANAGER->SetShader("CubeMapShader");
 	quad->Draw();
 	glUseProgram(0);
 	glDepthMask(GL_TRUE);
+}
+
+
+void Renderer::RenderReflectionQuad() {
+	projMatrix = glm::ortho(-1, 1, -1, 1);
+	viewMatrix = glm::mat4();
+	glViewport(0, 0, 200, 200);
+	SHADER_MANAGER->SetShader("QuadShader");
+	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", viewMatrix);
+	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", projMatrix);
+
+	SHADER_MANAGER->SetUniform("QuadShader", "diffuseTex", 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, water->GetReflectionTex());
+	reflectionQuad->Draw(); //TODO: Don't need two quads unless for naming
+
+	// Reset view port
+	glViewport(0, 0, screenSize.x, screenSize.y);
+}
+void Renderer::RenderRefractionQuad() {
+	glViewport(300, 0, 200, 200);
+	glBindTexture(GL_TEXTURE_2D, water->GetRefractionTex());
+	reflectionQuad->Draw();
+
+
+	// Reset view port
+	glViewport(0, 0, screenSize.x, screenSize.y);
+}
+
+void Renderer::SetupReflectionBuffer() {
+	water->BindReflectionFramebuffer();
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	// To get correct reflection sample we need to mirror (reflect) the camera position/pitch relative to the water plane
+	float cameraMirrorShift = camera->GetPosition().y - water->GetHeight(); // Height of camera above the water plane
+	camera->Reflect(cameraMirrorShift);
+	SHADER_MANAGER->SetUniform("CubeMapShader", "viewMatrix", camera->BuildViewMatrix());
+	DrawSkybox();
+	waterNode->SetInactive();
+	RenderObjects(glm::vec4(0.0, 1.0, 0.0, -water->GetHeight()));
+	camera->Reflect(-cameraMirrorShift);
+}
+
+void Renderer::SetupRefractionBuffer() {
+	SHADER_MANAGER->SetUniform("CubeMapShader", "viewMatrix", camera->BuildViewMatrix());
+	water->BindRefractionFramebuffer();
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	DrawSkybox();
+	RenderObjects(glm::vec4(0.0, -1.0, 0.0, water->GetHeight()));
+	water->UnbindFramebuffer(); //Binds Window FBO
 }

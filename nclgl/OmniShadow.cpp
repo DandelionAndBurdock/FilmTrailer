@@ -31,8 +31,7 @@ OmniShadow::~OmniShadow()
 
 void OmniShadow::Initialise() {
 	glGenFramebuffers(1, &FBO);
-
-	glGenTextures(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	// Create depth buffer
 	
@@ -40,35 +39,38 @@ void OmniShadow::Initialise() {
 	// Create cube map
 	glGenTextures(1, &shadowCubeMapID);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMapID);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
+	
 	// Setup each face of the cube map (GL_TEXTURE_CUBE_MAP_POSITIVE_X is the first enum)
 	for (GLuint i = 0; i < Shadow::NUM_FACES; ++i) {
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	}
 
+	glGenTextures(1, &depthTexID);
 	glBindTexture(GL_TEXTURE_2D, depthTexID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexID, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
+	
 	// During the first shadow pass only the depth information is rendered so disable reads and writes to the colour buffer
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
-
+	
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		__debugbreak();
 		return;
 	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
@@ -79,7 +81,7 @@ void OmniShadow::BindForWriting() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 void OmniShadow::BindForReading() {
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMapID);
 }
 

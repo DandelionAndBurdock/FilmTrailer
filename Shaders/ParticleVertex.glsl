@@ -1,8 +1,8 @@
-#version 150 core
+#version 330 core
 
-in vec3 modelPosition;	// Quad vertex positions
-in vec4 xyzs;		// Position of particle centre and particle size
-in vec4 colour;		// RGBA
+in layout(location = 0) vec3 modelPosition;	// Quad vertex positions
+in layout(location = 1) vec4 xyzs;		// Position of particle centre and particle size
+in layout(location = 2) vec4 colour;		// RGBA
 
 out vec2 texCoords;
 out vec4 particleColour;

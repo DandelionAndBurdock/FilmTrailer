@@ -108,7 +108,6 @@ void Water::SetupRefractionFrameBuffer() {
 
 	glGenTextures(1, &refractionColourTexFBO);
 	TEXTURE_MANAGER->AddTexture("Refraction", refractionColourTexFBO);
-	glGenTextures(1, &refractionDepthTexFBO);
 
 	glBindTexture(GL_TEXTURE_2D, refractionColourTexFBO);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, REFRACTION_WIDTH, REFRACTION_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);

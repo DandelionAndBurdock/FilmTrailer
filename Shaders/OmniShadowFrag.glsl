@@ -5,14 +5,15 @@
 uniform sampler2D diffuseTex;
 uniform sampler2D bumpTex;
 
-uniform samplerCube depthMap;
+uniform samplerCube depthMapTex;
 
+#define MAX_POINT_LIGHTS 1
 struct PointLight {
     vec4 position;
 	vec4 colour;
 	float radius;
 };
-uniform PointLight pointLight;
+uniform PointLight pointLight[MAX_POINT_LIGHTS];
 
 uniform vec3 cameraPos;
 
@@ -26,6 +27,8 @@ uniform float ambientStrength;
 	vec3 binormalWorld;
  } IN;
 
+ uniform float farPlane;
+ 
 out vec4 gl_FragColor;
 
 
@@ -37,7 +40,7 @@ vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fr
 
 void main(){
 	// Test if this fragment is in shadow
-	float shadow = CalculateShadow(worldPos);
+	float shadow = CalculateShadow(IN.worldPos);
 	// Profile if (shadow) {discard;}
 
 	// Sample normal from bump map 
@@ -48,7 +51,7 @@ void main(){
 	vec3 fragToCamera = normalize(cameraPos - IN.worldPos);
 	
 
-	fragColour = PointLightContribution(pointLight, normal, IN.worldPos, fragToCamera);
+	vec3 fragColour = PointLightContribution(pointLight[0], normal, IN.worldPos, fragToCamera, shadow);
 
 	
 	//gl_FragColor = vec4(IN.normalWorld, 1.0);
@@ -57,10 +60,10 @@ void main(){
 
 float CalculateShadow(vec3 worldPos){
 	// Vector from fragment position to light
-	vec3 fragToLight = worldPos - pointLight.pos.xyz;
+	vec3 fragToLight = worldPos - pointLight[0].position.xyz;
 
 	//  Depth of closest object in the light direction	
-    float closestDepth = texture(depthMap, fragToLight).r;
+    float closestDepth = texture(depthMapTex, fragToLight).r;
 	
 	// Renormalise closest depth from range [0, 1] to [0, farPlane]
 	closestDepth *= farPlane;
@@ -69,31 +72,15 @@ float CalculateShadow(vec3 worldPos){
 	float currentDepth = length(fragToLight);
 	
 	// Bias to prevent shadow acne. Give surfaces which are almost perpendicular to the light a smaller bias
-	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
-	
+	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
+	float bias = 0.05;
+	return currentDepth;
 	if (currentDepth > closestDepth + bias)
 		return 1.0;
 	else
 		return 0.0;
 }
-vec3 DirectionalLightContribution(DirectionalLight light, vec3 normal, vec3 fragPos, vec3 fragToCamera, float shadow){
-	// Unit vector from fragment position to light
-    vec3 fragToLight = vec3(normalize(-light.direction));
-    // Diffuse contribution : Proportional to cosine between normal and incident light ray (Lambert)
-	float diffuse = max(dot(normal, fragToLight), 0.0);
-    // Specular Contribution : Proportional to the cosine between the normal vector and 
-	// the vector half way between the eye vector and light direction
-    vec3 halfDir = normalize(fragToLight + fragToCamera);
-    float specular = pow(max(dot(normal, halfDir), 0.0), 50.0); //TODO: Map this
-    
-	// Total:
-	vec3 diffuseLight = vec3(light.colour) * diffuse * vec3(texture(diffuseTex, IN.texCoord));
-	vec3 ambientLight = vec3(light.colour) * (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord)); //TODO: Should really have seperate ambient sttrength for spotlight, dirlight, pointlight
-    vec3 specularLight = vec3(light.colour) * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
-	
-	vec3 diffuseSpecular = (1.0 - shadow) * (diffuseLight + specularLight);
-    return (ambientLight + diffuseSpecular);
-}
+
 
 // World space calculation of fragment colour contribution from a point light
 vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fragToCamera, float shadow)
@@ -115,8 +102,9 @@ vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fr
 	
 	// Total:
 	vec3 diffuseLight = vec3(light.colour) * diffuse * vec3(texture(diffuseTex, IN.texCoord));
-	vec3 ambientLight = vec3(light.colour) * (ambientStrength / MAX_POINT_LIGHTS) * vec3(texture(diffuseTex, IN.texCoord));
+	vec3 ambientLight = vec3(light.colour) * ambientStrength * vec3(texture(diffuseTex, IN.texCoord));
     vec3 specularLight = vec3(light.colour) * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
     vec3 diffuseSpecular = (1.0 - shadow) * (diffuseLight + specularLight);
-    return (ambientLight + diffuseSpecular);
+    //return (ambientLight + diffuseSpecular);
+	return vec3(shadow);
 }

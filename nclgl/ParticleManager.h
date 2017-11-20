@@ -18,6 +18,8 @@ public:
 	
 	void Update(GLfloat msec, glm::vec3 cameraPos);
 	void Render();
+
+	void SetSpawnArea();
 protected:
 
 	void Rebuffer();
@@ -28,6 +30,7 @@ protected:
 	void GenerateNewParticles(GLfloat msec);
 
 	void UpdateParticles(GLfloat msec, glm::vec3 cameraPos);
+
 
 
 	// Buffer for base quad

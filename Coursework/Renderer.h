@@ -23,6 +23,8 @@ class Spotlight;
 class Grass; //TODO: Move to heightmap
 class Water;
 class OmniShadow;
+class FlareManager;
+class Sun;
 
 class Renderer : public OGLRenderer {
 public:
@@ -51,6 +53,12 @@ protected:
 	void SetupScenes();
 	void SetupSceneA();
 	void ConfigureOpenGL();
+
+	void SetupReflectionBuffer();
+	void SetupRefractionBuffer();
+	// Helper Functions
+	void RenderReflectionQuad();
+	void RenderRefractionQuad();
 
 	void ShadowMapFirstPass();
 
@@ -103,8 +111,7 @@ protected:
 	GLfloat ambientStrength;
 
 	OBJMesh* tree; 
-	SceneNode* sun;
-	glm::vec3 sunPosition;
+	Sun* sun;
 	GLuint cubeMap;
 
 	OmniShadow* omniShadow;
@@ -115,4 +122,5 @@ protected:
 	GLfloat nearPlane;
 	GLfloat farPlane;
 
+	FlareManager* flareManager;
 };

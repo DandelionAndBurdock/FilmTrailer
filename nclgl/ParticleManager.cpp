@@ -67,7 +67,9 @@ ParticleManager::ParticleManager()
 
 
 void ParticleManager::Rebuffer() {
-
+	if (numParticles == 0) {
+		return;
+	}
 	glBindVertexArray(particleVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, numParticles * FLOATS_PER_PARTICLE * sizeof(GLfloat), positionBuffer);
@@ -124,9 +126,9 @@ GLuint ParticleManager::NextUnusedParticle()
 }
 
 void ParticleManager::Update(GLfloat msec, glm::vec3 cameraPos) {
-	GenerateNewParticles(msec);
 	UpdateParticles(msec, cameraPos);
 	Rebuffer();
+	GenerateNewParticles(msec);
 }
 
 void ParticleManager::GenerateNewParticles(GLfloat msec) {
@@ -150,7 +152,8 @@ void ParticleManager::GenerateNewParticles(GLfloat msec) {
 		);
 
 		particles[particleIndex].vel = mainDir + randDir * spread;
-		particles[particleIndex].size = (rand() % 1000) / 100.0f + 20.0f; //TODO: Use RNG make better rand generation
+		//particles[particleIndex].size = (rand() % 1000) / 100.0f + 20.0f; //TODO: Use RNG make better rand generation
+		particles[particleIndex].size =100.0f; //TODO: Use RNG make better rand generation
 
 		particles[particleIndex].colour[0] = (GLubyte) rand() % 256;
 		particles[particleIndex].colour[1] = (GLubyte) rand() % 256;
