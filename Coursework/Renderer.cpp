@@ -40,8 +40,9 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	text = new TextRenderer(width, height, FONTSDIR"arial.ttf", 30, glm::vec3(1.0f, 1.0f, 1.0f));
 
-	//PerlinNoise p;
-	//p.GenerateTexture();
+	PerlinNoise p;
+	p.GenerateTexture("Noise");
+
 
 	lightning = new Lightning(glm::vec3(500.0, 500.0, 0.0), glm::vec3(200.0, 0.0, 200.0));
 
@@ -60,7 +61,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	omniShadow = new OmniShadow(screenSize.x, screenSize.y);
 
 	postProcessor = new PostProcessor(screenSize.x, screenSize.y);
-
+	//postProcessor = new PostProcessor(800, 600);
 	sceneQuad = Mesh::GenerateQuad();
 }
 
@@ -88,7 +89,8 @@ Renderer::~Renderer() {
 
 void Renderer::SetupSceneA() {
 
-	terrain = new HeightMap(TEXTUREDIR"terrain.raw");
+	//terrain = new HeightMap(TEXTUREDIR"Flat.png");
+	terrain = new HeightMap();
 	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
 	grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	sceneARoot = new SceneNode();
@@ -163,12 +165,16 @@ void Renderer::SetupSceneA() {
 }
 
 void Renderer::UpdateScene(float msec) {
+	glActiveTexture(GL_TEXTURE5);
+	//TEXTURE_MANAGER->BindTexture("Noise");
+	TEXTURE_MANAGER->BindTexture("TerrainBump");
+
 	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);
 	CalculateFPS(msec); 
 
 	camera->UpdateCamera(msec);
 	//particleSystem->UpdateParticles(msec);
-	particleManager->Update(msec, camera->GetPosition());
+	//particleManager->Update(msec, camera->GetPosition());
 	//cameraControl->Update(msec);
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
@@ -258,7 +264,7 @@ void Renderer::DrawSceneToBuffer() {
 	DrawSkybox();
 	RenderObjects(NO_CLIP_PLANE);
 	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
-	particleManager->Render();
+	//particleManager->Render();
 	flareManager->Render();
 }
 
@@ -343,20 +349,27 @@ void Renderer::DrawFPS() {
 
 void Renderer::SetupScenes() {
 	SetupSceneA();
+	SetupSceneB();
 }
 
 
 void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
-	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
-	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
-	//SHADER_MANAGER->AddShader("ProcessShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"ProcessFrag.glsl");
+	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
+	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
+	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingHeightVertex.glsl", SHADERDIR"LightingFragment.glsl");
+	
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 	SHADER_MANAGER->AddShader("WaterShader", SHADERDIR"WaterVertex.glsl", SHADERDIR"WaterFragment.glsl");
 	SHADER_MANAGER->AddShader("CubeMapShader", SHADERDIR"skyboxVertex.glsl", SHADERDIR"skyboxFragment.glsl");
 	SHADER_MANAGER->AddShader("SunShader", SHADERDIR"SimpleBillBoardVertex.glsl", SHADERDIR"SimpleBillBoardFrag.glsl");
 	SHADER_MANAGER->AddShader("FlareShader", SHADERDIR"FlareVertex.glsl", SHADERDIR"FlareFragment.glsl");
+
+	// Post processing shaders
+	SHADER_MANAGER->AddShader("BlurShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BlurFragment.glsl");
+	SHADER_MANAGER->AddShader("BloomShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BloomFragment.glsl");
+	SHADER_MANAGER->AddShader("ContrastShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"ContrastFragment.glsl");
 }
 
 void Renderer::LoadTextures() {
@@ -426,6 +439,9 @@ void Renderer::UpdateUniforms() {
 				else if (uniform == "depthMapTex") {
 					SHADER_MANAGER->SetUniform(shader, uniform, 4);
 				}
+				else if (uniform == "heightMapTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 5);
+				}
 				else if (uniform == "cubeTex") {
 					SHADER_MANAGER->SetUniform(shader, uniform, 0);
 				}
@@ -488,6 +504,7 @@ void Renderer::UpdateUniforms() {
 
 	}
 }
+
 
 void Renderer::UpdateLightUniforms(const std::string& shader, std::string uniform) {
 	if (uniform.find("directionalLights") != std::string::npos) {

@@ -1,6 +1,8 @@
 #pragma once
 #include "GL/glew.h"
 
+#include <string>
+
 class PerlinNoise
 {
 public:
@@ -8,7 +10,7 @@ public:
 	~PerlinNoise();
 
 	void GenerateNoise();
-	void GenerateTexture(); //TODO: Accept name
+	void GenerateTexture(const std::string& handle); 
 protected:
 	GLint dimensions;
 	GLfloat* noiseValues;

@@ -1,25 +1,41 @@
 #include "PostProcessor.h"
 
+#include "ShaderManager.h"
 
+#include "../glm/mat4x4.hpp"
+#include "../glm/gtc/matrix_transform.hpp"
+
+#include "Mesh.h"
 
 PostProcessor::PostProcessor(GLuint screenWidth, GLuint screenHeight)
 {
 	texWidth = screenWidth;
 	texHeight = screenHeight;
 	Initialise();
+	
+	sceneQuad = Mesh::GenerateQuad();
 
+	blurPasses = 1;
+
+	contrastLevel = 3.0;
+
+	finalProcessTex = sceneColourTex;
 }
 
 
 PostProcessor::~PostProcessor()
 {
 	glDeleteFramebuffers(1, &sceneFBO);
+	glDeleteFramebuffers(1, &processFBO);
+	// Delete textures-> have overwitten one of them
+	delete sceneQuad;
 }
 
 
 
 void PostProcessor::Initialise() {
 	InitialiseSceneFBO();
+	InitialiseProcessFBO();
 }
 
 void PostProcessor::InitialiseSceneFBO() {
@@ -59,6 +75,21 @@ void PostProcessor::InitialiseSceneFBO() {
 
 }
 
+void PostProcessor::InitialiseProcessFBO() {
+	glGenFramebuffers(1, &processFBO);
+	for (int i = 0; i < 2; ++i) {
+		glGenTextures(1, &processColourTex[i]);
+		glBindTexture(GL_TEXTURE_2D, processColourTex[i]);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texWidth, 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	}
+
+}
+
 void PostProcessor::BindSceneFBO() {
 	glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -66,11 +97,104 @@ void PostProcessor::BindSceneFBO() {
 
 
 void PostProcessor::ProcessScene() {
-	finalProcessTex = sceneColourTex;
+	//Bloom(sceneColourTex);
+	//Contrast(finalProcessTex);
+	//GaussianBlur(sceneColourTex);
 }
 
 void PostProcessor::BindProcessedTexture(){
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, finalProcessTex);
+}
+
+void PostProcessor::GaussianBlur(GLuint startTexture) {
+	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
+	glClear(GL_COLOR_BUFFER_BIT);
+	SHADER_MANAGER->SetUniform("BlurShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
+	SHADER_MANAGER->SetUniform("BlurShader", "viewMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("BlurShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("BlurShader", "pixelSize", glm::vec2(1.0f / texWidth, 1.0f / texHeight));
+	SHADER_MANAGER->SetUniform("BlurShader", "diffuseTex", 0);
+
+	glDisable(GL_DEPTH_TEST);
+	glActiveTexture(GL_TEXTURE0);
+
+	GLuint tex0 = startTexture; // Save memory
+	processColourTex[0] = startTexture;
+	for (int i = 0; i < blurPasses; ++i) {
+		// First pass
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, processColourTex[1], 0);
+		glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
+		SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 0);
+		
+		sceneQuad->Draw();
+
+		// Second pass
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, processColourTex[0], 0);
+		glBindTexture(GL_TEXTURE_2D, processColourTex[1]);
+		SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 1);
+
+		sceneQuad->Draw();
+	}
+	finalProcessTex = processColourTex[0];
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_DEPTH_TEST);
+}
+
+
+void PostProcessor::Contrast(GLuint startTexture) {
+	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	SHADER_MANAGER->SetUniform("ContrastShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
+	SHADER_MANAGER->SetUniform("ContrastShader", "viewMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("ContrastShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("ContrastShader", "pixelSize", glm::vec2(1.0f / texWidth, 1.0f / texHeight));
+	SHADER_MANAGER->SetUniform("ContrastShader", "diffuseTex", 0);
+	SHADER_MANAGER->SetUniform("ContrastShader", "contrast", contrastLevel);
+
+	glDisable(GL_DEPTH_TEST);
+	glActiveTexture(GL_TEXTURE0);
+	
+	processColourTex[0] = startTexture;
+
+	glBindTexture(GL_TEXTURE_2D, startTexture);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, processColourTex[1], 0);
+	finalProcessTex = processColourTex[1];
+
+	sceneQuad->Draw();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_DEPTH_TEST);
+
+}
+
+
+void PostProcessor::Bloom(GLuint startTexture) {
+	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	SHADER_MANAGER->SetUniform("BloomShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
+	SHADER_MANAGER->SetUniform("BloomShader", "viewMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("BloomShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("BloomShader", "pixelSize", glm::vec2(1.0f / texWidth, 1.0f / texHeight));
+	SHADER_MANAGER->SetUniform("BloomShader", "diffuseTex", 0);
+
+	processColourTex[0] = startTexture;
+
+	glDisable(GL_DEPTH_TEST);
+	glActiveTexture(GL_TEXTURE0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D, processColourTex[1], 0);
+	glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
+	sceneQuad->Draw();
+
+	finalProcessTex = processColourTex[1];
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_DEPTH_TEST);
 }

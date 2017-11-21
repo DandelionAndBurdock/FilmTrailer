@@ -13,7 +13,7 @@ struct PointLight {
 	vec4 colour;
 	float radius;
 };
-uniform PointLight pointLight[MAX_POINT_LIGHTS];
+uniform PointLight pointLights[MAX_POINT_LIGHTS];
 
 uniform vec3 cameraPos;
 
@@ -51,7 +51,7 @@ void main(){
 	vec3 fragToCamera = normalize(cameraPos - IN.worldPos);
 	
 
-	vec3 fragColour = PointLightContribution(pointLight[0], normal, IN.worldPos, fragToCamera, shadow);
+	vec3 fragColour = PointLightContribution(pointLights[0], normal, IN.worldPos, fragToCamera, shadow);
 
 	
 	//gl_FragColor = vec4(IN.normalWorld, 1.0);
@@ -60,7 +60,7 @@ void main(){
 
 float CalculateShadow(vec3 worldPos){
 	// Vector from fragment position to light
-	vec3 fragToLight = worldPos - pointLight[0].position.xyz;
+	vec3 fragToLight = worldPos - pointLights[0].position.xyz;
 
 	//  Depth of closest object in the light direction	
     float closestDepth = texture(depthMapTex, fragToLight).r;
@@ -74,7 +74,7 @@ float CalculateShadow(vec3 worldPos){
 	// Bias to prevent shadow acne. Give surfaces which are almost perpendicular to the light a smaller bias
 	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
 	float bias = 0.05;
-	return currentDepth;
+	
 	if (currentDepth > closestDepth + bias)
 		return 1.0;
 	else

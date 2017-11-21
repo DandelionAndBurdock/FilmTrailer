@@ -77,7 +77,12 @@ void main() {
 	vec3 windDirection = normalize(vec3(1.0, 0.0, 1.0));
 	// Wind strength at this cluster position
     float localWindStrength = windStrength * (0.5f+sin(dot(grassClusterPosition, windDirection)/ 30.0 + time*1.2f)); 
-
+	// Put some asymmetry in the direction so it looks less artificial
+	if (localWindStrength < 0)
+		windStrength *= 0.2;
+	else
+		windStrength *= 0.3;
+		
    // Model-View-Projection Matrix
    mat4 mvp = projMatrix * viewMatrix * modelMatrix;
 
@@ -100,27 +105,27 @@ void main() {
 		float texCoordEndX = texCoordBeginX + 0.25f;
 		
 		// Top Left Vertex
-		vec3 topLeft = grassClusterPosition - rotatedAxisDir * halfQuadLength;// +windDirection * localWindStrength;
+		vec3 topLeft = grassClusterPosition - rotatedAxisDir * halfQuadLength +windDirection * localWindStrength;
 		topLeft.y += grassClusterHeight;
 		gl_Position = mvp * vec4(topLeft, 1.0);
 		OUT.texCoord = vec2(texCoordBeginX, 1.0);
 		EmitVertex();
 		
 		// Bottom Left Vertex
-		vec3 bottomLeft = grassClusterPosition - rotatedAxisDir * halfQuadLength;// +windDirection * localWindStrength;
+		vec3 bottomLeft = grassClusterPosition - rotatedAxisDir * halfQuadLength;
 		gl_Position = mvp * vec4(bottomLeft, 1.0);
 		OUT.texCoord = vec2(texCoordBeginX, 0.0);
 		EmitVertex();
 		
 		// Top Right Vertex
-		vec3 topRight = grassClusterPosition + rotatedAxisDir * halfQuadLength;// +windDirection * localWindStrength;
+		vec3 topRight = grassClusterPosition + rotatedAxisDir * halfQuadLength +windDirection * localWindStrength;
 		topRight.y += grassClusterHeight;
 		gl_Position = mvp * vec4(topRight, 1.0);
 		OUT.texCoord = vec2(texCoordEndX, 1.0);
 		EmitVertex();
 		
 		// Bottom Right Vertex
-		vec3 bottomRight = grassClusterPosition + rotatedAxisDir * halfQuadLength;// +windDirection * localWindStrength;
+		vec3 bottomRight = grassClusterPosition + rotatedAxisDir * halfQuadLength;
 		gl_Position = mvp * vec4(bottomRight, 1.0);
 		OUT.texCoord = vec2(texCoordEndX, 0.0);
 		EmitVertex();

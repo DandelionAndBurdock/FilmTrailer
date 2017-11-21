@@ -221,6 +221,11 @@ GLint Shader::SetUniform(const std::string& name, const glm::vec3& vec) {
 	return GetLocation(name);
 }
 
+GLint Shader::SetUniform(const std::string& name, const glm::vec2& vec) {
+	glUniform2fv(GetLocation(name), 1, (float*)& vec);
+	return GetLocation(name);
+}
+
 GLint Shader::SetUniform(const std::string& name, const glm::vec4& vec) {
 	glUniform4fv(GetLocation(name), 1, (float*)& vec);
 	return GetLocation(name);

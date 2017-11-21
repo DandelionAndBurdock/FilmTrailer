@@ -3,6 +3,9 @@
 #include <vector>
 
 #include "..\GLEW\include\GL\glew.h"
+
+class Mesh;
+
 class PostProcessor
 {
 public:
@@ -14,18 +17,30 @@ public:
 	void BindProcessedTexture();
 
 protected:
+	void GaussianBlur(GLuint startTexture);
+	void Contrast(GLuint startTexture);
+	void Bloom(GLuint startTexture);
+
 	void Initialise();
 	void InitialiseSceneFBO();
+	void InitialiseProcessFBO();
+
 	GLuint sceneFBO;
 	GLuint sceneColourTex;
 	GLuint sceneDepthTex;
 
-	std::vector<GLuint> processFBOs;
-	std::vector<GLuint> processColourTexes;
+	GLuint processFBO;
+	GLuint processColourTex[2];
 
 	GLuint texWidth;
 	GLuint texHeight;
 
 	GLuint finalProcessTex;
+
+	GLuint blurPasses;
+
+	GLfloat contrastLevel;
+
+	Mesh* sceneQuad;
 };
 

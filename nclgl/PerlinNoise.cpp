@@ -52,7 +52,7 @@ void PerlinNoise::GenerateNoise() {
 	}
 }
 
-void PerlinNoise::GenerateTexture() {
+void PerlinNoise::GenerateTexture(const std::string& handle) {
 	GenerateNoise();
-	TEXTURE_MANAGER->AddTexture("Noise", noiseValues, dimensions);
+	TEXTURE_MANAGER->AddTexture(handle, noiseValues, dimensions);
 }

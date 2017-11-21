@@ -20,6 +20,7 @@ class HeightMap : public Mesh
 {
 public:
 	HeightMap(std::string name);
+	HeightMap(); // Generate a flat height map
 	~HeightMap() {};
 
 	float GetHeightAtPosition(float x, float z);

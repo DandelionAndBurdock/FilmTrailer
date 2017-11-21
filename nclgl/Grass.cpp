@@ -35,8 +35,8 @@ void Grass::BufferGrassPositions(HeightMap* const terrain) {
 	// Each grass cluster is offset from the previous cluster by 
 	// a randomly generated offset between grassCusterOffsetMin 
 	// and grassCusterOffsetMax 
-	float grassClusterOffsetMin = 3.5f;
-	float grassClusterOffsetMax = 5.5f;
+	float grassClusterOffsetMin = 1.0f;
+	float grassClusterOffsetMax = 1.5f;
 	
 	// Each grass cluster has a height between grassPatchHeightMin
 	// and grassPatchHeightMax

@@ -86,6 +86,18 @@ bool ShaderManager::SetUniform(const std::string& shader, const std::string& uni
 	}
 }
 
+bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, const glm::vec2& vec) {
+	Shader* s = GetShader(shader);
+	if (s) {
+		s->Use();
+		return (s->SetUniform(uniform, vec) != -1);
+	}
+	else {
+		return false;
+	}
+}
+
+
 bool ShaderManager::SetUniform(const std::string& shader, const std::string& uniform, const glm::mat4& mat) {
 	Shader* s = GetShader(shader);
 	if (s) {

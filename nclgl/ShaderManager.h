@@ -24,8 +24,10 @@ public:
 	bool SetUniform(const std::string& shader, const std::string& uniform, GLint i);
 	bool SetUniform(const std::string& shader, const std::string& uniform, GLfloat f);
 	bool SetUniform(const std::string& shader, const std::string& uniform, const glm::mat4& mat);
+	bool SetUniform(const std::string& shader, const std::string& uniform, const glm::vec2& vec);
 	bool SetUniform(const std::string& shader, const std::string& uniform, const glm::vec3& vec);
 	bool SetUniform(const std::string& shader, const std::string& uniform, const glm::vec4& vec);
+
 
 	std::vector<std::string> GetUniformNames(const std::string& shader);
 
