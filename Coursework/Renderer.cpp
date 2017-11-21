@@ -17,6 +17,7 @@
 #include "nclgl\OmniShadow.h"
 #include "nclgl\FlareManager.h"
 #include "nclgl\Sun.h"
+#include "nclgl\PostProcessor.h"
 
 #include <algorithm> // For min()
 #include <iostream>
@@ -57,6 +58,10 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	nearPlane = 1.0f;
 	farPlane = 10000.0f;
 	omniShadow = new OmniShadow(screenSize.x, screenSize.y);
+
+	postProcessor = new PostProcessor(screenSize.x, screenSize.y);
+
+	sceneQuad = Mesh::GenerateQuad();
 }
 
 
@@ -76,6 +81,7 @@ Renderer::~Renderer() {
 	delete refractionQuad;
 	delete reflectionQuad;
 	delete sun;
+	delete sceneQuad;
 	CubeRobot::DeleteCube();
 }
 
@@ -230,13 +236,11 @@ void Renderer::RenderScene() {
 	//*************** SHADOW *****************************
 	ShadowMapFirstPass();
 	omniShadow->BindForReading();
-	//*************RENDER SCENE**************************
-	DrawSkybox();
-	//waterNode->SetActive();
-	RenderObjects(NO_CLIP_PLANE);
-	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
-	particleManager->Render();
-	flareManager->Render();
+	//*************RENDER SCENE **************************
+	DrawSceneToBuffer();
+	//*************POST PROCESSING **************************
+	postProcessor->ProcessScene();
+	PresentScene();
 
 	//*************RENDER GUI**************************
 	//RenderReflectionQuad();
@@ -247,6 +251,28 @@ void Renderer::RenderScene() {
 	ClearNodeLists();
 	activeShaders.clear();
 
+}
+
+void Renderer::DrawSceneToBuffer() {
+	postProcessor->BindSceneFBO();
+	DrawSkybox();
+	RenderObjects(NO_CLIP_PLANE);
+	//particleSystem->Render(projMatrix * viewMatrix, camera->GetPosition());
+	particleManager->Render();
+	flareManager->Render();
+}
+
+//TODO: Draw Scene()
+void Renderer::ProcessScene() {
+	postProcessor->ProcessScene();
+}
+
+void Renderer::PresentScene() {
+	postProcessor->BindProcessedTexture();
+	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
+	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
+	sceneQuad->Draw();
 }
 
 void Renderer::BuildNodeLists(SceneNode* from) {
@@ -322,8 +348,9 @@ void Renderer::SetupScenes() {
 
 void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
-	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
-//	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
+	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
+	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
+	//SHADER_MANAGER->AddShader("ProcessShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"ProcessFrag.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 	SHADER_MANAGER->AddShader("WaterShader", SHADERDIR"WaterVertex.glsl", SHADERDIR"WaterFragment.glsl");
@@ -573,6 +600,7 @@ void Renderer::ShadowMapFirstPass() {
 }
 
 void Renderer::DrawSkybox() {
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMap);
 	glDepthMask(GL_FALSE);
 	SHADER_MANAGER->SetShader("CubeMapShader");
@@ -630,3 +658,5 @@ void Renderer::SetupRefractionBuffer() {
 	RenderObjects(glm::vec4(0.0, -1.0, 0.0, water->GetHeight()));
 	water->UnbindFramebuffer(); //Binds Window FBO
 }
+
+

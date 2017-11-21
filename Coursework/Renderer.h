@@ -25,6 +25,7 @@ class Water;
 class OmniShadow;
 class FlareManager;
 class Sun;
+class PostProcessor;
 
 class Renderer : public OGLRenderer {
 public:
@@ -64,6 +65,10 @@ protected:
 
 	void DrawFPS();
 
+	void DrawSceneToBuffer();
+	void ProcessScene();
+	void PresentScene();
+
 	SceneNode* currentRoot;
 	SceneNode* sceneARoot;
 	CameraController* cameraControl;
@@ -71,6 +76,7 @@ protected:
 	Mesh* reflectionQuad;
 	Mesh* refractionQuad;
 	Mesh* quad;
+	Mesh* sceneQuad; // Holds scene for post processing
 
 
 	Frustum frameFrustum;
@@ -123,4 +129,8 @@ protected:
 	GLfloat farPlane;
 
 	FlareManager* flareManager;
+
+	PostProcessor* postProcessor;
+
+	
 };

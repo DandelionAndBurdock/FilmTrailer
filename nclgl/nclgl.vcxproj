@@ -32,6 +32,7 @@
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="PerlinNoise.cpp" />
     <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="PostProcessor.cpp" />
     <ClCompile Include="RandomNumberGenerator.cpp" />
     <ClCompile Include="SceneNode.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -70,6 +71,7 @@
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="PerlinNoise.h" />
     <ClInclude Include="Plane.h" />
+    <ClInclude Include="PostProcessor.h" />
     <ClInclude Include="RandomNumberGenerator.h" />
     <ClInclude Include="SceneNode.h" />
     <ClInclude Include="Shader.h" />
