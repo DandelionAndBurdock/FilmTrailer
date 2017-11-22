@@ -1,6 +1,7 @@
 #include "SceneNode.h"
 
 #include "TextureManager.h"
+#include "ShaderManager.h"
 #include "Texture.h"
 
 SceneNode::SceneNode(Mesh* m, const std::string& shader)
@@ -65,6 +66,7 @@ void SceneNode::Update(float msec) {
 void SceneNode::BindTextures() {
 	for (int i = 0; i < textures.size(); ++i) {
 		glActiveTexture(GL_TEXTURE0 + i);
+		SHADER_MANAGER->SetShader(shader);
 		TEXTURE_MANAGER->BindTexture(textures[i]);
 	}
 }

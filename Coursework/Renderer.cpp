@@ -216,8 +216,8 @@ void Renderer::SetupSceneC() {
 	oceanMesh = new GerstnerWaves;
 	oceanNode = new SceneNode(oceanMesh, "GerstnerShader");
 	oceanNode->UseTexture("Ocean");
-	oceanNode->UseTexture("WaterBump");
-	oceanNode->SetTransform(glm::translate(glm::vec3(-4000.0f, 300.0f, -4000.0f)));
+	oceanNode->UseTexture("OceanNormal");
+	oceanNode->SetTransform(glm::translate(glm::vec3(0.0f, 200.0f, -3500.0f)));
 	heightMap->AddChild(oceanNode);
 
 	CubeRobot* cubey = new CubeRobot();
@@ -238,7 +238,7 @@ void Renderer::UpdateScene(float msec) {
 
 
 	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);
-	CalculateFPS(msec); 
+	CalculateFPS(msec);  
 
 	camera->UpdateCamera(msec);
 	//particleSystem->UpdateParticles(msec);
@@ -460,7 +460,8 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("SandGrass", TEXTUREDIR"sandGrass.jpg");
 	TEXTURE_MANAGER->AddTexture("Rock", TEXTUREDIR"rock.png");
 	TEXTURE_MANAGER->AddTexture("Flower", TEXTUREDIR"Flower.png");
-	TEXTURE_MANAGER->AddTexture("Ocean", TEXTUREDIR"Ocean.jpg");
+	TEXTURE_MANAGER->AddTexture("Ocean", TEXTUREDIR"Ocean.png");
+	TEXTURE_MANAGER->AddTexture("OceanNormal", TEXTUREDIR"ocean_normal.png");
 
 	TEXTURE_MANAGER->AddTexture("Sun", TEXTUREDIR"sun.png");
 	for (int i = 1; i <= 8; ++i) {

@@ -62,9 +62,9 @@ GerstnerWaves::GerstnerWaves()
 	BufferData();
 
 
-	waves.push_back(Wave(glm::vec2(1.0, 0.0), 128.0f, 0.5f, 10.0f));
-	waves.push_back(Wave(glm::vec2(1.0, 1.0), 200.0f, 0.25f, 10.0f));
-	waves.push_back(Wave(glm::vec2(0.0, 1.0), 256.0f, 1.0f, 5.0f));
+	waves.push_back(Wave(glm::vec2(1.0, 0.0), 128.0f, 0.05f, 10.0f));
+	waves.push_back(Wave(glm::vec2(1.0, 1.0), 200.0f, 0.025f, 10.0f));
+	waves.push_back(Wave(glm::vec2(0.0, 1.0), 256.0f, 0.1f, 5.0f));
 
 }
 
