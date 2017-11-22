@@ -15,7 +15,7 @@ PostProcessor::PostProcessor(GLuint screenWidth, GLuint screenHeight)
 	
 	sceneQuad = Mesh::GenerateQuad();
 
-	blurPasses = 1;
+	blurPasses = 0;
 
 	contrastLevel = 3.0;
 
@@ -77,29 +77,28 @@ void PostProcessor::InitialiseSceneFBO() {
 
 void PostProcessor::InitialiseProcessFBO() {
 	glGenFramebuffers(1, &processFBO);
-	for (int i = 0; i < 2; ++i) {
-		glGenTextures(1, &processColourTex[i]);
-		glBindTexture(GL_TEXTURE_2D, processColourTex[i]);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texWidth, 0,
-			GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	}
+	processColourTex[0] = sceneColourTex;
 
+	glGenTextures(1, &processColourTex[1]);
+	glBindTexture(GL_TEXTURE_2D, processColourTex[1]);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texHeight, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 }
 
 void PostProcessor::BindSceneFBO() {
 	glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-}
+} 
 
 
 void PostProcessor::ProcessScene() {
 	//Bloom(sceneColourTex);
-	//Contrast(finalProcessTex);
-	//GaussianBlur(sceneColourTex);
+	Contrast(sceneColourTex);
+	GaussianBlur(sceneColourTex);
 }
 
 void PostProcessor::BindProcessedTexture(){
@@ -120,26 +119,50 @@ void PostProcessor::GaussianBlur(GLuint startTexture) {
 	glDisable(GL_DEPTH_TEST);
 	glActiveTexture(GL_TEXTURE0);
 
-	GLuint tex0 = startTexture; // Save memory
-	processColourTex[0] = startTexture;
-	for (int i = 0; i < blurPasses; ++i) {
-		// First pass
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, processColourTex[1], 0);
-		glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
-		SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 0);
-		
-		sceneQuad->Draw();
+	
+	if (processColourTex[0] == startTexture) {
+		for (int i = 0; i < blurPasses; ++i) {
+			// First pass
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_2D, processColourTex[1], 0);
+			glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
+			SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 0);
 
-		// Second pass
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, processColourTex[0], 0);
-		glBindTexture(GL_TEXTURE_2D, processColourTex[1]);
-		SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 1);
+			sceneQuad->Draw();
 
-		sceneQuad->Draw();
+			// Second pass
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_2D, processColourTex[0], 0);
+			glBindTexture(GL_TEXTURE_2D, processColourTex[1]);
+			SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 1);
+
+			sceneQuad->Draw();
+		}
+		finalProcessTex = processColourTex[0];
 	}
-	finalProcessTex = processColourTex[0];
+	else {
+		for (int i = 0; i < blurPasses; ++i) {
+			// First pass
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_2D, processColourTex[0], 0);
+			glBindTexture(GL_TEXTURE_2D, processColourTex[1]);
+			SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 0);
+
+			sceneQuad->Draw();
+
+			// Second pass
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_2D, processColourTex[1], 0);
+			glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
+			SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 1);
+
+			sceneQuad->Draw();
+		}
+		finalProcessTex = processColourTex[1];
+	}
+
+	
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_DEPTH_TEST);
 }
@@ -158,13 +181,19 @@ void PostProcessor::Contrast(GLuint startTexture) {
 
 	glDisable(GL_DEPTH_TEST);
 	glActiveTexture(GL_TEXTURE0);
-	
-	processColourTex[0] = startTexture;
-
 	glBindTexture(GL_TEXTURE_2D, startTexture);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+
+	if (processColourTex[0] == startTexture) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 			GL_TEXTURE_2D, processColourTex[1], 0);
-	finalProcessTex = processColourTex[1];
+		finalProcessTex = processColourTex[1];
+	}
+	else {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, processColourTex[0], 0);
+		finalProcessTex = processColourTex[0];
+	}
+	
 
 	sceneQuad->Draw();
 

@@ -12,6 +12,7 @@ CubeRobot::CubeRobot()
 	body = new SceneNode(cube, "TerrainShader");
 	body->SetModelScale(glm::vec3(10.0f, 15.0f, 5.0f));
 	body->SetTransform(glm::translate(glm::vec3(0.0f, 35.0f, 0.0f)));
+	body->UseTexture("Flower");
 	AddChild(body);
 
 	//head = new SceneNode(cube, glm::vec4(0, 1, 0, 1));

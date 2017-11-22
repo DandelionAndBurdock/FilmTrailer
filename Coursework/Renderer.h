@@ -26,8 +26,11 @@ class OmniShadow;
 class FlareManager;
 class Sun;
 class PostProcessor;
+class Scene;
+class GerstnerWaves;
 
 class Renderer : public OGLRenderer {
+	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, NUM_SCENES};
 public:
 	Renderer(Window& parent);
 	virtual ~Renderer();
@@ -37,6 +40,7 @@ public:
 	void RenderObjects(const glm::vec4& clipPlane);
 
 protected:
+	void Transition(SceneNumber from, SceneNumber to);
 	void DrawSkybox();
 
 	void UpdateUniforms();
@@ -53,13 +57,18 @@ protected:
 	void SetupCamera();
 	void SetupScenes();
 	void SetupSceneA();
+	void SetupSceneB();
+	void SetupSceneC();
 	void ConfigureOpenGL();
+	void SetConstants();
+	void HandleInput();
 
 	void SetupReflectionBuffer();
 	void SetupRefractionBuffer();
 	// Helper Functions
 	void RenderReflectionQuad();
 	void RenderRefractionQuad();
+	void RenderNoiseQuad();
 
 	void ShadowMapFirstPass();
 
@@ -69,14 +78,15 @@ protected:
 	void ProcessScene();
 	void PresentScene();
 
-	SceneNode* currentRoot;
-	SceneNode* sceneARoot;
-	CameraController* cameraControl;
-	Camera* camera;
-	Mesh* reflectionQuad;
-	Mesh* refractionQuad;
-	Mesh* quad;
-	Mesh* sceneQuad; // Holds scene for post processing
+	SceneNode* masterRoot = nullptr;
+	SceneNumber currentScene;
+	std::vector<Scene*> scenes;
+	CameraController* cameraControl = nullptr;
+	Camera* camera = nullptr;
+	Mesh* reflectionQuad = nullptr;
+	Mesh* refractionQuad = nullptr;
+	Mesh* quad = nullptr;
+	Mesh* sceneQuad = nullptr; // Holds scene for post processing
 
 
 	Frustum frameFrustum;
@@ -88,14 +98,12 @@ protected:
 
 	GLuint quadTexture;//TODO: remove
 
-	HeightMap* terrain;
-
 	GLuint mapTexture;
 
-	TextRenderer* text;
+	TextRenderer* text = nullptr;
 
-	ParticleSystem* particleSystem;
-	ParticleManager* particleManager;
+	ParticleSystem* particleSystem = nullptr;
+	ParticleManager* particleManager = nullptr;
 
 	// List of all lights in the world
 	std::vector<Light*> lights;
@@ -104,21 +112,25 @@ protected:
 	// List of temporary lights in the world e.g. lightning
 	std::vector<Light*> tempLights;
 
-	DirectionalLight* dirLight;
+	DirectionalLight* dirLight = nullptr;
 
-	Lightning* lightning;
-	Spotlight* spotlight;
-	Grass* grass;
+	Lightning* lightning = nullptr;
+	Spotlight* spotlight = nullptr;
+	Grass* grass = nullptr;
 
-	Water* water;
-	SceneNode* waterNode;
+	Water* water = nullptr;
+	SceneNode* waterNode = nullptr;
+	GerstnerWaves* oceanMesh = nullptr;
+	SceneNode* oceanNode = nullptr;
 
 	// Modify ambient strenght of the scene to change mood
 	GLfloat ambientStrength;
 
-	OBJMesh* tree; 
-	Sun* sun;
-	GLuint cubeMap;
+	OBJMesh* tree = nullptr;
+	Sun* sun = nullptr;
+	GLuint currentCubeMap;
+	GLuint cubeMapA;
+	GLuint cubeMapB;
 
 	OmniShadow* omniShadow;
 
@@ -128,9 +140,9 @@ protected:
 	GLfloat nearPlane;
 	GLfloat farPlane;
 
-	FlareManager* flareManager;
+	FlareManager* flareManager = nullptr;
 
-	PostProcessor* postProcessor;
+	PostProcessor* postProcessor = nullptr;
 
-	
+
 };

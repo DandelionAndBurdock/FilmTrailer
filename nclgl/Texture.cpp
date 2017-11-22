@@ -1,7 +1,7 @@
 #include "Texture.h"
 
 #include "../SOIL/SOIL.h"
-
+#include <iostream>
 Texture::Texture(std::string path) {
 	loadSuccess = false;
 	LoadTexture(path);
@@ -70,5 +70,8 @@ void Texture::Bind1D() const {
 }
 void Texture::LoadTexture(std::string path) {
 	ID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	if (!ID) {
+		std::cout << path << " " << SOIL_last_result() << std::endl;
+	}
 	loadSuccess = bool(ID);
 }

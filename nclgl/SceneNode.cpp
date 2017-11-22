@@ -83,6 +83,6 @@ void SceneNode::SetInactive() {
 void SceneNode::SetActive() {
 	isActive = true;
 	for (auto iter = children.begin(); iter != children.end(); ++iter) {
-		(*iter)->SetInactive();
+		(*iter)->SetActive();
 	}
 }

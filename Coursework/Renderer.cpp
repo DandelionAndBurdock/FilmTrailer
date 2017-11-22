@@ -18,6 +18,9 @@
 #include "nclgl\FlareManager.h"
 #include "nclgl\Sun.h"
 #include "nclgl\PostProcessor.h"
+#include "nclgl\Scene.h"
+#include "nclgl\GerstnerWaves.h"
+
 
 #include <algorithm> // For min()
 #include <iostream>
@@ -25,55 +28,42 @@
 
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
-	dirLight = nullptr;
-	spotlight = nullptr;
 	CubeRobot::CreateCube();
 	Light::CreateLightMesh();
-	
 
+	reflectionQuad = Mesh::GenerateQuad();
+	refractionQuad = Mesh::GenerateQuad();
+	sceneQuad = Mesh::GenerateQuad();
+	
 	SetupCamera();
 	LoadShaders();
 	LoadTextures();
-
 	SetupScenes();
-	currentRoot = sceneARoot;
+	ConfigureOpenGL();
+	SetConstants();
 
 	text = new TextRenderer(width, height, FONTSDIR"arial.ttf", 30, glm::vec3(1.0f, 1.0f, 1.0f));
 
 	PerlinNoise p;
 	p.GenerateTexture("Noise");
 
-
-	lightning = new Lightning(glm::vec3(500.0, 500.0, 0.0), glm::vec3(200.0, 0.0, 200.0));
-
 	flareManager = new FlareManager();
 
-	ConfigureOpenGL();
-
-	init = true;
-
-	reflectionQuad = Mesh::GenerateQuad();
-	refractionQuad = Mesh::GenerateQuad();
-	ambientStrength = 0.2;
-
-	nearPlane = 1.0f;
-	farPlane = 10000.0f;
 	omniShadow = new OmniShadow(screenSize.x, screenSize.y);
 
 	postProcessor = new PostProcessor(screenSize.x, screenSize.y);
-	//postProcessor = new PostProcessor(800, 600);
-	sceneQuad = Mesh::GenerateQuad();
+
+	init = true;
+	time = 0.0f;
 }
 
-
+//TODO: Check
 Renderer::~Renderer() {
 	//Functions delete meshes...
 	if (dirLight)
 		delete dirLight;
 	if (spotlight)
 		delete spotlight;
-
-	delete sceneARoot;
 	delete camera;
 	delete cameraControl;
 //	delete particleSystem;
@@ -84,20 +74,25 @@ Renderer::~Renderer() {
 	delete sun;
 	delete sceneQuad;
 	CubeRobot::DeleteCube();
+	//Light::DeleteLightMesh();
 }
 
 
 void Renderer::SetupSceneA() {
-
-	//terrain = new HeightMap(TEXTUREDIR"Flat.png");
-	terrain = new HeightMap();
-	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
-	grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
-	sceneARoot = new SceneNode();
-	sceneARoot->AddChild(heightMap);
+	SceneNode* heightMap = new SceneNode(new HeightMap, "TerrainShader");
+	
+	scenes.push_back(new Scene(masterRoot));
+	scenes[SCENE_A]->SetCubeMap(cubeMapA);
+	scenes[SCENE_A]->SetTerrain(heightMap);
 	heightMap->UseTexture("Terrain");
 	heightMap->UseTexture("TerrainBump");
+	heightMap->UseTexture("Sand");
+	heightMap->UseTexture("SandGrass");
+	heightMap->UseTexture("Grass");
+	heightMap->UseTexture("Rock");
 
+	lightning = new Lightning(glm::vec3(500.0, 500.0, 0.0), glm::vec3(200.0, 0.0, 200.0));
+	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	
 	//Load meshes function
 	OBJMesh* m = new OBJMesh;
@@ -107,14 +102,6 @@ void Renderer::SetupSceneA() {
 	else {
 		__debugbreak();
 	}
-
-
-	//heightMap->AddChild(new CubeRobot());
-	//
-	//CubeRobot* CR2 = new CubeRobot();
-	//CR2->SetTransform(glm::translate(glm::vec3(-50.0f)) * glm::scale(glm::vec3(2.0f)));
-	//heightMap->AddChild(CR2);
-
 
 	permanentLights.clear();
 	permanentLights.push_back(new Light(glm::vec3(50.0f, 500.0f, 50.0f), glm::vec4(1.0f), 2000.0f));
@@ -139,21 +126,12 @@ void Renderer::SetupSceneA() {
 	}
 	//spotlight = new Spotlight(glm::vec3(100.0f, 500.0f, 500.0f), glm::vec3(0.0, 0.0, 1.0),glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
 	//heightMap->AddChild(spotlight);
-	water = new Water(GetScreenSize().x, GetScreenSize().y);//TODO: Should water/height map be scene nodes then initialise ?->memory problem //TODO: Not true water height fix
-	waterNode = new SceneNode(water, "WaterShader");
-	waterNode->SetTransform(glm::translate(glm::vec3(200.0f, water->GetHeight(), 500.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-	waterNode->SetModelScale(glm::vec3(200.0f, 200.0f, 200.0f));
-	waterNode->SetColour(glm::vec4(0.0f));// Add to transparent list
-	waterNode->UseTexture("Reflection");
-	waterNode->UseTexture("WaterBump");
-	waterNode->UseTexture("Refraction");
-	waterNode->UseTexture("dudvMap");
-	waterNode->UseTexture("DepthMap");
-	heightMap->AddChild(waterNode);
+	
 	SceneNode* t = new SceneNode(tree, "TerrainShader");
 	t->SetModelScale(glm::vec3(50.0f));
 	t->SetColour(glm::vec4(0.0f));// Add to transparent list
-	t->SetTransform(glm::translate(glm::vec3(900.0f, terrain->GetHeightAtPosition(50.0f, 50.0f), 900.0f)));
+	//t->SetTransform(glm::translate(glm::vec3(900.0f, terrain->GetHeightAtPosition(50.0f, 50.0f), 900.0f)));
+	t->SetTransform(glm::translate(glm::vec3(900.0f, 100.0f, 900.0f)));
 	heightMap->AddChild(t);
 //	heightMap->SetInactive();
 
@@ -162,12 +140,102 @@ void Renderer::SetupSceneA() {
 	
 	//particleSystem = new ParticleSystem(glm::vec3(300.0f, 300.0f, 300.0f));
 	particleManager = new ParticleManager();
+	heightMap = nullptr;
+}
+
+
+void Renderer::HandleInput() {
+	if (Window::GetKeyboard()->KeyTriggered(KEYBOARD_1)) {
+		if (scenes.size() > 0) {
+			Transition(currentScene, SCENE_A);
+		}
+	}
+	if (Window::GetKeyboard()->KeyTriggered(KEYBOARD_2)) {
+		if (scenes.size() > 1) {
+			Transition(currentScene, SCENE_B);
+		}
+	}
+	if (Window::GetKeyboard()->KeyTriggered(KEYBOARD_3)) {
+		if (scenes.size() > 2) {
+			Transition(currentScene, SCENE_C);
+		}
+	}
+}
+
+void Renderer::SetupSceneB() {
+	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainShader");
+
+	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
+	//masterRoot->AddChild(heightMap);
+
+	scenes.push_back(new Scene(masterRoot));
+	scenes[SCENE_B]->SetCubeMap(cubeMapB);
+	scenes[SCENE_B]->SetTerrain(heightMap);
+	heightMap->UseTexture("Terrain");
+	heightMap->UseTexture("TerrainBump");
+	heightMap->UseTexture("Sand");
+	heightMap->UseTexture("SandGrass");
+	heightMap->UseTexture("Grass");
+	heightMap->UseTexture("Rock");
+
+	//Load meshes function
+	// OBJMesh* m = new OBJMesh;
+	// if (m->LoadOBJMesh(MESHDIR"flying Disk flying.obj")) {
+	// 	tree = m;
+	// }
+	// else {
+	// 	__debugbreak();
+	// }
+
+	heightMap->AddChild(new CubeRobot());
+
+
+}
+
+void Renderer::SetupSceneC() {
+	scenes.push_back(new Scene(masterRoot));
+	scenes[SCENE_C]->SetCubeMap(cubeMapB);
+	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"PoolMap.data"), "TerrainShader");
+	scenes[SCENE_C]->SetTerrain(heightMap);
+	heightMap->UseTexture("Terrain");
+	heightMap->UseTexture("TerrainBump");
+
+	water = new Water(GetScreenSize().x, GetScreenSize().y);
+	waterNode = new SceneNode(water, "WaterShader");
+	waterNode->SetTransform(glm::translate(glm::vec3(2000.0f, water->GetHeight(), 2000.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	waterNode->SetModelScale(glm::vec3(1600.0f, 1600.0f, 1600.0f));
+	waterNode->SetColour(glm::vec4(0.0f));// Add to transparent list
+	waterNode->UseTexture("Reflection");
+	waterNode->UseTexture("WaterBump");
+	waterNode->UseTexture("Refraction");
+	waterNode->UseTexture("dudvMap");
+	waterNode->UseTexture("DepthMap");
+	heightMap->AddChild(waterNode);
+
+
+	oceanMesh = new GerstnerWaves;
+	oceanNode = new SceneNode(oceanMesh, "GerstnerShader");
+	oceanNode->UseTexture("Ocean");
+	oceanNode->UseTexture("WaterBump");
+	oceanNode->SetTransform(glm::translate(glm::vec3(-4000.0f, 300.0f, -4000.0f)));
+	heightMap->AddChild(oceanNode);
+
+	CubeRobot* cubey = new CubeRobot();
+	cubey->SetTransform(glm::translate(glm::vec3(1500.0f, 300.0f, 2800.0f)) * glm::scale(glm::vec3(2.0f)));
+	cubey->UseTexture("Flower");
+	heightMap->AddChild(cubey);
+	cubey = nullptr;
+	heightMap = nullptr;
+
 }
 
 void Renderer::UpdateScene(float msec) {
+	OGLRenderer::UpdateScene(msec);
+	HandleInput();
+
 	glActiveTexture(GL_TEXTURE5);
-	//TEXTURE_MANAGER->BindTexture("Noise");
-	TEXTURE_MANAGER->BindTexture("TerrainBump");
+	TEXTURE_MANAGER->BindTexture("Noise");
+
 
 	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);
 	CalculateFPS(msec); 
@@ -179,11 +247,11 @@ void Renderer::UpdateScene(float msec) {
 	viewMatrix = camera->BuildViewMatrix(); //TODO: Move camera construction to cameraControl
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
 	//dirLight->Rotate(1.0 / 10.0 * msec, glm::vec3(0.0, 0.0, 1.0));
-	grass->Update(msec);
-	if (currentRoot) {
-		currentRoot->Update(msec);
+	//grass->Update(msec);
+	if (masterRoot) {
+		masterRoot->Update(msec);
 
-		BuildNodeLists(currentRoot);
+		BuildNodeLists(masterRoot);
 		SortNodeLists();
 	}
 
@@ -201,17 +269,14 @@ void Renderer::UpdateScene(float msec) {
 	if (spotlight) {
 		spotlight->UpdateTransform();
 	}
-
-
-
 	for (auto& light : lights) {
 		light->UpdateTransform();
 	}
 	flareManager->PrepareToRender(camera->GetPosition(), projMatrix * viewMatrix, sun->GetPosition());
 
-	SHADER_MANAGER->SetUniform("Grass", "modelMatrix", modelMatrix);
-	SHADER_MANAGER->SetUniform("Grass", "viewMatrix", viewMatrix);
-	SHADER_MANAGER->SetUniform("Grass", "projMatrix", projMatrix);
+	//SHADER_MANAGER->SetUniform("Grass", "modelMatrix", modelMatrix);
+	//SHADER_MANAGER->SetUniform("Grass", "viewMatrix", viewMatrix);
+	//SHADER_MANAGER->SetUniform("Grass", "projMatrix", projMatrix);
 }
 
 void Renderer::RenderObjects(const glm::vec4& clipPlane) {
@@ -220,7 +285,7 @@ void Renderer::RenderObjects(const glm::vec4& clipPlane) {
 		SHADER_MANAGER->SetUniform(shader, "viewMatrix", camera->BuildViewMatrix()); //TODO: Store
 	}
 	DrawNodes();
-	grass->Draw();
+	//grass->Draw();
 	if (lightning->ShouldFire()) {
 		//lightning->Draw(projMatrix * viewMatrix, camera->GetPosition());
 	}
@@ -238,10 +303,9 @@ void Renderer::RenderScene() {
 	SetupRefractionBuffer();
 	glDisable(GL_CLIP_DISTANCE0);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
 	//*************** SHADOW *****************************
-	ShadowMapFirstPass();
-	omniShadow->BindForReading();
+	//ShadowMapFirstPass();
+	//omniShadow->BindForReading();
 	//*************RENDER SCENE **************************
 	DrawSceneToBuffer();
 	//*************POST PROCESSING **************************
@@ -249,8 +313,9 @@ void Renderer::RenderScene() {
 	PresentScene();
 
 	//*************RENDER GUI**************************
-	//RenderReflectionQuad();
-	//RenderRefractionQuad();
+	RenderReflectionQuad();
+	RenderRefractionQuad();
+	RenderNoiseQuad();
 	DrawFPS();
 	SwapBuffers();
 	glUseProgram(0);
@@ -260,6 +325,7 @@ void Renderer::RenderScene() {
 }
 
 void Renderer::DrawSceneToBuffer() {
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	postProcessor->BindSceneFBO();
 	DrawSkybox();
 	RenderObjects(NO_CLIP_PLANE);
@@ -348,16 +414,24 @@ void Renderer::DrawFPS() {
 }
 
 void Renderer::SetupScenes() {
+	masterRoot = new SceneNode();
 	SetupSceneA();
 	SetupSceneB();
-}
+	SetupSceneC();
+	currentCubeMap = cubeMapA;
+	currentScene = SCENE_A;
+	scenes[SCENE_B]->GetRoot()->SetInactive();
+	scenes[SCENE_C]->GetRoot()->SetInactive();
 
+}
 
 void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
-	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
-	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
+	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
+	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingHeightVertex.glsl", SHADERDIR"LightingFragment.glsl");
+	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
+	SHADER_MANAGER->AddShader("ShadowDepth", SHADERDIR"ShadowCubeMapVertex.glsl", SHADERDIR"ShadowCubeMapFrag.glsl", SHADERDIR"ShadowCubeMapGeom.glsl");
 	
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
@@ -365,6 +439,7 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("CubeMapShader", SHADERDIR"skyboxVertex.glsl", SHADERDIR"skyboxFragment.glsl");
 	SHADER_MANAGER->AddShader("SunShader", SHADERDIR"SimpleBillBoardVertex.glsl", SHADERDIR"SimpleBillBoardFrag.glsl");
 	SHADER_MANAGER->AddShader("FlareShader", SHADERDIR"FlareVertex.glsl", SHADERDIR"FlareFragment.glsl");
+	SHADER_MANAGER->AddShader("GerstnerShader", SHADERDIR"GerstnerVertex.glsl", SHADERDIR"GerstnerFragment.glsl");
 
 	// Post processing shaders
 	SHADER_MANAGER->AddShader("BlurShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BlurFragment.glsl");
@@ -378,12 +453,21 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("TerrainBump", TEXTUREDIR"Barren RedsDOT3.jpg");
 	TEXTURE_MANAGER->AddTexture("dudvMap", TEXTUREDIR"waterDUDV.png");
 	TEXTURE_MANAGER->AddTexture("waterBump", TEXTUREDIR"waterNormalMap.png");
+	//TEXTURE_MANAGER->AddTexture("Sand", TEXTUREDIR"sand.jpg");
+	//TEXTURE_MANAGER->AddTexture("Grass", TEXTUREDIR"grass.jpg");
+	TEXTURE_MANAGER->AddTexture("Sand", TEXTUREDIR"rock.jpg");
+	TEXTURE_MANAGER->AddTexture("Grass", TEXTUREDIR"rock.jpg");
+	TEXTURE_MANAGER->AddTexture("SandGrass", TEXTUREDIR"sandGrass.jpg");
+	TEXTURE_MANAGER->AddTexture("Rock", TEXTUREDIR"rock.png");
+	TEXTURE_MANAGER->AddTexture("Flower", TEXTUREDIR"Flower.png");
+	TEXTURE_MANAGER->AddTexture("Ocean", TEXTUREDIR"Ocean.jpg");
+
 	TEXTURE_MANAGER->AddTexture("Sun", TEXTUREDIR"sun.png");
 	for (int i = 1; i <= 8; ++i) {
 		TEXTURE_MANAGER->AddTexture(std::string("Flare") + std::to_string(i), TEXTUREDIR + std::string("Flare") + std::to_string(i) + std::string(".png"));
 	}
 	
-	cubeMap = SOIL_load_OGL_cubemap(
+	cubeMapA = SOIL_load_OGL_cubemap(
 		TEXTUREDIR"lake1_lf.jpg",
 		TEXTUREDIR"lake1_rt.jpg",
 		TEXTUREDIR"lake1_up.jpg",
@@ -393,7 +477,22 @@ void Renderer::LoadTextures() {
 		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0
 	);
 
-	if (!cubeMap) {
+	if (!cubeMapA) {
+		std::cout << SOIL_last_result() << std::endl;
+		__debugbreak();
+	}
+
+	cubeMapB = SOIL_load_OGL_cubemap(
+		TEXTUREDIR"rusted_west.jpg",
+		TEXTUREDIR"rusted_east.jpg",
+		TEXTUREDIR"rusted_up.jpg",
+		TEXTUREDIR"rusted_down.jpg",
+		TEXTUREDIR"rusted_south.jpg",
+		TEXTUREDIR"rusted_north.jpg",
+		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0
+	);
+
+	if (!cubeMapB) {
 		std::cout << SOIL_last_result() << std::endl;
 		__debugbreak();
 	}
@@ -445,11 +544,22 @@ void Renderer::UpdateUniforms() {
 				else if (uniform == "cubeTex") {
 					SHADER_MANAGER->SetUniform(shader, uniform, 0);
 				}
+				else if (uniform == "sandTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 3);
+				}
+				else if (uniform == "sandGrassTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 4);
+				}
+				else if (uniform == "grassTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 5);
+				}
+				else if (uniform == "rockTex") {
+					SHADER_MANAGER->SetUniform(shader, uniform, 6);
+				}
 				else {
 					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
 				}
 			}
-		
 			else if (uniform.find("Light") != std::string::npos) {
 				UpdateLightUniforms(shader, uniform);
 			}
@@ -618,7 +728,7 @@ void Renderer::ShadowMapFirstPass() {
 
 void Renderer::DrawSkybox() {
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubeMap);
 	glDepthMask(GL_FALSE);
 	SHADER_MANAGER->SetShader("CubeMapShader");
 	quad->Draw();
@@ -646,6 +756,12 @@ void Renderer::RenderReflectionQuad() {
 }
 void Renderer::RenderRefractionQuad() {
 	glViewport(300, 0, 200, 200);
+	SHADER_MANAGER->SetShader("QuadShader");
+	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", viewMatrix);
+	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", projMatrix);
+
+	SHADER_MANAGER->SetUniform("QuadShader", "diffuseTex", 0);
 	glBindTexture(GL_TEXTURE_2D, water->GetRefractionTex());
 	reflectionQuad->Draw();
 
@@ -674,6 +790,34 @@ void Renderer::SetupRefractionBuffer() {
 	DrawSkybox();
 	RenderObjects(glm::vec4(0.0, -1.0, 0.0, water->GetHeight()));
 	water->UnbindFramebuffer(); //Binds Window FBO
+	waterNode->SetActive();
 }
 
 
+
+
+void Renderer::Transition(SceneNumber from, SceneNumber to) {
+	// Turn off current scene
+	scenes[from]->GetRoot()->SetInactive();
+	scenes[to]->GetRoot()->SetActive();
+	currentCubeMap = scenes[to]->GetCubeMap();
+	currentScene = to;
+
+}
+
+void Renderer::SetConstants() {
+	ambientStrength = 0.2;
+	nearPlane = 1.0f;
+	farPlane = 10000.0f;
+}
+
+void Renderer::RenderNoiseQuad() {
+	SHADER_MANAGER->SetShader("QuadShader");
+	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
+
+	SHADER_MANAGER->SetUniform("QuadShader", "diffuseTex", 0);
+	TEXTURE_MANAGER->BindTexture("Noise");
+	reflectionQuad->Draw();
+}

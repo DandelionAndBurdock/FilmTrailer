@@ -16,7 +16,6 @@ OmniShadow::OmniShadow(GLuint screenWidth, GLuint screenHeight)
 	aspect = shadowTexWidth / shadowTexHeight;
 
 	shader = "ShadowDepth";
-	SHADER_MANAGER->AddShader("ShadowDepth", SHADERDIR"ShadowCubeMapVertex.glsl", SHADERDIR"ShadowCubeMapFrag.glsl", SHADERDIR"ShadowCubeMapGeom.glsl");
 	SHADER_MANAGER->SetUniform("ShadowDepth", "farPlane", Shadow::farPlane);
 	Initialise();
 }
@@ -50,6 +49,7 @@ void OmniShadow::Initialise() {
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	}
 
+
 	glGenTextures(1, &depthTexID);
 	glBindTexture(GL_TEXTURE_2D, depthTexID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -78,7 +78,10 @@ void OmniShadow::Initialise() {
 void OmniShadow::BindForWriting() {
 	glViewport(0, 0, shadowTexWidth, shadowTexHeight);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMapID);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	
 }
 void OmniShadow::BindForReading() {
 	glActiveTexture(GL_TEXTURE4);
