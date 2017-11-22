@@ -10,11 +10,11 @@
 #include <string>
 
 //TODO: Make this a derived class
-class ParticleSystem
+class FireworkSystem
 {
 public:
-	ParticleSystem(const glm::vec3& pos);
-	~ParticleSystem();
+	FireworkSystem(const glm::vec3& pos);
+	~FireworkSystem();
 
 	void UpdateParticles(GLfloat msec);
 	void Render(const glm::mat4& viewProj, const glm::vec3 cameraPos);

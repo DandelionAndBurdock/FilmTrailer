@@ -90,7 +90,6 @@ vec3 SpotLightContribution(SpotLight light, vec3 normal, vec3 fragPos, vec3 frag
 	diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
 	
-	
 	// Total:
 	vec3 diffuseLight = vec3(light.colour) * diffuse * vec3(texture(diffuseTex, IN.texCoord));
 	vec3 ambientLight = vec3(light.colour) * attenuation * ambientStrength  * vec3(texture(diffuseTex, IN.texCoord));
@@ -138,6 +137,7 @@ void main(){
 			fragColour += PointLightContribution(pointLights[i], normal, IN.worldPos, fragToCamera);
 		}
 	}
+	
 	// Directional Lights 
 	for (int i = 0; i < MAX_DIR_LIGHTS; i++){
 		if (directionalLights[i].colour.x >= 0.0){
@@ -157,4 +157,5 @@ void main(){
 	
 	//gl_FragColor = vec4(IN.normalWorld, 1.0);
 	gl_FragColor = vec4(fragColour, 1.0);
+	//gl_FragColor = vec4(SpotLightContribution(spotLights[0], normal, IN.worldPos, fragToCamera), 1.0);
 }

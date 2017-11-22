@@ -10,7 +10,7 @@
 #include "common.h" //TODO: Remove
 #include <iostream>
 using namespace Fireworks;
-ParticleSystem::ParticleSystem(const glm::vec3& pos)
+FireworkSystem::FireworkSystem(const glm::vec3& pos)
 {
 	currentVBO = 0;
 	currentFBO = 1;
@@ -43,14 +43,14 @@ ParticleSystem::ParticleSystem(const glm::vec3& pos)
 	glBindVertexArray(billboardVAO);
 }
 
-ParticleSystem::~ParticleSystem()
+FireworkSystem::~FireworkSystem()
 {
 	glDeleteVertexArrays(1, &updateVAO);
 	glDeleteVertexArrays(1, &billboardVAO);
 }
 
 
-void ParticleSystem::InitFireworks(const glm::vec3& pos) {
+void FireworkSystem::InitFireworks(const glm::vec3& pos) {
 	Firework fireworks[MAX_PARTICLES];
 	// Initialise launcher
 	fireworks[0].type = FIREWORK_LAUNCHER;
@@ -75,14 +75,14 @@ void ParticleSystem::InitFireworks(const glm::vec3& pos) {
 	glBindVertexArray(0);
 }
 
-void ParticleSystem::Render(const glm::mat4& viewProj, const glm::vec3 cameraPos) {
+void FireworkSystem::Render(const glm::mat4& viewProj, const glm::vec3 cameraPos) {
 	RenderParticles(viewProj, cameraPos);
 
 	currentVBO = currentFBO;
 	currentFBO = ++currentFBO % 2;
 }
 
-void ParticleSystem::UpdateParticles(GLfloat msec) {
+void FireworkSystem::UpdateParticles(GLfloat msec) {
 	time += msec;
 
 	glEnable(GL_RASTERIZER_DISCARD);
@@ -150,7 +150,8 @@ void ParticleSystem::UpdateParticles(GLfloat msec) {
 }
 
 
-void ParticleSystem::RenderParticles(const glm::mat4& viewProj, const glm::vec3 cameraPos) {
+void FireworkSystem::RenderParticles(const glm::mat4& viewProj, const glm::vec3 cameraPos) {
+	glDisable(GL_DEPTH_TEST);
 	SHADER_MANAGER->SetShader(billboardShader);
 	SHADER_MANAGER->SetUniform(billboardShader, "cameraPos", cameraPos);
 	SHADER_MANAGER->SetUniform(billboardShader, "viewProjMatrix", viewProj);
@@ -172,11 +173,11 @@ void ParticleSystem::RenderParticles(const glm::mat4& viewProj, const glm::vec3 
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Firework), (GLvoid*)(2 * sizeof(GLint) + 2 * sizeof(glm::vec3) + sizeof(glm::vec4)));
 	glDrawTransformFeedback(GL_POINTS, transfromFeedBackBuffer[currentFBO]);
 	//glDisable(GL_BLEND); TODO: Commented this and nothing obvious broke but can't remember why I put it in
-
+	glEnable(GL_DEPTH_TEST);
 }
 
 // As we are using transform feedback and need to specify the buffers before linking we will not use the shader manager to load our shader
-void ParticleSystem::LoadShaders() {
+void FireworkSystem::LoadShaders() {
 	updateShader = "FireworkShader";
 	Shader* shader = new Shader(SHADERDIR"FireworksVertex.glsl", SHADERDIR"FireworksFrag.glsl", SHADERDIR"FireworksGeom.glsl");
 

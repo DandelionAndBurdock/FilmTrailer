@@ -15,7 +15,7 @@ PostProcessor::PostProcessor(GLuint screenWidth, GLuint screenHeight)
 	
 	sceneQuad = Mesh::GenerateQuad();
 
-	blurPasses = 0;
+	blurPasses = 1;
 
 	contrastLevel = 3.0;
 
@@ -97,8 +97,8 @@ void PostProcessor::BindSceneFBO() {
 
 void PostProcessor::ProcessScene() {
 	//Bloom(sceneColourTex);
-	Contrast(sceneColourTex);
-	GaussianBlur(sceneColourTex);
+	//Contrast(sceneColourTex);
+	 //GaussianBlur(sceneColourTex);
 }
 
 void PostProcessor::BindProcessedTexture(){
@@ -161,7 +161,7 @@ void PostProcessor::GaussianBlur(GLuint startTexture) {
 		finalProcessTex = processColourTex[1];
 	}
 
-	
+	//std::swap(finalProcessTex, processColourTex[1]);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_DEPTH_TEST);
@@ -227,3 +227,4 @@ void PostProcessor::Bloom(GLuint startTexture) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_DEPTH_TEST);
 }
+

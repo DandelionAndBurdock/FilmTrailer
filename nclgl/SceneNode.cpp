@@ -66,7 +66,6 @@ void SceneNode::Update(float msec) {
 void SceneNode::BindTextures() {
 	for (int i = 0; i < textures.size(); ++i) {
 		glActiveTexture(GL_TEXTURE0 + i);
-		SHADER_MANAGER->SetShader(shader);
 		TEXTURE_MANAGER->BindTexture(textures[i]);
 	}
 }
@@ -88,3 +87,4 @@ void SceneNode::SetActive() {
 		(*iter)->SetActive();
 	}
 }
+

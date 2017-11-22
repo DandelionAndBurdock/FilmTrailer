@@ -14,7 +14,7 @@
 //TODO: Forward declarations
 class HeightMap;
 class TextRenderer;
-class ParticleSystem;
+class FireworkSystem;
 class ParticleManager;
 class Light;
 class DirectionalLight;
@@ -30,7 +30,7 @@ class Scene;
 class GerstnerWaves;
 
 class Renderer : public OGLRenderer {
-	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, NUM_SCENES};
+	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, NUM_SCENES};
 public:
 	Renderer(Window& parent);
 	virtual ~Renderer();
@@ -59,6 +59,8 @@ protected:
 	void SetupSceneA();
 	void SetupSceneB();
 	void SetupSceneC();
+	void SetupSceneD();
+	void SetupSceneE();
 	void ConfigureOpenGL();
 	void SetConstants();
 	void HandleInput();
@@ -69,8 +71,10 @@ protected:
 	void RenderReflectionQuad();
 	void RenderRefractionQuad();
 	void RenderNoiseQuad();
-
+	void RenderViewPointToBuffer(const glm::vec3& pos, const glm::vec3& lookat);
+	void RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWidth, GLuint windowHeight);
 	void ShadowMapFirstPass();
+	void SceneSpecificUpdates();
 
 	void DrawFPS();
 
@@ -87,7 +91,7 @@ protected:
 	Mesh* refractionQuad = nullptr;
 	Mesh* quad = nullptr;
 	Mesh* sceneQuad = nullptr; // Holds scene for post processing
-
+	Mesh* splitQuad = nullptr; // Holds images for multiple screens
 
 	Frustum frameFrustum;
 	// List of shaders used in the current frame
@@ -102,7 +106,7 @@ protected:
 
 	TextRenderer* text = nullptr;
 
-	ParticleSystem* particleSystem = nullptr;
+	FireworkSystem* particleSystem = nullptr;
 	ParticleManager* particleManager = nullptr;
 
 	// List of all lights in the world
@@ -122,15 +126,23 @@ protected:
 	SceneNode* waterNode = nullptr;
 	GerstnerWaves* oceanMesh = nullptr;
 	SceneNode* oceanNode = nullptr;
+	SceneNode* laser = nullptr;
 
 	// Modify ambient strenght of the scene to change mood
 	GLfloat ambientStrength;
 
+	OBJMesh* houseMesh = nullptr;
+	SceneNode* houseNode = nullptr;
+
 	OBJMesh* tree = nullptr;
+	OBJMesh* ufoMesh = nullptr;
+	SceneNode* ufoNode = nullptr;
 	Sun* sun = nullptr;
 	GLuint currentCubeMap;
 	GLuint cubeMapA;
 	GLuint cubeMapB;
+	GLuint cubeMapC;
+	GLuint cubeMapD;
 
 	OmniShadow* omniShadow;
 
@@ -140,9 +152,16 @@ protected:
 	GLfloat nearPlane;
 	GLfloat farPlane;
 
+	GLfloat sceneTime = 0.0f;
+
 	FlareManager* flareManager = nullptr;
 
 	PostProcessor* postProcessor = nullptr;
 
+	GLboolean pause = false;
 
+	bool shadowRender = false;
+
+	GLuint multipleViewBuffer;
+	GLuint multipleViewTex;
 };

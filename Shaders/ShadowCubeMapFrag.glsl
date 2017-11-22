@@ -5,6 +5,7 @@ in vec4 fragWorldPos;
 uniform vec3 lightWorldPos;
 uniform float farPlane;
 
+
 void main()
 {
 	float lightDistance = length(fragWorldPos.xyz - lightWorldPos);

@@ -46,19 +46,10 @@ void OmniShadow::Initialise() {
 	
 	// Setup each face of the cube map (GL_TEXTURE_CUBE_MAP_POSITIVE_X is the first enum)
 	for (GLuint i = 0; i < Shadow::NUM_FACES; ++i) {
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT32, shadowTexWidth, shadowTexWidth, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	}
-
-
-	glGenTextures(1, &depthTexID);
-	glBindTexture(GL_TEXTURE_2D, depthTexID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexID, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowCubeMapID, 0);
 
 	
 	// During the first shadow pass only the depth information is rendered so disable reads and writes to the colour buffer
@@ -71,15 +62,16 @@ void OmniShadow::Initialise() {
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	
 }
 
 
 
 void OmniShadow::BindForWriting() {
-	glViewport(0, 0, shadowTexWidth, shadowTexHeight);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMapID);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, shadowTexWidth, shadowTexWidth);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	
 }
@@ -90,8 +82,6 @@ void OmniShadow::BindForReading() {
 
 void OmniShadow::Unbind() {
 	glViewport(0, 0, screenWidth, screenHeight);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -102,11 +92,13 @@ void OmniShadow::SetUniforms(const Light* light) {
 	// FOV = 90 degrees to fill entire face
 	glm::mat4 shadowProjMatrix = glm::perspective(glm::radians(90.0f), aspect, nearPlane, farPlane);
 
-	std::vector<glm::mat4> lightTransforms;
+	glm::mat4 lightTransforms[6];
 	for (int i = 0; i < NUM_FACES; ++i) {
-		lightTransforms.push_back(glm::lookAt(lightPos, lightPos + cameraDirections[i].target, cameraDirections[i].up));
+		lightTransforms[i] = shadowProjMatrix * glm::lookAt(lightPos, lightPos + cameraDirections[i].target, cameraDirections[i].up);
 		SHADER_MANAGER->SetUniform(shader, "lightViewMatrices[" + std::to_string(i) + "]", lightTransforms[i]);
+		
 	}
 	SHADER_MANAGER->SetUniform(shader, "lightWorldPos", lightPos);
 	SHADER_MANAGER->SetUniform(shader, "modelMatrix", light->GetTransform());
+
 }

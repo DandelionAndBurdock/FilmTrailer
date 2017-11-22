@@ -69,3 +69,6 @@ protected:
 	// Only active nodes are drawn and updated
 	bool isActive;
 };
+
+
+// Other types of scene node
