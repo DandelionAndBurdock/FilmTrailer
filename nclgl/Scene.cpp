@@ -36,7 +36,7 @@ void Scene::UpdateEffects(GLfloat msec, const glm::vec3& cameraPos) {
 	if (fireworks) {
 		fireworks->UpdateParticles(msec);
 	}
-	if (emitter) {
+	if (emitterOn && emitter) {
 		emitter->Update(msec);
 	}
 
@@ -53,7 +53,7 @@ void Scene::DrawEffects(const glm::mat4& viewProj, const glm::vec3& cameraPos) {
 		fireworks->Render(viewProj, cameraPos);
 	}
 
-	if (emitter) {
+	if (emitterOn && emitter) {
 		emitter->Draw();
 	}
 
@@ -73,8 +73,8 @@ void Scene::SetEmitter(ParticleEmitter* particleEmitter) {
 	emitter->SetParticleVariance(1.0f);
 	emitter->SetLaunchParticles(16.0f);
 	emitter->SetParticleLifetime(2000.0f);
-	emitter->SetParticleSpeed(0.1f);
-	emitter->SetSpawnPoint(glm::vec3(0.0f));
+	emitter->SetParticleSpeed(0.03f);
+	emitter->SetSpawnPoint(glm::vec3(1150.0f, 0.0f, 800.0f));
 }
 
 void Scene::AddLight(Light* light) { 

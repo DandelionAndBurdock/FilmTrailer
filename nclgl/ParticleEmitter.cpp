@@ -18,7 +18,7 @@ ParticleEmitter::ParticleEmitter(void) {
 	particleSize = 24.0f;
 	particleVariance = 0.2f;
 	nextParticleTime = 0.0f;
-	particleSpeed = 0.2f;
+	particleSpeed = 1.0f;
 	numLaunchParticles = 10;
 	largestSize = 0;
 
@@ -88,7 +88,6 @@ void ParticleEmitter::Update(float msec)	{
 			//Otherwise, this particle must be still 'alive'. Update its
 			//position by multiplying its normalised direction by the
 			//particle speed, and adding the result to the position. Easy!
-			particleSpeed = 0.01;
 			p->position += p->direction*(msec*particleSpeed);
 
 

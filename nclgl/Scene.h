@@ -35,6 +35,7 @@ public:
 
 	void UpdateEffects(GLfloat msec, const glm::vec3& cameraPos);
 	void DrawEffects(const glm::mat4& viewProj, const glm::vec3& cameraPos);
+	void ToggleEmitter() { emitterOn = !emitterOn; }
 
 	void SetFireworks(FireworkSystem* firework) { fireworks = firework; }
 	void SetEmitter(ParticleEmitter* particleEmitter);
@@ -57,5 +58,8 @@ ParticleManager* particles = nullptr;
 
 // List of permanent lights in the scene
 std::vector<Light*> permanentLights;
+
+
+bool emitterOn = false;
 };
 

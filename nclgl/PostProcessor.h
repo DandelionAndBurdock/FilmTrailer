@@ -16,6 +16,9 @@ public:
 	void ProcessScene();
 	void BindProcessedTexture();
 
+	void BlurOn() { blurOn = true; }
+	void BlurOff() { blurOn = false; }
+
 protected:
 	void GaussianBlur(GLuint startTexture);
 	void Contrast(GLuint startTexture);
@@ -43,5 +46,7 @@ protected:
 	GLfloat contrastLevel;
 
 	Mesh* sceneQuad;
+
+	GLboolean blurOn = false;
 };
 

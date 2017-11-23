@@ -96,8 +96,12 @@ void PostProcessor::BindSceneFBO() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 } 
 
-
+#include <iostream>
 void PostProcessor::ProcessScene() {
+	finalProcessTex = sceneColourTex;
+	if (blurOn) {
+		GaussianBlur(sceneColourTex);
+	}
 	//Bloom(sceneColourTex);
 	//Contrast(sceneColourTex);
 	//GaussianBlur(sceneColourTex);

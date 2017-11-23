@@ -171,7 +171,7 @@ void Renderer::SetupSceneA() {
 
 
 	CubeRobot* cubey = new CubeRobot();
-	cubey->SetTransform(glm::translate(glm::vec3(600.0f, -100.0f, 400.0f)) * glm::scale(glm::vec3(4.0f)));
+	cubey->SetTransform(glm::translate(glm::vec3(600.0f, 0.0f, 400.0f)) * glm::scale(glm::vec3(4.0f)));
 	heightMap->AddChild(cubey);
 
 	CubeRobot* cubey2 = new CubeRobot();
@@ -349,18 +349,14 @@ void Renderer::UpdateScene(float msec) {
 			masterRoot->Update(msec);
 		}
 
-		if (sceneTime > 50000.0f) {
-			SceneNumber nextScene = SceneNumber((currentScene + 1) % SceneNumber::NUM_SCENES);
-			Transition(currentScene, nextScene);
-		}
-
+		PrepareToTransition();
+		PostTransition();
 		scenes[currentScene]->UpdateEffects(msec, camera->GetPosition());
 
 		textureMatrix = glm::rotate(glm::radians(time), glm::vec3(0.0, 1.0, 1.0));
 
 		SceneSpecificUpdates(msec);
 
-		hellKnightNode->Update(msec);
 
 	}
 
@@ -566,7 +562,8 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("HoleTerrainShader", SHADERDIR"DeformVertex.glsl", SHADERDIR"DeformFragment.glsl");
 	SHADER_MANAGER->AddShader("ShadowDepth", SHADERDIR"ShadowCubeMapVertex.glsl", SHADERDIR"ShadowCubeMapFrag.glsl", SHADERDIR"ShadowCubeMapGeom.glsl");
 	SHADER_MANAGER->AddShader("AnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl");
-	
+	SHADER_MANAGER->AddShader("ExplodeAnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl", SHADERDIR"ExplodingGeom.glsl");
+
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("TextureQuadShader", SHADERDIR"TexturedQuadVertex.glsl", SHADERDIR"TexturedQuadFragment.glsl"); // Adding this one just so I don't break an
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
@@ -1047,10 +1044,15 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			laser->SetInactive();
 		}
 
-		if (sceneTime > 6000 && !hellKnightNode->IsIdle()) {
+		if (sceneTime > 6750 && !hellKnightNode->IsIdle()) {
 			hellKnightNode->SetIdle(true);
 			hellKnightNode->PlayAnim(MESHDIR"idle2.md5anim");
+			scenes[currentScene]->ToggleEmitter();
 		}
+		else if (sceneTime > 12000) {
+			hellKnightNode->SetShader("ExplodeAnimShader");
+		}
+
 		
 	}
 
@@ -1066,4 +1068,21 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 		ufoNode->SetTransform(glm::translate(glm::vec3(UFO_SPEED * msec * movementDirection)) * ufoNode->GetTransform());
 	}
 
+}
+
+void Renderer::PrepareToTransition() {
+	if (sceneTime > (SCENE_TIME - SCENE_TRANSITION_TIME / 2.0)) {
+		postProcessor->BlurOn(); 
+	}
+	if (sceneTime > SCENE_TIME) {
+		SceneNumber nextScene = SceneNumber((currentScene + 1) % SceneNumber::NUM_SCENES);
+		Transition(currentScene, nextScene);
+	}
+}
+
+void Renderer::PostTransition() {
+	if (sceneTime > SCENE_TRANSITION_TIME / 2.0 && 
+		sceneTime < SCENE_TIME - SCENE_TRANSITION_TIME / 2.0) {
+		postProcessor->BlurOff(); 
+	}
 }

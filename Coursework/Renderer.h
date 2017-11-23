@@ -33,6 +33,8 @@ class MD5FileData;
 
 class Renderer : public OGLRenderer {
 	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, NUM_SCENES};
+	const float SCENE_TIME = 7000.0f; // Time in msec to display each scene 
+	const float SCENE_TRANSITION_TIME = 2000.0f; // Time in msec to move from one scene to another
 public:
 	Renderer(Window& parent);
 	virtual ~Renderer();
@@ -42,7 +44,9 @@ public:
 	void RenderObjects(const glm::vec4& clipPlane);
 
 protected:
+	void PrepareToTransition();
 	void Transition(SceneNumber from, SceneNumber to);
+	void PostTransition();
 	void DrawSkybox();
 
 	void UpdateUniforms();
@@ -164,7 +168,7 @@ protected:
 
 	GLuint multipleViewBuffer;
 	GLuint multipleViewTex;
-
+	 
 	MD5Node* hellKnightNode;
 	MD5FileData* hellKnightData;
 };

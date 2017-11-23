@@ -103,13 +103,13 @@ void	MD5Node::DrawNode() {
 		modelMatrix = glm::translate(finalPosition) * rotationMatrix;
 	}
 
-
+	
 	sourceData.BindTextureBuffers();
 	sourceData.UpdateTransformTBO(currentSkeleton);
 
-	SHADER_MANAGER->SetUniform("AnimShader", "modelMatrix", modelMatrix);
-	SHADER_MANAGER->SetUniform("AnimShader", "weightTex", MD5_WEIGHT_TEXNUM);
-	SHADER_MANAGER->SetUniform("AnimShader", "transformTex", MD5_TRANSFORM_TEXNUM);
+	SHADER_MANAGER->SetUniform(shader, "modelMatrix", modelMatrix);
+	SHADER_MANAGER->SetUniform(shader, "weightTex", MD5_WEIGHT_TEXNUM);
+	SHADER_MANAGER->SetUniform(shader, "transformTex", MD5_TRANSFORM_TEXNUM);
 
 
 
