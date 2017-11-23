@@ -105,6 +105,5 @@ vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fr
 	vec3 ambientLight = vec3(light.colour) * ambientStrength * vec3(texture(diffuseTex, IN.texCoord));
     vec3 specularLight = vec3(light.colour) * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
     vec3 diffuseSpecular = (1.0 - shadow) * (diffuseLight + specularLight);
-    //return (ambientLight + diffuseSpecular);
-	return vec3(shadow);
+    return (ambientLight + diffuseSpecular);
 }

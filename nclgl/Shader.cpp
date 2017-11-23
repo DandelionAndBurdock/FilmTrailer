@@ -186,6 +186,9 @@ void Shader::AddArrayUniformLocation(const std::string& name) {
 	else if (name.find("spot") != std::string::npos) {
 		AddSpotLightUniformLocation();
 	}
+	else if (name.find("lightViewMat") != std::string::npos) {
+		AddLightViewUniformLocation();
+	}
 	else {
 		std::cout << "Warning: Failed to find uniform " << name << std::endl;
 	}
@@ -337,6 +340,20 @@ void Shader::AddSpotLightUniformLocation() {
 		}
 		name = "spotLights[" + ss.str() + "].position";
 		location = glGetUniformLocation(program, name.c_str());
+		if (location < 0) {
+			std::cout << "Warning: Failed to find uniform " << name << std::endl;
+		}
+		else {
+			uniformLocations[name] = location;
+		}
+	}
+}
+
+void Shader::AddLightViewUniformLocation() {
+	const int NUM_FACES = 6;
+	for (int i = 0; i < NUM_FACES; ++i) {
+		std::string name = "lightViewMatrices[" + std::to_string(i) + "]";
+		GLint location = glGetUniformLocation(program, name.c_str());
 		if (location < 0) {
 			std::cout << "Warning: Failed to find uniform " << name << std::endl;
 		}

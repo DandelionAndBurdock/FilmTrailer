@@ -96,7 +96,6 @@ void OmniShadow::SetUniforms(const Light* light) {
 	for (int i = 0; i < NUM_FACES; ++i) {
 		lightTransforms[i] = shadowProjMatrix * glm::lookAt(lightPos, lightPos + cameraDirections[i].target, cameraDirections[i].up);
 		SHADER_MANAGER->SetUniform(shader, "lightViewMatrices[" + std::to_string(i) + "]", lightTransforms[i]);
-		
 	}
 	SHADER_MANAGER->SetUniform(shader, "lightWorldPos", lightPos);
 	SHADER_MANAGER->SetUniform(shader, "modelMatrix", light->GetTransform());

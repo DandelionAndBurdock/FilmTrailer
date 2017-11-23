@@ -97,17 +97,14 @@ Renderer::~Renderer() {
 
 
 void Renderer::SetupSceneA() {
-	SceneNode* heightMap = new SceneNode(new HeightMap, "TerrainShader");
+	SceneNode* heightMap = new SceneNode(new HeightMap, "TerrainShadowShader");
 	
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_A]->SetCubeMap(cubeMapA);
 	scenes[SCENE_A]->SetTerrain(heightMap);
 	heightMap->UseTexture("Terrain");
 	heightMap->UseTexture("TerrainBump");
-	heightMap->UseTexture("Sand");
-	heightMap->UseTexture("SandGrass");
-	heightMap->UseTexture("Grass");
-	heightMap->UseTexture("Rock");
+
 
 	lightning = new Lightning(glm::vec3(500.0, 500.0, 0.0), glm::vec3(200.0, 0.0, 200.0));
 	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
@@ -122,7 +119,7 @@ void Renderer::SetupSceneA() {
 	}
 
 	permanentLights.clear();
-	permanentLights.push_back(new Light(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec4(1.0f), 2000.0f));
+	permanentLights.push_back(new Light(glm::vec3(500.0f, 200.0f, 500.0f), glm::vec4(1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 50.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(1000.0f, 500.0f, 1000.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 2000.0f));
 	//permanentLights.push_back(new Light(glm::vec3(500.0f, 200.0f, 2000.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2000.0f));
@@ -153,6 +150,13 @@ void Renderer::SetupSceneA() {
 	heightMap->AddChild(t);
 //	heightMap->SetInactive();
 
+	CubeRobot* cubey = new CubeRobot();
+	cubey->SetTransform(glm::translate(glm::vec3(600.0f, -100.0f, 400.0f)) * glm::scale(glm::vec3(4.0f)));
+	heightMap->AddChild(cubey);
+
+	CubeRobot* cubey2 = new CubeRobot();
+	cubey2->SetTransform(glm::translate(glm::vec3(600.0f, 0.0f, 800.0f)) * glm::scale(glm::vec3(4.0f)));
+	heightMap->AddChild(cubey2);
 
 	quad = Mesh::GenerateQuad();
 	
@@ -277,6 +281,17 @@ void Renderer::SetupSceneE() {
 	laser->SetTransform(glm::translate(glm::vec3(500.0f, 0.0f, 500.0f)));
 	SHADER_MANAGER->SetUniform("HoleTerrainShader", "epicentre", glm::vec2(500.0f, 500.0f));
 	laser->UseTexture("Laser");
+
+	//OBJMesh* m = new OBJMesh;
+	//if (m->LoadOBJMesh(MESHDIR"farmhouse_obj.obj")) {
+	//	houseMesh = m;
+	//}
+	//else {
+	//	__debugbreak();
+	//}
+
+	houseNode = new SceneNode(houseMesh, "TerrainShader");
+	heightMap->AddChild(houseNode);
 	scenes[SCENE_E]->SetTerrain(heightMap);
 	scenes[SCENE_E]->SetCubeMap(cubeMapC);
 	scenes[SCENE_E]->SetEmitter(new ParticleEmitter);
@@ -386,18 +401,18 @@ void Renderer::RenderScene() {
 	//*************** WATER**************************
 	// Enable clipping planes so that we don't have to process geometry
 	// above/below the water for refraction/reflection
-	//glEnable(GL_CLIP_DISTANCE0);
-	//SetupReflectionBuffer();
-	//SetupRefractionBuffer();
-	//glDisable(GL_CLIP_DISTANCE0);
-	//glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	glEnable(GL_CLIP_DISTANCE0);
+	SetupReflectionBuffer();
+	SetupRefractionBuffer();
+	glDisable(GL_CLIP_DISTANCE0);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	//*************** SHADOW *****************************
-	//ShadowMapFirstPass();
-	//omniShadow->BindForReading();
+	ShadowMapFirstPass();
+	omniShadow->BindForReading();
 	//*************RENDER SCENE **************************
 	DrawSceneToBuffer();
 	//*************POST PROCESSING **************************
-	postProcessor->ProcessScene();
+	//postProcessor->ProcessScene();
 	PresentScene();
 
 	//*************RENDER GUI**************************
@@ -528,7 +543,7 @@ void Renderer::SetupScenes() {
 
 void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TextShader", SHADERDIR"TextVertex.glsl", SHADERDIR"TextFragment.glsl");
-	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
+	SHADER_MANAGER->AddShader("TerrainShadowShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
 	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingHeightVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");

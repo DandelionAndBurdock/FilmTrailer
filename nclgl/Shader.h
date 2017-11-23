@@ -38,6 +38,7 @@ protected:
 	void AddDirLightUniformLocation();
 	void AddPointLightUniformLocation();
 	void AddSpotLightUniformLocation();
+	void AddLightViewUniformLocation();
 
 
 	GLuint objects[3];
