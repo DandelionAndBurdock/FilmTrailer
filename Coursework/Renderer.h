@@ -28,6 +28,8 @@ class Sun;
 class PostProcessor;
 class Scene;
 class GerstnerWaves;
+class MD5Node;
+class MD5FileData;
 
 class Renderer : public OGLRenderer {
 	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, NUM_SCENES};
@@ -74,7 +76,7 @@ protected:
 	void RenderViewPointToBuffer(const glm::vec3& pos, const glm::vec3& lookat);
 	void RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWidth, GLuint windowHeight);
 	void ShadowMapFirstPass();
-	void SceneSpecificUpdates();
+	void SceneSpecificUpdates(GLfloat msec);
 
 	void DrawFPS();
 
@@ -89,7 +91,7 @@ protected:
 	Camera* camera = nullptr;
 	Mesh* reflectionQuad = nullptr;
 	Mesh* refractionQuad = nullptr;
-	Mesh* quad = nullptr;
+	Mesh* skyboxQuad = nullptr;
 	Mesh* sceneQuad = nullptr; // Holds scene for post processing
 	Mesh* splitQuad = nullptr; // Holds images for multiple screens
 
@@ -111,8 +113,6 @@ protected:
 
 	// List of all lights in the world
 	std::vector<Light*> lights;
-	// List of permanent lights in the world
-	std::vector<Light*> permanentLights;
 	// List of temporary lights in the world e.g. lightning
 	std::vector<Light*> tempLights;
 
@@ -164,4 +164,7 @@ protected:
 
 	GLuint multipleViewBuffer;
 	GLuint multipleViewTex;
+
+	MD5Node* hellKnightNode;
+	MD5FileData* hellKnightData;
 };

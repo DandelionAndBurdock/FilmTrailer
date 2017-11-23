@@ -14,6 +14,8 @@ public:
 	const glm::mat4& GetTransform() const {	return transform; }
 	glm::mat4 GetWorldTransform() const {	return worldTransform; }
 
+	glm::vec3 GetPosition()  { return glm::vec3(worldTransform[3][0], worldTransform[3][1], worldTransform[3][2]); }
+
 	glm::vec4 GetColour() const {	return colour; }
 	void SetColour(glm::vec4 c) {	colour = c; }
 

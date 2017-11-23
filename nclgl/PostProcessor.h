@@ -20,6 +20,7 @@ protected:
 	void GaussianBlur(GLuint startTexture);
 	void Contrast(GLuint startTexture);
 	void Bloom(GLuint startTexture);
+	void Combine(GLuint sceneTexture, GLuint highlightTexture);
 
 	void Initialise();
 	void InitialiseSceneFBO();

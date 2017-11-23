@@ -5,6 +5,10 @@
 
 #include "ParticleSystem.h" // Rename firework system
 #include "ParticleEmitter.h"
+#include "Lightning.h"
+#include "ParticleManager.h"
+#include "Light.h"
+
 Scene::Scene(SceneNode* masterRoot)
 {
 	root = new SceneNode();
@@ -28,21 +32,37 @@ void Scene::SetTerrain(SceneNode* heightMap) {
 }
 
 
-void Scene::UpdateEffects(GLfloat msec) {
+void Scene::UpdateEffects(GLfloat msec, const glm::vec3& cameraPos) {
 	if (fireworks) {
 		fireworks->UpdateParticles(msec);
 	}
 	if (emitter) {
 		emitter->Update(msec);
 	}
+
+	if (lightning) {
+		lightning->Update(msec);
+	}
+
+	if (particles) {
+		particles->Update(msec, cameraPos);
+	}
 }
-void Scene::DrawEffects(const glm::mat4& viewProj, const glm::vec3 cameraPos) {
+void Scene::DrawEffects(const glm::mat4& viewProj, const glm::vec3& cameraPos) {
 	if (fireworks) {
 		fireworks->Render(viewProj, cameraPos);
 	}
 
 	if (emitter) {
 		emitter->Draw();
+	}
+
+	if (lightning && lightning->ShouldFire()) {
+		lightning->Draw(viewProj, cameraPos);
+	}
+
+	if (particles) {
+		particles->Render();
 	}
 }
 
@@ -55,4 +75,9 @@ void Scene::SetEmitter(ParticleEmitter* particleEmitter) {
 	emitter->SetParticleLifetime(2000.0f);
 	emitter->SetParticleSpeed(0.1f);
 	emitter->SetSpawnPoint(glm::vec3(0.0f));
+}
+
+void Scene::AddLight(Light* light) { 
+	permanentLights.push_back(light); 
+	terrain->AddChild(light);
 }

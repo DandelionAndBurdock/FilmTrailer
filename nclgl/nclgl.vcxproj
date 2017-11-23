@@ -23,6 +23,11 @@
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Lightning.cpp" />
+    <ClCompile Include="Matrix4.cpp" />
+    <ClCompile Include="MD5Anim.cpp" />
+    <ClCompile Include="MD5FileData.cpp" />
+    <ClCompile Include="MD5Mesh.cpp" />
+    <ClCompile Include="MD5Node.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="OBJMesh.cpp" />
@@ -35,6 +40,7 @@
     <ClCompile Include="PerlinNoise.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="PostProcessor.cpp" />
+    <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="RandomNumberGenerator.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneNode.cpp" />
@@ -65,6 +71,11 @@
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Lightning.h" />
+    <ClInclude Include="Matrix4.h" />
+    <ClInclude Include="MD5Anim.h" />
+    <ClInclude Include="MD5FileData.h" />
+    <ClInclude Include="MD5Mesh.h" />
+    <ClInclude Include="MD5Node.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="OBJMesh.h" />
@@ -78,6 +89,7 @@
     <ClInclude Include="PerlinNoise.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="PostProcessor.h" />
+    <ClInclude Include="Quaternion.h" />
     <ClInclude Include="RandomNumberGenerator.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneNode.h" />
@@ -88,6 +100,9 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="Vector2.h" />
+    <ClInclude Include="Vector3.h" />
+    <ClInclude Include="Vector4.h" />
     <ClInclude Include="Water.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>

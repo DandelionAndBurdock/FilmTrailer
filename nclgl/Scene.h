@@ -14,6 +14,7 @@ class Grass;
 class Sun;
 class Water;
 class ParticleEmitter;
+class Light;
 
 #include <vector>
 
@@ -32,11 +33,15 @@ public:
 	void SetCubeMap(GLuint cubeMap) { this->cubeMap = cubeMap; }
 	GLuint GetCubeMap() { return cubeMap; }
 
-	void UpdateEffects(GLfloat msec);
-	void DrawEffects(const glm::mat4& viewProj, const glm::vec3 cameraPos);
+	void UpdateEffects(GLfloat msec, const glm::vec3& cameraPos);
+	void DrawEffects(const glm::mat4& viewProj, const glm::vec3& cameraPos);
 
 	void SetFireworks(FireworkSystem* firework) { fireworks = firework; }
 	void SetEmitter(ParticleEmitter* particleEmitter);
+	void SetLightning(Lightning* lightning) { this->lightning = lightning; }
+	void SetParticles(ParticleManager* particles) { this->particles = particles; }
+	void AddLight(Light* light); 
+	std::vector<Light*>& GetLights() { return permanentLights; }
 
 protected:
 SceneNode* root = nullptr;
@@ -47,5 +52,10 @@ GLuint cubeMap = 0;
 // Effects
 FireworkSystem* fireworks = nullptr;
 ParticleEmitter* emitter = nullptr;
+Lightning* lightning = nullptr;
+ParticleManager* particles = nullptr;
+
+// List of permanent lights in the scene
+std::vector<Light*> permanentLights;
 };
 

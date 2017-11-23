@@ -15,7 +15,7 @@ PostProcessor::PostProcessor(GLuint screenWidth, GLuint screenHeight)
 	
 	sceneQuad = Mesh::GenerateQuad();
 
-	blurPasses = 1;
+	blurPasses = 3;
 
 	contrastLevel = 3.0;
 
@@ -77,16 +77,18 @@ void PostProcessor::InitialiseSceneFBO() {
 
 void PostProcessor::InitialiseProcessFBO() {
 	glGenFramebuffers(1, &processFBO);
-	processColourTex[0] = sceneColourTex;
 
-	glGenTextures(1, &processColourTex[1]);
-	glBindTexture(GL_TEXTURE_2D, processColourTex[1]);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texHeight, 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	for (int i = 0; i < 2; ++i) {
+		glGenTextures(1, &processColourTex[i]);
+		glBindTexture(GL_TEXTURE_2D, processColourTex[i]);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texHeight, 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	}
+
 }
 
 void PostProcessor::BindSceneFBO() {
@@ -98,7 +100,7 @@ void PostProcessor::BindSceneFBO() {
 void PostProcessor::ProcessScene() {
 	//Bloom(sceneColourTex);
 	//Contrast(sceneColourTex);
-	 //GaussianBlur(sceneColourTex);
+	//GaussianBlur(sceneColourTex);
 }
 
 void PostProcessor::BindProcessedTexture(){
@@ -109,7 +111,7 @@ void PostProcessor::BindProcessedTexture(){
 
 void PostProcessor::GaussianBlur(GLuint startTexture) {
 	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
-	glClear(GL_COLOR_BUFFER_BIT);
+	
 	SHADER_MANAGER->SetUniform("BlurShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
 	SHADER_MANAGER->SetUniform("BlurShader", "viewMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("BlurShader", "modelMatrix", glm::mat4());
@@ -119,13 +121,17 @@ void PostProcessor::GaussianBlur(GLuint startTexture) {
 	glDisable(GL_DEPTH_TEST);
 	glActiveTexture(GL_TEXTURE0);
 
-	
-	if (processColourTex[0] == startTexture) {
-		for (int i = 0; i < blurPasses; ++i) {
+	for (int i = 0; i < blurPasses; ++i) {
 			// First pass
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 				GL_TEXTURE_2D, processColourTex[1], 0);
-			glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
+			if (i == 0) {
+				glBindTexture(GL_TEXTURE_2D, startTexture);
+			}
+			else {
+				glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
+			}
+		
 			SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 0);
 
 			sceneQuad->Draw();
@@ -139,39 +145,16 @@ void PostProcessor::GaussianBlur(GLuint startTexture) {
 			sceneQuad->Draw();
 		}
 		finalProcessTex = processColourTex[0];
-	}
-	else {
-		for (int i = 0; i < blurPasses; ++i) {
-			// First pass
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-				GL_TEXTURE_2D, processColourTex[0], 0);
-			glBindTexture(GL_TEXTURE_2D, processColourTex[1]);
-			SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 0);
+		//std::swap(finalProcessTex, processColourTex[1]);
 
-			sceneQuad->Draw();
-
-			// Second pass
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-				GL_TEXTURE_2D, processColourTex[1], 0);
-			glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
-			SHADER_MANAGER->SetUniform("BlurShader", "isVertical", 1);
-
-			sceneQuad->Draw();
-		}
-		finalProcessTex = processColourTex[1];
-	}
-
-	//std::swap(finalProcessTex, processColourTex[1]);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glEnable(GL_DEPTH_TEST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glEnable(GL_DEPTH_TEST);
 }
 
 
 void PostProcessor::Contrast(GLuint startTexture) {
 	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
 
-	glClear(GL_COLOR_BUFFER_BIT);
 	SHADER_MANAGER->SetUniform("ContrastShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
 	SHADER_MANAGER->SetUniform("ContrastShader", "viewMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("ContrastShader", "modelMatrix", glm::mat4());
@@ -206,25 +189,50 @@ void PostProcessor::Contrast(GLuint startTexture) {
 void PostProcessor::Bloom(GLuint startTexture) {
 	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
 
-	glClear(GL_COLOR_BUFFER_BIT);
 	SHADER_MANAGER->SetUniform("BloomShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
 	SHADER_MANAGER->SetUniform("BloomShader", "viewMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("BloomShader", "modelMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("BloomShader", "pixelSize", glm::vec2(1.0f / texWidth, 1.0f / texHeight));
 	SHADER_MANAGER->SetUniform("BloomShader", "diffuseTex", 0);
 
-	processColourTex[0] = startTexture;
-
 	glDisable(GL_DEPTH_TEST);
 	glActiveTexture(GL_TEXTURE0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-		GL_TEXTURE_2D, processColourTex[1], 0);
-	glBindTexture(GL_TEXTURE_2D, processColourTex[0]);
-	sceneQuad->Draw();
+	glBindTexture(GL_TEXTURE_2D, startTexture);
 
-	finalProcessTex = processColourTex[1];
+	if (processColourTex[0] == startTexture) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, processColourTex[1], 0);
+		finalProcessTex = processColourTex[1];
+	}
+	else {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, processColourTex[0], 0);
+		finalProcessTex = processColourTex[0];
+	}
+	sceneQuad->Draw();
+	
+	GaussianBlur(finalProcessTex);
+	Contrast(finalProcessTex);
+
+	// Combine blurred highlight image with the original scene
+	Combine(sceneColourTex, finalProcessTex);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_DEPTH_TEST);
 }
 
+
+void PostProcessor::Combine(GLuint sceneTexture, GLuint highlightTexture) {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDisable(GL_DEPTH_TEST);
+	SHADER_MANAGER->SetUniform("CombineShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
+	SHADER_MANAGER->SetUniform("CombineShader", "viewMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("CombineShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("CombineShader", "pixelSize", glm::vec2(1.0f / texWidth, 1.0f / texHeight));
+	SHADER_MANAGER->SetUniform("CombineShader", "originalSceneTex", 0);
+	SHADER_MANAGER->SetUniform("CombineShader", "blurredHighlightTex", 1);
+
+	sceneQuad->Draw();
+
+	glEnable(GL_DEPTH_TEST);
+}

@@ -17,6 +17,15 @@ bool Light::CreateLightMesh() {
 
 }
 
-void Light::UpdateTransform(){ 
-	transform = glm::translate(position); 
+
+
+glm::vec4 Light::GetPosition() const {
+	//if (parent) {
+	//	glm::mat4 temp = parent->GetWorldTransform();
+	//	return parent->GetWorldTransform() * transform * glm::vec4(position, 1.0);
+	//}
+	//else {
+		return glm::vec4(position, 1.0);
+	//}
+	
 }

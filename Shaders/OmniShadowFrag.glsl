@@ -1,4 +1,4 @@
-//TODO: https://learnopengl.com/code_viewer_gh.php?code=src/5.advanced_lighting/3.2.2.point_shadows_soft/3.2.2.point_shadows.fs
+//Credit https://learnopengl.com/code_viewer_gh.php?code=src/5.advanced_lighting/3.2.2.point_shadows_soft/3.2.2.point_shadows.fs
 #version 330 core
 // OmniDirectional Shadows for a single light
 
@@ -74,7 +74,6 @@ float CalculateShadow(vec3 worldPos){
 	// Bias to prevent shadow acne. Give surfaces which are almost perpendicular to the light a smaller bias
 	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
 	float bias = 0.05;
-
 	if (currentDepth > closestDepth + bias)
 		return 1.0;
 	else
@@ -106,4 +105,5 @@ vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fr
     vec3 specularLight = vec3(light.colour) * specular * 0.33;//vec3(texture(material.specular, IN.texCoord));
     vec3 diffuseSpecular = (1.0 - shadow) * (diffuseLight + specularLight);
     return (ambientLight + diffuseSpecular);
+
 }

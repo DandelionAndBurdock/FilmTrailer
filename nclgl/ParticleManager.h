@@ -21,7 +21,8 @@ public:
 
 	void SetSpawnArea();
 protected:
-
+	// Sort particles by distance from the camera
+	void SortParticles();
 	void Rebuffer();
 	// Returns index of particle with lifeRemaining < 0 
 	GLuint NextUnusedParticle();

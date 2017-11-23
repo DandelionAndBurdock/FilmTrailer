@@ -5,6 +5,7 @@
 
 #include <algorithm>
 
+#include "RandomNumberGenerator.h"
 
 #include "../../glm/gtx/norm.hpp" // length2()
 
@@ -138,8 +139,16 @@ void ParticleManager::GenerateNewParticles(GLfloat msec) {
 	numNewParticles = min(numNewParticles, MAX_NEW_PARTICLES);
 	for (int i = 0; i < numNewParticles; ++i) {
 		int particleIndex = NextUnusedParticle();
-		particles[particleIndex].lifeRemaining = 5000.0f;
-		particles[particleIndex].pos = glm::vec3(0.0, 0.0, -20.0f);
+		particles[particleIndex].lifeRemaining = 7000.0f;
+
+		GLfloat xMin = 0.0f;
+		GLfloat xMax = 10.0f;
+
+		GLfloat zMin = 0.0f;
+		GLfloat zMax = 1000.0f;
+		particles[particleIndex].pos = glm::vec3(RNG->GetRandFloat(xMin, xMax), 
+												 200.0f, 
+												 RNG->GetRandFloat(zMin, zMax));
 
 		float spread = 1.5f;
 
@@ -152,12 +161,11 @@ void ParticleManager::GenerateNewParticles(GLfloat msec) {
 		);
 
 		particles[particleIndex].vel = mainDir + randDir * spread;
-		//particles[particleIndex].size = (rand() % 1000) / 100.0f + 20.0f; //TODO: Use RNG make better rand generation
-		particles[particleIndex].size =100.0f; //TODO: Use RNG make better rand generation
+		particles[particleIndex].size = (rand() % 1000) / 500.0f + 0.5f; //TODO: Use RNG make better rand generation
 
-		particles[particleIndex].colour[0] = (GLubyte) rand() % 256;
-		particles[particleIndex].colour[1] = (GLubyte) rand() % 256;
-		particles[particleIndex].colour[2] = (GLubyte) rand() % 256;
+		particles[particleIndex].colour[0] = (GLubyte) 0.95;
+		particles[particleIndex].colour[1] = (GLubyte) 0.95;
+		particles[particleIndex].colour[2] = (GLubyte) 0.95;
 		particles[particleIndex].colour[3] = (GLubyte) (rand() % 256) / 3;
 
 	}
@@ -193,4 +201,12 @@ void ParticleManager::UpdateParticles(GLfloat msec, glm::vec3 cameraPos) {
 			p.cameraDistance = -1.0f;
 		}
 	}
+}
+
+void ParticleManager::SortParticles() {
+	std::sort(particles.begin(), particles.begin());
+}
+
+void ParticleManager::SetSpawnArea() {
+
 }
