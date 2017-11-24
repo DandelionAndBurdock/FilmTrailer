@@ -32,8 +32,8 @@ class MD5Node;
 class MD5FileData;
 
 class Renderer : public OGLRenderer {
-	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, NUM_SCENES};
-	const float SCENE_TIME = 7000.0f; // Time in msec to display each scene 
+	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, SCENE_F, NUM_SCENES};
+	const float SCENE_TIME = 70000.0f; // Time in msec to display each scene 
 	const float SCENE_TRANSITION_TIME = 2000.0f; // Time in msec to move from one scene to another
 public:
 	Renderer(Window& parent);
@@ -67,6 +67,7 @@ protected:
 	void SetupSceneC();
 	void SetupSceneD();
 	void SetupSceneE();
+	void SetupSceneF();
 	void ConfigureOpenGL();
 	void SetConstants();
 	void HandleInput();
@@ -81,6 +82,9 @@ protected:
 	void RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWidth, GLuint windowHeight);
 	void ShadowMapFirstPass();
 	void SceneSpecificUpdates(GLfloat msec);
+	glm::vec3 ufoTargetPositions[2]; //Temp variables
+	GLint ufoTargetIndex = 0;
+	void SwitchUFOTargetPosition(); //Temporary function delete
 
 	void DrawFPS();
 
@@ -147,6 +151,8 @@ protected:
 	GLuint cubeMapB;
 	GLuint cubeMapC;
 	GLuint cubeMapD;
+	GLuint cubeMapE;
+	GLuint cubeMapF;
 
 	OmniShadow* omniShadow;
 
@@ -168,6 +174,8 @@ protected:
 
 	GLuint multipleViewBuffer;
 	GLuint multipleViewTex;
+	GLuint multipleViewDepthTex;
+	Mesh* splitScreenMesh;
 	 
 	MD5Node* hellKnightNode;
 	MD5FileData* hellKnightData;

@@ -18,6 +18,7 @@ public:
 
 	void BlurOn() { blurOn = true; }
 	void BlurOff() { blurOn = false; }
+	void SetBlurPasses(GLint n) { blurPasses = n; }
 
 protected:
 	void GaussianBlur(GLuint startTexture);

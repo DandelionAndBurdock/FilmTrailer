@@ -75,9 +75,30 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
 		multipleViewTex, 0);
 
+	glGenTextures(1, &multipleViewDepthTex);
+	glBindTexture(GL_TEXTURE_2D, multipleViewDepthTex);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, screenSize.x, screenSize.y,
+		0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+		GL_TEXTURE_2D, multipleViewDepthTex, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+		multipleViewDepthTex, 0);
+
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		return;
-}
+
+	ufoTargetPositions[0] = glm::vec3(1500.0f, 600.0f, 1500.0f);
+	ufoTargetPositions[1] = glm::vec3(300.0f, 900.0f, 300.0f);
+
+	splitScreenMesh = Mesh::GenerateQuad();
+}; //Temp variables
+	
 
 //TODO: Check
 Renderer::~Renderer() {
@@ -208,13 +229,18 @@ void Renderer::HandleInput() {
 			Transition(currentScene, SCENE_E);
 		}
 	}
+	if (Window::GetKeyboard()->KeyTriggered(KEYBOARD_6)) {
+		if (scenes.size() > 5) {
+			Transition(currentScene, SCENE_F);
+		}
+	}
 	if (Window::GetKeyboard()->KeyTriggered(KEYBOARD_P)) {
 		pause = !pause;
 	}
 }
 
 void Renderer::SetupSceneB() {
-	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainShader");
+	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainTexShader");
 
 	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	scenes.push_back(new Scene(masterRoot));
@@ -321,12 +347,12 @@ void Renderer::SetupSceneE() {
 	heightMap = nullptr;
 }
 
-/*
-void Renderer::SetupSceneF(){
-scenes.push_back(new Scene(masterRoot));
-scenes[SCENE_F]->SetFireworks(new FireworkSystem(glm::vec3(300.0f, 300.0f, 300.0f)));
-scenes[SCENE_F]->SetCubeMap(cubeMapC);
-*/
+
+void Renderer::SetupSceneF() {
+	scenes.push_back(new Scene(masterRoot));
+	scenes[SCENE_F]->SetFireworks(new FireworkSystem(glm::vec3(0.0f, 0.0f, 0.0f)));
+	scenes[SCENE_F]->SetCubeMap(cubeMapF);
+}
 
 void Renderer::UpdateScene(float msec) {
 	OGLRenderer::UpdateScene(msec);
@@ -341,7 +367,8 @@ void Renderer::UpdateScene(float msec) {
 	viewMatrix = camera->BuildViewMatrix();
 
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
-
+	BuildNodeLists(masterRoot);
+	SortNodeLists();
 
 	if (!pause) {
 		sceneTime += msec;
@@ -360,10 +387,6 @@ void Renderer::UpdateScene(float msec) {
 
 	}
 
-
-	BuildNodeLists(masterRoot);
-	SortNodeLists();
-
 	lights.clear();
 	lights.insert(lights.end(), tempLights.begin(), tempLights.end());
 	lights.insert(lights.end(), scenes[currentScene]->GetLights().begin(), scenes[currentScene]->GetLights().end());
@@ -380,13 +403,9 @@ void Renderer::UpdateScene(float msec) {
 	//dirLight->Rotate(1.0 / 10.0 * msec, glm::vec3(0.0, 0.0, 1.0));
 	//grass->Update(msec);
 
-
-
 	
 	//spotlight->Randomise(msec);
 	
-	
-
 	flareManager->PrepareToRender(camera->GetPosition(), projMatrix * viewMatrix, sun->GetPosition());
 
 	//SHADER_MANAGER->SetUniform("Grass", "modelMatrix", modelMatrix);
@@ -425,6 +444,10 @@ void Renderer::RenderScene() {
 	omniShadow->BindForReading();
 	//*************RENDER SCENE **************************
 	DrawSceneToBuffer();
+	// Draw mini-scene for multiple views
+	if (currentScene == SCENE_B) {
+		RenderViewPointToBuffer(ufoNode->GetPosition(), glm::vec3(0.0f, -1.0f, 0.0f));
+	}
 	//*************POST PROCESSING **************************
 	 postProcessor->ProcessScene();
 	PresentScene();
@@ -433,9 +456,15 @@ void Renderer::RenderScene() {
 	//RenderReflectionQuad();
 	//RenderRefractionQuad();
 	//RenderNoiseQuad();
+	if (currentScene == SCENE_B) {
+		RenderSplitScreen(100, 100, 150, 150);
+	}
+	else if (currentScene == SCENE_F) {
+		scenes[SCENE_F]->DrawEffects(projMatrix * viewMatrix, camera->GetPosition());
+	}
 	flareManager->Render();
 	DrawFPS();
-	scenes[currentScene]->DrawEffects(projMatrix * viewMatrix, camera->GetPosition());
+
 	SwapBuffers();
 	glUseProgram(0);
 	ClearNodeLists();
@@ -448,6 +477,7 @@ void Renderer::DrawSceneToBuffer() {
 	postProcessor->BindSceneFBO();
 	DrawSkybox();
 	RenderObjects(NO_CLIP_PLANE);
+	scenes[currentScene]->DrawEffects(projMatrix * viewMatrix, camera->GetPosition());
 }
 
 //TODO: Draw Scene()
@@ -545,12 +575,14 @@ void Renderer::SetupScenes() {
 	SetupSceneC();
 	SetupSceneD();
 	SetupSceneE();
+	SetupSceneF();
 	currentCubeMap = cubeMapA;
 	currentScene = SCENE_A;
 	scenes[SCENE_B]->GetRoot()->SetInactive();
 	scenes[SCENE_C]->GetRoot()->SetInactive();
 	scenes[SCENE_D]->GetRoot()->SetInactive();
 	scenes[SCENE_E]->GetRoot()->SetInactive();
+	scenes[SCENE_F]->GetRoot()->SetInactive();
 }
 
 void Renderer::LoadShaders() {
@@ -558,7 +590,7 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TerrainShadowShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
 	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingHeightVertex.glsl", SHADERDIR"LightingFragment.glsl");
-	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
+	SHADER_MANAGER->AddShader("TerrainTexShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
 	SHADER_MANAGER->AddShader("HoleTerrainShader", SHADERDIR"DeformVertex.glsl", SHADERDIR"DeformFragment.glsl");
 	SHADER_MANAGER->AddShader("ShadowDepth", SHADERDIR"ShadowCubeMapVertex.glsl", SHADERDIR"ShadowCubeMapFrag.glsl", SHADERDIR"ShadowCubeMapGeom.glsl");
 	SHADER_MANAGER->AddShader("AnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl");
@@ -588,10 +620,8 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("TerrainBump", TEXTUREDIR"Barren RedsDOT3.jpg");
 	TEXTURE_MANAGER->AddTexture("dudvMap", TEXTUREDIR"waterDUDV.png");
 	TEXTURE_MANAGER->AddTexture("waterBump", TEXTUREDIR"waterNormalMap.png");
-	//TEXTURE_MANAGER->AddTexture("Sand", TEXTUREDIR"sand.jpg");
-	//TEXTURE_MANAGER->AddTexture("Grass", TEXTUREDIR"grass.jpg");
-	TEXTURE_MANAGER->AddTexture("Sand", TEXTUREDIR"rock.jpg");
-	TEXTURE_MANAGER->AddTexture("Grass", TEXTUREDIR"rock.jpg");
+	TEXTURE_MANAGER->AddTexture("Sand", TEXTUREDIR"sand.png");
+	TEXTURE_MANAGER->AddTexture("Grass", TEXTUREDIR"grass.png");
 	TEXTURE_MANAGER->AddTexture("SandGrass", TEXTUREDIR"sandGrass.jpg");
 	TEXTURE_MANAGER->AddTexture("Rock", TEXTUREDIR"rock.png");
 	TEXTURE_MANAGER->AddTexture("Flower", TEXTUREDIR"Flower.png");
@@ -666,6 +696,21 @@ void Renderer::LoadTextures() {
 		__debugbreak();
 	}
 
+	cubeMapF = SOIL_load_OGL_cubemap(
+		TEXTUREDIR"purplenebula_lf.tga",
+		TEXTUREDIR"purplenebula_rt.tga",
+		TEXTUREDIR"purplenebula_up.tga",
+		TEXTUREDIR"purplenebula_dn.tga",
+		TEXTUREDIR"purplenebula_bk.tga",
+		TEXTUREDIR"purplenebula_ft.tga",
+		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0
+	);
+
+	if (!cubeMapF) {
+		std::cout << SOIL_last_result() << std::endl;
+		__debugbreak();
+	}
+
 }
 
 void Renderer::ConfigureOpenGL() {
@@ -735,16 +780,16 @@ void Renderer::UpdateUniforms() {
 					SHADER_MANAGER->SetUniform(shader, uniform, 0);
 				}
 				else if (uniform == "sandTex") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 3);
+					SHADER_MANAGER->SetUniform(shader, uniform, 2);
 				}
 				else if (uniform == "sandGrassTex") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 4);
+					SHADER_MANAGER->SetUniform(shader, uniform, 3);
 				}
 				else if (uniform == "grassTex") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 5);
+					SHADER_MANAGER->SetUniform(shader, uniform, 4);
 				}
 				else if (uniform == "rockTex") {
-					SHADER_MANAGER->SetUniform(shader, uniform, 6);
+					SHADER_MANAGER->SetUniform(shader, uniform, 5);
 				}
 				else {
 					std::cout << "Warning: " << uniform << " was not set by renderer" << std::endl;
@@ -1016,21 +1061,35 @@ void Renderer::RenderNoiseQuad() {
 
 void Renderer::RenderViewPointToBuffer(const glm::vec3& pos, const glm::vec3& viewDirection) {
 	glBindFramebuffer(GL_FRAMEBUFFER, multipleViewBuffer);
-	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", glm::lookAt(pos, pos + viewDirection, glm::vec3(0, 1, 0)));
-	RenderObjects(NO_CLIP_PLANE);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); 
+	glm::mat4 newViewMatrix = glm::lookAt(pos, pos + viewDirection, glm::vec3(1, 0, 0)); // Last element is up vector of camera need to pass in as parm but this will work for now
+	frameFrustum.FromMatrix(projMatrix * newViewMatrix);
+	BuildNodeLists(masterRoot);
+	SortNodeLists();
+	for (const auto& shader : activeShaders) {
+		SHADER_MANAGER->SetUniform(shader, "clipPlane", NO_CLIP_PLANE);
+		SHADER_MANAGER->SetUniform(shader, "viewMatrix", newViewMatrix); //TODO: Store
+	}
+	DrawSkybox();
+	DrawNodes();
+	//grass->Draw();
+	
+	scenes[currentScene]->DrawEffects(projMatrix * newViewMatrix, pos);
 }
 
 void Renderer::RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWidth, GLuint windowHeight) {
 	glViewport(windowX, windowY, windowWidth, windowHeight);
+	glDisable(GL_DEPTH_TEST);
 	SHADER_MANAGER->SetUniform("QuadShader", "modelMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("QuadShader", "viewMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("QuadShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
 
 	SHADER_MANAGER->SetUniform("QuadShader", "diffuseTex", 0);
 	glBindTexture(GL_TEXTURE_2D, multipleViewTex);
-
-
+	splitScreenMesh->Draw();
+	// Reset viewport
 	glViewport(0, 0, screenSize.x, screenSize.y);
+	glEnable(GL_DEPTH_TEST);
 }
 
 // Temporary ugly function
@@ -1062,16 +1121,24 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	}
 
 	if (currentScene == SCENE_B && ufoNode) {
-		const float UFO_SPEED = 0.1f; // Units per milliseconds
-		glm::vec3 targetPosition = glm::vec3(1000.0f, 100.0f, 1000.0f);
+		const float UFO_SPEED = 0.001f; // Units per milliseconds
+
+		glm::vec3 targetPosition = ufoTargetPositions[ufoTargetIndex];
 		glm::vec3 movementDirection = targetPosition - ufoNode->GetPosition();
+
+		if (glm::distance(targetPosition, ufoNode->GetPosition())< 5.0f) {
+			SwitchUFOTargetPosition();
+			ufoNode->SetTransform(glm::translate(glm::vec3(-2.0f * UFO_SPEED * msec *  movementDirection)) * ufoNode->GetTransform());
+		}
+	
 		ufoNode->SetTransform(glm::translate(glm::vec3(UFO_SPEED * msec * movementDirection)) * ufoNode->GetTransform());
-	}
+	} 
 
 }
 
 void Renderer::PrepareToTransition() {
 	if (sceneTime > (SCENE_TIME - SCENE_TRANSITION_TIME / 2.0)) {
+		postProcessor->SetBlurPasses(1 + 3 * round(sceneTime / SCENE_TRANSITION_TIME));
 		postProcessor->BlurOn(); 
 	}
 	if (sceneTime > SCENE_TIME) {
@@ -1081,8 +1148,17 @@ void Renderer::PrepareToTransition() {
 }
 
 void Renderer::PostTransition() {
+	if (sceneTime < SCENE_TRANSITION_TIME / 2.0) {
+		postProcessor->SetBlurPasses(4 - 3 * round((2.0 * sceneTime) / SCENE_TRANSITION_TIME)); // Decrease blur over time
+	}
+	 
 	if (sceneTime > SCENE_TRANSITION_TIME / 2.0 && 
 		sceneTime < SCENE_TIME - SCENE_TRANSITION_TIME / 2.0) {
 		postProcessor->BlurOff(); 
 	}
 }
+
+void Renderer::SwitchUFOTargetPosition() { //Temporary function delete
+	ufoTargetIndex = ++ufoTargetIndex % 2;
+}
+

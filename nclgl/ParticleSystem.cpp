@@ -172,7 +172,6 @@ void FireworkSystem::RenderParticles(const glm::mat4& viewProj, const glm::vec3 
 	glEnableVertexAttribArray(2); // Size
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Firework), (GLvoid*)(2 * sizeof(GLint) + 2 * sizeof(glm::vec3) + sizeof(glm::vec4)));
 	glDrawTransformFeedback(GL_POINTS, transfromFeedBackBuffer[currentFBO]);
-	//glDisable(GL_BLEND); TODO: Commented this and nothing obvious broke but can't remember why I put it in
 	glEnable(GL_DEPTH_TEST);
 }
 

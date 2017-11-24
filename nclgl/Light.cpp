@@ -20,12 +20,12 @@ bool Light::CreateLightMesh() {
 
 
 glm::vec4 Light::GetPosition() const {
-	//if (parent) {
-	//	glm::mat4 temp = parent->GetWorldTransform();
-	//	return parent->GetWorldTransform() * transform * glm::vec4(position, 1.0);
-	//}
-	//else {
-		return glm::vec4(position, 1.0);
-	//}
+	if (parent) {
+		glm::mat4 temp = parent->GetWorldTransform();
+		return parent->GetWorldTransform() * transform * glm::vec4(position, 1.0);
+	}
+	else {
+		return transform * glm::vec4(position, 1.0);
+	}
 	
 }
