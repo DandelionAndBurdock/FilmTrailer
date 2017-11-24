@@ -3,9 +3,6 @@
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
-uniform mat4 textureMatrix;
-
-
 
 in vec3 position;
 in vec4 colour;
@@ -42,12 +39,13 @@ out Vertex {
 
 void main(void){
 	// Calculate vertex positions
-	vec3 wavePosition = position;
+	vec3 wavePosition = vec3(modelMatrix * vec4(position, 1.0));
 	for (int i = 0; i < MAX_WAVES; ++i)
 	{
 		wavePosition.x += Waves[i].qFactor * Waves[i].amplitude * Waves[i].wavevector.x * cos(dot(Waves[i].wavevector, position.xz) - Waves[i].angularFreq * time + Waves[i].phase); //TODO: Precalculate sine and cosine values
 		wavePosition.z += Waves[i].qFactor * Waves[i].amplitude * Waves[i].wavevector.y * cos(dot(Waves[i].wavevector, position.xz) - Waves[i].angularFreq * time + Waves[i].phase);
 		wavePosition.y += Waves[i].amplitude * sin(dot(Waves[i].wavevector, position.xz) - Waves[i].angularFreq * time + Waves[i].phase);
+		wavePosition.y += sin(dot(Waves[i].wavevector, position.xz));
 	}
 		
 	// Calculate normals
@@ -77,7 +75,7 @@ void main(void){
 		}
 
 	OUT.colour = colour;
-	OUT.texCoord = (textureMatrix * vec4(texCoord, 0.0, 1.0)).xy;
+	OUT.texCoord = vec4(texCoord, 0.0, 1.0).xy;
 	OUT.modelPos = wavePosition;
 	mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
 	OUT.normal = normalize(normalMatrix * normalize(waveNormal)); 

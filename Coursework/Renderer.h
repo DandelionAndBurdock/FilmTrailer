@@ -30,6 +30,7 @@ class Scene;
 class GerstnerWaves;
 class MD5Node;
 class MD5FileData;
+class SimpleShadow;
 
 class Renderer : public OGLRenderer {
 	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, SCENE_F, NUM_SCENES};
@@ -78,9 +79,14 @@ protected:
 	void RenderReflectionQuad();
 	void RenderRefractionQuad();
 	void RenderNoiseQuad();
+
 	void RenderViewPointToBuffer(const glm::vec3& pos, const glm::vec3& lookat);
 	void RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWidth, GLuint windowHeight);
+
 	void ShadowMapFirstPass();
+	void SimpleShadowFirstPass();
+	void DrawSimpleShadowScene();
+
 	void SceneSpecificUpdates(GLfloat msec);
 	glm::vec3 ufoTargetPositions[2]; //Temp variables
 	GLint ufoTargetIndex = 0;
@@ -179,4 +185,6 @@ protected:
 	 
 	MD5Node* hellKnightNode;
 	MD5FileData* hellKnightData;
+
+	SimpleShadow* simpleShadow;
 };

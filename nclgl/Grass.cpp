@@ -44,8 +44,11 @@ void Grass::BufferGrassPositions(HeightMap* const terrain) {
 	float grassClusterHeight = 5.0f;
 
 	// Start in the centre 	add clusters while not gone out of the boundaries
-	glm::vec3 currentClusterPosition(xDimension * 0.5f, 0.0f, zDimension * 0.5f);
-	glm::vec3 startingClusterPosition(xDimension * 0.5f, 0.0f, zDimension * 0.5f);
+	GLfloat startX = xDimension * 0.2f;
+	GLfloat startZ = zDimension * 0.8f;
+	glm::vec3 currentClusterPosition(startX, 0.0f, startZ);
+	glm::vec3 startingClusterPosition(startX, terrain->GetHeightAtPosition(startX, startZ), startZ);
+	//glm::vec3 startingClusterPosition(xDimension * 0.25f, 0.0f, zDimension * 0.5f);
 	std::vector<glm::vec3> vertices;
 
 	//TODO: Make a function InBounds()
@@ -62,14 +65,17 @@ void Grass::BufferGrassPositions(HeightMap* const terrain) {
 
 		vertices.push_back(currentClusterPosition);
 	}
-	GLuint grassVBO;
-	glGenVertexArrays(1, &grassVAO);
-	glGenBuffers(1, &grassVBO);
-	glBindVertexArray(grassVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, grassVBO);
-	glBufferData(GL_ARRAY_BUFFER, numClusters * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, (void*)0);
+	if (!vertices.empty()) {
+		GLuint grassVBO;
+		glGenVertexArrays(1, &grassVAO);
+		glGenBuffers(1, &grassVBO);
+		glBindVertexArray(grassVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, grassVBO);
+		glBufferData(GL_ARRAY_BUFFER, numClusters * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, (void*)0);
+	}
+
 }
 
 void Grass::Draw() {

@@ -46,6 +46,7 @@
     <ClCompile Include="SceneNode.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
+    <ClCompile Include="SimpleShadow.cpp" />
     <ClCompile Include="Spotlight.cpp" />
     <ClCompile Include="Sun.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
@@ -95,6 +96,7 @@
     <ClInclude Include="SceneNode.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderManager.h" />
+    <ClInclude Include="SimpleShadow.h" />
     <ClInclude Include="Spotlight.h" />
     <ClInclude Include="Sun.h" />
     <ClInclude Include="TextRenderer.h" />

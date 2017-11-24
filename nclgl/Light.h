@@ -10,7 +10,7 @@
 
 class Mesh;
 #include "SceneNode.h"
-
+#include "../glm/gtx/transform.hpp"	
 class Light : public SceneNode
 {
 public:
@@ -21,6 +21,8 @@ public:
 		this->position = position;
 		this->lightColour = colour;
 		this->radius = radius;
+		/*transform = glm::translate(position);
+		SetModelScale(glm::vec3(10.0f));*/
 	}
 
 	~Light() {}
