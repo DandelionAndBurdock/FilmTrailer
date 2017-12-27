@@ -6,8 +6,10 @@
 #include "../glm/gtx/transform.hpp"
 
 #include "Shader.h"
-
+#include "Interpolator.h"
 #include "Texture.h"
+
+#include <vector>
 
 Scope::Scope(GLfloat sWidth, GLfloat sHeight)
 {
@@ -27,8 +29,19 @@ Scope::Scope(GLfloat sWidth, GLfloat sHeight)
 		crossShader->LinkProgram();
 	}
 
+
 	crossTexture = new Texture(TEXTUREDIR"crosshair.png");
 	quad = Mesh::GenerateNullQuad();
+
+	std::vector<glm::vec3> wps;
+	wps.push_back(glm::vec3(0.8f, 0.8f, 0.0f));
+	wps.push_back(glm::vec3(-0.8f, 0.8f, 0.0f));
+	wps.push_back(glm::vec3(-0.9f, -0.8f, 0.0f));
+	wps.push_back(glm::vec3(-0.5f, -0.8f, 0.0f));
+	wps.push_back(glm::vec3(0.0f, -0.8f, 0.0f));
+	wps.push_back(glm::vec3(0.7f, 0.8f, 0.0f));
+	wps.push_back(glm::vec3(1.4f, 0.0f, 0.0f));
+	interpolator = new Interpolator(wps);
 
 
 	float aspectRatio = sWidth / sHeight;
@@ -87,8 +100,32 @@ void Scope::DrawCircle() {
 }
 void Scope::UpdateCircle(GLfloat deltaSec) {
 	time += deltaSec;
-	centre.x = glm::sin(time * glm::two_pi<float>() / 5000.0f) * 1.0f;
-	centre.y = glm::cos(time * glm::two_pi<float>() / 5000.0f) * 0.8f;
+	if (time < SWITCH_ON_TIME) {
+		return;
+	}
+	
+	interpolator->Update(deltaSec);
+	if ((time - SWITCH_ON_TIME) <= interpolator->GetCircuitTime()) {
+		centre = glm::vec2(interpolator->GetPos());
+	}
+	else if(firstLoop) {
+		std::vector<glm::vec3> wps;
+		wps.push_back(glm::vec3(1.4f, 0.2f, 0.0f));
+		wps.push_back(glm::vec3(1.0f, -0.2f, 0.0f));
+		wps.push_back(glm::vec3(0.8f, 0.1f, 0.0f));
+		wps.push_back(glm::vec3(0.7f, -0.05f, 0.0f));
+		wps.push_back(glm::vec3(0.3f, 0.00f, 0.0f));
+		wps.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+		interpolator->SetWaypoints(wps, 4.2f);
+		firstLoop = false;
+		time = SWITCH_ON_TIME;
+	}
+	else {
+		static float endTime = time;
+		ReduceRadius( (time -endTime) * (time - endTime) * (time - endTime) * 0.0001f);
+	}
+
+	
 	RebufferVertices();
 }
 
@@ -130,4 +167,5 @@ void Scope::RebufferVertices() {
 	quadVerts[2] = glm::vec3(centre + glm::vec2(-radius, radius), 0.0f);
 	quadVerts[3] = glm::vec3(centre + glm::vec2(radius, -radius), 0.0f);
 	quad->BufferVertices(quadVerts);
+
 }

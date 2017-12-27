@@ -20,6 +20,7 @@
     <ClCompile Include="GerstnerWaves.cpp" />
     <ClCompile Include="Grass.cpp" />
     <ClCompile Include="HeightMap.cpp" />
+    <ClCompile Include="Interpolator.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Lightning.cpp" />
@@ -71,6 +72,7 @@
     <ClInclude Include="Grass.h" />
     <ClInclude Include="HeightMap.h" />
     <ClInclude Include="InputDevice.h" />
+    <ClInclude Include="Interpolator.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Lightning.h" />

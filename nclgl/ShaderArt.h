@@ -4,11 +4,12 @@ class Mesh;
 class Shader;
 
 #include <GL/glew.h>
+#include <string>
 
 class ShaderArt
 {
 public:
-	ShaderArt(GLfloat screenWidth, GLfloat screenHeight);
+	ShaderArt(GLfloat screenWidth, GLfloat screenHeight, const std::string& vs, const std::string& fs);
 	~ShaderArt();
 
 	void Draw();
@@ -25,6 +26,6 @@ protected:
 	GLfloat screenHeight;
 
 	// Time in seconds
-	GLfloat time;
+	GLfloat time = 0.0f;
 };
 

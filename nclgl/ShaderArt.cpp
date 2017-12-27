@@ -3,9 +3,9 @@
 #include "Mesh.h"
 #include "Shader.h"
 
-ShaderArt::ShaderArt(GLfloat sWidth, GLfloat sHeight)
+ShaderArt::ShaderArt(GLfloat sWidth, GLfloat sHeight, const std::string& vs, const std::string& fs)
 {
-	shader = new Shader(SHADERDIR"PassThroughVertex.glsl", SHADERDIR"LavaLamp.frag");
+	shader = new Shader(vs, fs);
 	if (!shader->WasLoaded()) {
 		__debugbreak();
 	}
@@ -32,6 +32,9 @@ ShaderArt::~ShaderArt()
 }
 
 void ShaderArt::Draw() {
+	if (time == 0.0f) {
+		return;
+	}
 	shader->Use();
 	shader->SetUniform("resolution", glm::vec2(screenWidth, screenHeight));
 	shader->SetUniform("time", time);
@@ -39,5 +42,5 @@ void ShaderArt::Draw() {
 }
 
 void ShaderArt::Update(GLfloat timeSec) {
-	time = timeSec;
+	time += timeSec;
 }

@@ -7,11 +7,12 @@
 class Shader;
 class Mesh;
 class Texture;
+class Interpolator;
 
 class Scope
 {
 	// Scope will appear after SWITCH_ON_TIME seconds
-	const float SWITCH_ON_TIME = 0.0f;
+	const float SWITCH_ON_TIME = 3.0f;
 
 	// Number of points on the circle circumference
 	const int NUM_POINTS = 40;
@@ -24,6 +25,8 @@ public:
 	void DrawCircle();
 	void UpdateCircle(GLfloat timeSec);
 	void DrawCrossHair();
+	void ReduceRadius(float deltaR) { radius -= deltaR; radius = glm::max(radius, 0.0f); }
+	float GetRadius() { return radius; }
 protected:
 	// Centre of the circle in screen space
 	glm::vec2 centre = glm::vec2(0.0f);
@@ -59,13 +62,17 @@ protected:
 	GLint numIndices = 0;
 
 	// Radius of the circle in screen space
-	const float radius = 0.4f;
+	float radius = 0.4f;
 
 	// Cross hair quad
 	Mesh* quad;
 
 	// Cross hair texture
 	Texture* crossTexture;
+
+	Interpolator* interpolator;
+
+	bool firstLoop = true;
 };
 
 

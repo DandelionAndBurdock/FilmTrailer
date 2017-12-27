@@ -26,6 +26,8 @@
 #include "nclgl\SimpleShadow.h"
 #include "nclgl\ShaderArt.h"
 #include "nclgl\Scope.h"
+#include "../glm/glm.hpp"
+
 
 
 #include <algorithm> // For min()
@@ -126,6 +128,9 @@ Renderer::~Renderer() {
 	if (shaderArt) {
 		delete shaderArt;
 	}
+	if (blood) {
+		delete blood;
+	}
 	if (scope) {
 		delete scope;
 	}
@@ -135,7 +140,8 @@ Renderer::~Renderer() {
 
 void Renderer::SetupSceneA() {
 	scenes.push_back(new Scene(masterRoot));
-	shaderArt = new ShaderArt(screenSize.x, screenSize.y);
+	shaderArt = new ShaderArt(screenSize.x, screenSize.y, SHADERDIR"PassThroughVertex.glsl", SHADERDIR"LavaLamp.frag");
+	blood = new ShaderArt(screenSize.x, screenSize.y, SHADERDIR"PassThroughVertex.glsl", SHADERDIR"BloodFragment.glsl");
 	scope = new Scope(screenSize.x, screenSize.y);
 	scenes[SCENE_A]->SetCubeMap(cubeMapA);
 
@@ -145,6 +151,7 @@ void Renderer::SetupSceneA() {
 
 	hellKnightData->AddAnim(MESHDIR"walk7.md5anim");
 	hellKnightData->AddAnim(MESHDIR"idle2.md5anim");
+	hellKnightData->AddAnim(MESHDIR"attack2.md5anim");
 	hellKnightNode->PlayAnim(MESHDIR"walk7.md5anim");
 
 	masterRoot->AddChild(hellKnightNode);
@@ -409,7 +416,10 @@ void Renderer::UpdateScene(float msec) {
 
 	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);
 
-	camera->UpdateCamera(msec);
+	if (currentScene != SCENE_A) {
+		camera->UpdateCamera(msec);
+	}
+	
 	viewMatrix = camera->BuildViewMatrix();
 
 
@@ -497,9 +507,10 @@ void Renderer::RenderScene() {
 		DrawSkybox();
 
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		//shaderArt->Draw();
+		shaderArt->Draw();
+		blood->Draw();
 
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilFunc(GL_EQUAL, 1, 0xFF);
 		RenderObjects(NO_CLIP_PLANE);
 
 		glStencilFunc(GL_EQUAL, 1, 0xFF);
@@ -1198,8 +1209,18 @@ void Renderer::RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWi
 void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	if (currentScene == SCENE_A) {
 		if (shaderArt) {
-			shaderArt->Update(sceneTime / 1000.0f);
-			scope->UpdateCircle(sceneTime / 1000.0f);
+			if (scope->GetRadius() > 0.001f) {
+				shaderArt->Update(msec / 1000.0f);
+			}
+			else {
+				blood->Update(msec / 1000.0f);
+			}
+				
+			scope->UpdateCircle(msec / 1000.0f);
+			if (hellKnightNode->IsIdle()) {
+				hellKnightNode->PlayAnim(MESHDIR"idle2.md5anim");
+			}
+	
 		}
 	}
 	if (currentScene == SCENE_E) {

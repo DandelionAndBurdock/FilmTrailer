@@ -14,5 +14,5 @@ out vec4 gl_FragColor;
 
 void main(void){
 	//gl_FragColor = texture(diffuseTex, IN.texCoord);
-	gl_FragColor = vec4(IN.normal, 1.0);
+	gl_FragColor = vec4(0.0, IN.texCoord.x / 2.0, IN.texCoord.y / 4.0, 1.0);
 }

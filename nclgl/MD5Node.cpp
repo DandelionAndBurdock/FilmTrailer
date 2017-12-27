@@ -99,8 +99,15 @@ void	MD5Node::DrawNode() {
 		displacement.x *= distanceMoved;
 		displacement.y *= distanceMoved;
 		displacement.z *= distanceMoved;
-		glm::vec3 finalPosition = glm::vec3(640.0, 0.0, 0.0) - displacement;
+		glm::vec3 finalPosition = glm::vec3(1170.0, 0.0, 0.0) - displacement;
+		if (finalPosition.x < 10.0) {
+			idle = true;
+		}
 		modelMatrix = glm::translate(finalPosition) * rotationMatrix;
+	}
+	else {
+		glm::mat4 rotationMatrix = glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		modelMatrix = glm::translate(glm::vec3(0.0f)) * rotationMatrix;
 	}
 
 	

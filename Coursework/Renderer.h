@@ -191,6 +191,6 @@ protected:
 	SimpleShadow* simpleShadow;
 
 	ShaderArt* shaderArt;
-
+	ShaderArt* blood;
 	Scope* scope;
 };
