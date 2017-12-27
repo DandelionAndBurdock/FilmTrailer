@@ -125,7 +125,7 @@ OGLRenderer::OGLRenderer(Window &window)	{
 	}
 	//If we get this far, everything's going well!
 
-	glClearColor(0.2f,0.2f,0.2f,1.0f);			//When we clear the screen, we want it to be dark grey
+	glClearColor(0.0f,0.0f,1.0f,1.0f);			//When we clear the screen, we want it to be dark grey
 
 
 	window.SetRenderer(this);					//Tell our window about the new renderer! (Which will in turn resize the renderer window to fit...)

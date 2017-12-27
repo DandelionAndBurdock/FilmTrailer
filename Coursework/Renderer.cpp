@@ -24,6 +24,8 @@
 #include "nclgl\MD5Node.h"
 #include "nclgl\MD5FileData.h"
 #include "nclgl\SimpleShadow.h"
+#include "nclgl\ShaderArt.h"
+#include "nclgl\Scope.h"
 
 
 #include <algorithm> // For min()
@@ -120,20 +122,47 @@ Renderer::~Renderer() {
 	delete sun;
 	delete sceneQuad;
 	CubeRobot::DeleteCube();
+
+	if (shaderArt) {
+		delete shaderArt;
+	}
+	if (scope) {
+		delete scope;
+	}
 	//Light::DeleteLightMesh();
 }
 
 
 void Renderer::SetupSceneA() {
+	scenes.push_back(new Scene(masterRoot));
+	shaderArt = new ShaderArt(screenSize.x, screenSize.y);
+	scope = new Scope(screenSize.x, screenSize.y);
+	scenes[SCENE_A]->SetCubeMap(cubeMapA);
+	return;//Revert
 	SceneNode* heightMap = new SceneNode(new HeightMap, "TerrainShadowShader");
 	
-	scenes.push_back(new Scene(masterRoot));
-	scenes[SCENE_A]->SetCubeMap(cubeMapA);
+
 	scenes[SCENE_A]->SetTerrain(heightMap);
 	heightMap->UseTexture("Terrain");
 	heightMap->UseTexture("TerrainBump");
 
-	
+	scenes[SCENE_A]->AddLight(new Light(glm::vec3(500.0f, 200.0f, 500.0f), glm::vec4(1.0f), 2000.0f));
+
+	if (dirLight) {
+		delete dirLight;
+	}
+
+	sun = new Sun(glm::vec3(0.5f, -1.0f, 0.0f), glm::vec3(1.0, 1.0, 1.0), 1000.0f);
+	dirLight = sun->GetLight();
+	sun->SetTransform(glm::translate(sun->GetPosition()));
+	sun->UseTexture("Sun");
+	heightMap->AddChild(sun);
+
+	if (spotlight) {
+		delete spotlight;
+	}
+
+
 	lightning = new Lightning(glm::vec3(2000.0, 500.0, 2000.0), glm::vec3(2200.0, 0.0, 2200.0));//TODO: Double delete
 	scenes[SCENE_A]->SetLightning(lightning);
 	
@@ -169,21 +198,7 @@ void Renderer::SetupSceneA() {
 		__debugbreak();
 	}
 
-	scenes[SCENE_A]->AddLight(new Light(glm::vec3(500.0f, 200.0f, 500.0f), glm::vec4(1.0f), 2000.0f));
 
-	if (dirLight) {
-		delete dirLight;
-	}
-
-	sun = new Sun(glm::vec3(0.5f, -1.0f, 0.0f), glm::vec3(1.0, 1.0, 1.0), 1000.0f);
-	dirLight = sun->GetLight();
-	sun->SetTransform(glm::translate(sun->GetPosition()));
-	sun->UseTexture("Sun");
-	heightMap->AddChild(sun);
-
-	if (spotlight) {
-		delete spotlight;
-	}
 	
 	//heightMap->AddChild(spotlight);
 	
@@ -386,13 +401,14 @@ void Renderer::UpdateScene(float msec) {
 	camera->UpdateCamera(msec);
 	viewMatrix = camera->BuildViewMatrix();
 
-	frameFrustum.FromMatrix(projMatrix * viewMatrix);
-	BuildNodeLists(masterRoot);
-	SortNodeLists();
+
 
 	if (!pause) {
 		sceneTime += msec;
 		if (masterRoot) {
+			frameFrustum.FromMatrix(projMatrix * viewMatrix);
+			BuildNodeLists(masterRoot);
+			SortNodeLists();
 			masterRoot->Update(msec);
 		}
 
@@ -424,7 +440,7 @@ void Renderer::UpdateScene(float msec) {
 
 	//spotlight->Randomise(msec);
 	
-	flareManager->PrepareToRender(camera->GetPosition(), projMatrix * viewMatrix, sun->GetPosition());
+	//Revert: flareManager->PrepareToRender(camera->GetPosition(), projMatrix * viewMatrix, sun->GetPosition());
 }
 
 void Renderer::RenderObjects(const glm::vec4& clipPlane) {
@@ -443,14 +459,51 @@ void Renderer::RenderObjects(const glm::vec4& clipPlane) {
 
 }
 void Renderer::RenderScene() {
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if (currentScene == NUM_SCENES) {
+		return;
+	}
+
+	if (currentScene == SCENE_A) {
+		// Enable writing to the stencil buffer
+		glEnable(GL_STENCIL_TEST);
+		// Render circle updating contents of the stencil buffer
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF); // each bit ends up as 0 in the stencil buffer (disabling writes)
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDisable(GL_DEPTH_TEST);
+		scope->DrawCircle();
+
+		// Disable writing to the stencil buffer
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		glStencilMask(0x00); // each bit ends up as 0 in the stencil buffer (disabling writes)
+
+		glStencilFunc(GL_EQUAL, 1, 0xFF);
+		DrawSkybox();
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		shaderArt->Draw();
+
+		glStencilFunc(GL_EQUAL, 1, 0xFF);
+		scope->DrawCrossHair();
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glStencilMask(~0);
+		glClear(GL_STENCIL_BUFFER_BIT);
+		glDepthMask(GL_TRUE);
+		SwapBuffers();
+		glUseProgram(0);
+		return;
+	}
 
 	//*************** WATER**************************
 	// Enable clipping planes so that we don't have to process geometry
 	// above/below the water for refraction/reflection
-	if (waterNode->IsActive()) {
+	if (waterNode && waterNode->IsActive()) {
 		glEnable(GL_CLIP_DISTANCE0);
 		SetupReflectionBuffer();
 		SetupRefractionBuffer();
@@ -594,6 +647,9 @@ void Renderer::DrawFPS() {
 void Renderer::SetupScenes() {
 	masterRoot = new SceneNode();
 	SetupSceneA();
+	currentScene = SCENE_A; // Revert
+	currentCubeMap = cubeMapA;
+	return; //Revert
 	SetupSceneB();
 	SetupSceneC();
 	SetupSceneD();
@@ -613,13 +669,14 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TerrainShadowShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"OmniShadowFrag.glsl");
 	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingHeightVertex.glsl", SHADERDIR"LightingFragment.glsl");
-	SHADER_MANAGER->AddShader("TerrainTexShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
+
+	// Misisng:SHADER_MANAGER->AddShader("TerrainTexShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
 	SHADER_MANAGER->AddShader("HoleTerrainShader", SHADERDIR"DeformVertex.glsl", SHADERDIR"DeformFragment.glsl");
 	SHADER_MANAGER->AddShader("ShadowDepth", SHADERDIR"ShadowCubeMapVertex.glsl", SHADERDIR"ShadowCubeMapFrag.glsl", SHADERDIR"ShadowCubeMapGeom.glsl");
 	SHADER_MANAGER->AddShader("AnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl");
-	SHADER_MANAGER->AddShader("ExplodeAnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl", SHADERDIR"ExplodingGeom.glsl");
-	SHADER_MANAGER->AddShader("SimpleShadowDepth", SHADERDIR"ShadowVert.glsl", SHADERDIR"ShadowFrag.glsl");
-	SHADER_MANAGER->AddShader("SimpleShadowScene", SHADERDIR"ShadowSceneVert.glsl", SHADERDIR"ShadowSceneFrag.glsl");
+	// Missing: SHADER_MANAGER->AddShader("ExplodeAnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl", SHADERDIR"ExplodingGeom.glsl");
+	// Missing: SHADER_MANAGER->AddShader("SimpleShadowDepth", SHADERDIR"ShadowVert.glsl", SHADERDIR"ShadowFrag.glsl");
+	// Missing: SHADER_MANAGER->AddShader("SimpleShadowScene", SHADERDIR"ShadowSceneVert.glsl", SHADERDIR"ShadowSceneFrag.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("TextureQuadShader", SHADERDIR"TexturedQuadVertex.glsl", SHADERDIR"TexturedQuadFragment.glsl"); // Adding this one just so I don't break an
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
@@ -628,14 +685,14 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("SunShader", SHADERDIR"SimpleBillBoardVertex.glsl", SHADERDIR"SimpleBillBoardFrag.glsl");
 	SHADER_MANAGER->AddShader("FlareShader", SHADERDIR"FlareVertex.glsl", SHADERDIR"FlareFragment.glsl");
 	SHADER_MANAGER->AddShader("GerstnerShader", SHADERDIR"GerstnerVertex.glsl", SHADERDIR"GerstnerFragment.glsl");
-	SHADER_MANAGER->AddShader("CausticShader", SHADERDIR"CausticVertex3JustCheat.glsl", SHADERDIR"CausticFragment3JustCheat.glsl");
+	// Missing: SHADER_MANAGER->AddShader("CausticShader", SHADERDIR"CausticVertex3JustCheat.glsl", SHADERDIR"CausticFragment3JustCheat.glsl");
 	SHADER_MANAGER->AddShader("ParticleShader", SHADERDIR"vertex.glsl", SHADERDIR"fragment.glsl", SHADERDIR"geometry.glsl");
 
 	// Post processing shaders
 	SHADER_MANAGER->AddShader("BlurShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BlurFragment.glsl");
 	SHADER_MANAGER->AddShader("BloomShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BloomFragment.glsl");
 	SHADER_MANAGER->AddShader("ContrastShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"ContrastFragment.glsl");
-	SHADER_MANAGER->AddShader("CombineShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"CombineFragment.glsl");
+	// Missing: SHADER_MANAGER->AddShader("CombineShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"CombineFragment.glsl");
 }
 
 void Renderer::LoadTextures() {
@@ -717,7 +774,7 @@ void Renderer::LoadTextures() {
 
 	if (!cubeMapD) {
 		std::cout << SOIL_last_result() << std::endl;
-		__debugbreak();
+		//Missing__debugbreak();
 	}
 
 	cubeMapF = SOIL_load_OGL_cubemap(
@@ -732,7 +789,7 @@ void Renderer::LoadTextures() {
 
 	if (!cubeMapF) {
 		std::cout << SOIL_last_result() << std::endl;
-		__debugbreak();
+		//Missing:__debugbreak();
 	}
 
 }
@@ -753,12 +810,13 @@ void Renderer::SetupCamera() {
 
 // This was an attempt to make setting uniforms nicer but spiralled into a horrible mess
 void Renderer::UpdateUniforms() {
+
 	activeShaders.insert("CubeMapShader");
 	if (currentScene == SCENE_E) {
 		activeShaders.insert("ParticleShader");
 	}
 	if (currentScene == SCENE_A) {
-		activeShaders.insert("Particle");
+		// Revert: activeShaders.insert("Particle");
 	}
 	for (const auto& shader : activeShaders) {
 		std::vector<std::string> uniforms = SHADER_MANAGER->GetUniformNames(shader);
@@ -1123,6 +1181,12 @@ void Renderer::RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWi
 
 // Temporary ugly function
 void Renderer::SceneSpecificUpdates(GLfloat msec) {
+	if (currentScene == SCENE_A) {
+		if (shaderArt) {
+			shaderArt->Update(sceneTime / 1000.0f);
+			scope->UpdateCircle(sceneTime / 1000.0f);
+		}
+	}
 	if (currentScene == SCENE_E) {
 		if (sceneTime < 10000) {
 			laser->SetActive();

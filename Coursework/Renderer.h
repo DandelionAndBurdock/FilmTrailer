@@ -31,6 +31,8 @@ class GerstnerWaves;
 class MD5Node;
 class MD5FileData;
 class SimpleShadow;
+class ShaderArt;
+class Scope;
 
 class Renderer : public OGLRenderer {
 	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, SCENE_F, NUM_SCENES};
@@ -187,4 +189,8 @@ protected:
 	MD5FileData* hellKnightData;
 
 	SimpleShadow* simpleShadow;
+
+	ShaderArt* shaderArt;
+
+	Scope* scope;
 };
