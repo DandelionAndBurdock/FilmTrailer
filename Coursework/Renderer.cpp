@@ -138,6 +138,17 @@ void Renderer::SetupSceneA() {
 	shaderArt = new ShaderArt(screenSize.x, screenSize.y);
 	scope = new Scope(screenSize.x, screenSize.y);
 	scenes[SCENE_A]->SetCubeMap(cubeMapA);
+
+
+	hellKnightData = new MD5FileData(MESHDIR"hellknight.md5mesh");
+	hellKnightNode = new MD5Node(*hellKnightData);
+
+	hellKnightData->AddAnim(MESHDIR"walk7.md5anim");
+	hellKnightData->AddAnim(MESHDIR"idle2.md5anim");
+	hellKnightNode->PlayAnim(MESHDIR"walk7.md5anim");
+
+	masterRoot->AddChild(hellKnightNode);
+	hellKnightNode->SetModelScale(glm::vec3(100.0f));
 	return;//Revert
 	SceneNode* heightMap = new SceneNode(new HeightMap, "TerrainShadowShader");
 	
@@ -486,10 +497,14 @@ void Renderer::RenderScene() {
 		DrawSkybox();
 
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		shaderArt->Draw();
+		//shaderArt->Draw();
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		RenderObjects(NO_CLIP_PLANE);
 
 		glStencilFunc(GL_EQUAL, 1, 0xFF);
 		scope->DrawCrossHair();
+
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_STENCIL_TEST);
 		glStencilMask(~0);

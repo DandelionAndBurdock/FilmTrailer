@@ -94,12 +94,12 @@ void	MD5Node::DrawNode() {
 		const int MOVEMENT_PER_WALK_CYCLE = 130;
 		glm::vec3 originalDirection = glm::vec3(1.0, 0.0, 0.0);
 		float distanceMoved = MOVEMENT_PER_WALK_CYCLE * GetNumCycles();
-		glm::mat4 rotationMatrix = glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 rotationMatrix = glm::rotate(glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::vec3 displacement = glm::vec3(rotationMatrix * glm::vec4(originalDirection, 1.0));
 		displacement.x *= distanceMoved;
 		displacement.y *= distanceMoved;
 		displacement.z *= distanceMoved;
-		glm::vec3 finalPosition = glm::vec3(2000.0, 0.0, 0.0) - displacement;
+		glm::vec3 finalPosition = glm::vec3(640.0, 0.0, 0.0) - displacement;
 		modelMatrix = glm::translate(finalPosition) * rotationMatrix;
 	}
 
