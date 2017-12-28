@@ -193,4 +193,6 @@ protected:
 	ShaderArt* shaderArt;
 	ShaderArt* blood;
 	Scope* scope;
+
+	float bloodCountdown = 8000.0f;
 };

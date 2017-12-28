@@ -9,6 +9,7 @@ class Mesh;
 class Texture;
 class Interpolator;
 
+#include <iostream>
 class Scope
 {
 	// Scope will appear after SWITCH_ON_TIME seconds
@@ -26,7 +27,10 @@ public:
 	void UpdateCircle(GLfloat timeSec);
 	void DrawCrossHair();
 	void ReduceRadius(float deltaR) { radius -= deltaR; radius = glm::max(radius, 0.0f); }
+	void IncreaseRadius(float deltaR) { radius += deltaR; radius = glm::min(radius, 3.0f); }
 	float GetRadius() { return radius; }
+	// Rebuffer vertex data to openGL
+	void RebufferVertices();
 protected:
 	// Centre of the circle in screen space
 	glm::vec2 centre = glm::vec2(0.0f);
@@ -37,8 +41,6 @@ protected:
 	// Indices to draw the circle
 	GLuint* circleIndices;
 
-	// Rebuffer vertex data to openGL
-	void RebufferVertices();
 	
 	// Vertex Array Object for circle
 	GLuint circleVAO;

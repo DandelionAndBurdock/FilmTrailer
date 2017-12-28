@@ -5,6 +5,9 @@
 
 ShaderArt::ShaderArt(GLfloat sWidth, GLfloat sHeight, const std::string& vs, const std::string& fs)
 {
+	if (fs.find("Lava") != std::string::npos) {
+		time = 1.5f;
+	}
 	shader = new Shader(vs, fs);
 	if (!shader->WasLoaded()) {
 		__debugbreak();

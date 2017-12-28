@@ -100,6 +100,7 @@ void Scope::DrawCircle() {
 }
 void Scope::UpdateCircle(GLfloat deltaSec) {
 	time += deltaSec;
+
 	if (time < SWITCH_ON_TIME) {
 		return;
 	}

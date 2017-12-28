@@ -288,6 +288,11 @@ void Renderer::HandleInput() {
 }
 
 void Renderer::SetupSceneB() {
+	scenes.push_back(new Scene(masterRoot));
+	scenes[SCENE_B]->SetCubeMap(cubeMapB);
+
+
+	return;
 	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainTexShader");
 
 	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
@@ -525,6 +530,41 @@ void Renderer::RenderScene() {
 		glUseProgram(0);
 		return;
 	}
+	else if (currentScene == SCENE_B) {
+		// Enable writing to the stencil buffer
+		glEnable(GL_STENCIL_TEST);
+		// Render circle updating contents of the stencil buffer
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF); // each bit ends up as 0 in the stencil buffer (disabling writes)
+		//glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDisable(GL_DEPTH_TEST);
+		scope->DrawCircle();
+
+		// Disable writing to the stencil buffer
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		glStencilMask(0x00); // each bit ends up as 0 in the stencil buffer (disabling writes)
+
+		glStencilFunc(GL_EQUAL, 1, 0xFF);
+		DrawSkybox();
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		shaderArt->Draw();
+		blood->Draw();
+
+		glStencilFunc(GL_EQUAL, 1, 0xFF);
+		RenderObjects(NO_CLIP_PLANE);
+
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glStencilMask(~0);
+		glClear(GL_STENCIL_BUFFER_BIT);
+		glDepthMask(GL_TRUE);
+		SwapBuffers();
+		glUseProgram(0);
+		return;
+	}
 
 	//*************** WATER**************************
 	// Enable clipping planes so that we don't have to process geometry
@@ -675,8 +715,8 @@ void Renderer::SetupScenes() {
 	SetupSceneA();
 	currentScene = SCENE_A; // Revert
 	currentCubeMap = cubeMapA;
-	return; //Revert
 	SetupSceneB();
+	return; //Revert
 	SetupSceneC();
 	SetupSceneD();
 	SetupSceneE();
@@ -1209,11 +1249,12 @@ void Renderer::RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWi
 void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	if (currentScene == SCENE_A) {
 		if (shaderArt) {
-			if (scope->GetRadius() > 0.001f) {
+			if (scope->GetRadius() > 0.399f) {
 				shaderArt->Update(msec / 1000.0f);
 			}
 			else {
 				blood->Update(msec / 1000.0f);
+				bloodCountdown -= msec;
 			}
 				
 			scope->UpdateCircle(msec / 1000.0f);
@@ -1222,6 +1263,16 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			}
 	
 		}
+		if (bloodCountdown < 0.0f) {
+			Transition(SCENE_A, SCENE_B);
+		}
+	}
+
+	if (currentScene == SCENE_B) {
+		float timeSec = msec / 1000.0f;
+		scope->IncreaseRadius(timeSec * timeSec * timeSec * 100.0f);
+		std::cout << scope->GetRadius() << std::endl;
+		scope->RebufferVertices();
 	}
 	if (currentScene == SCENE_E) {
 		if (sceneTime < 10000) {
