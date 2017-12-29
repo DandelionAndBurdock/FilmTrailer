@@ -7,6 +7,8 @@
 #include "nclgl\CameraController.h"
 #include "CubeRobot.h"
 
+
+
 #include <algorithm>
 #include <set>
 #include <limits> // For numeric_limits<float>::max()
@@ -33,6 +35,10 @@ class MD5FileData;
 class SimpleShadow;
 class ShaderArt;
 class Scope;
+
+// Shader AI
+class ShaderAI;
+class Model;
 
 class Renderer : public OGLRenderer {
 	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, SCENE_F, NUM_SCENES};
@@ -195,4 +201,12 @@ protected:
 	Scope* scope;
 
 	float bloodCountdown = 8000.0f;
+
+
+	// ShaderAI 
+	ShaderAI* shaderAI;
+	std::vector<Model*> text3D;
+	void TestDraw();
+	OBJMesh* bulb;
+	SceneNode* bulbNode;
 };

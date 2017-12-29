@@ -28,6 +28,10 @@
 #include "nclgl\Scope.h"
 #include "../glm/glm.hpp"
 
+// Ugly ASSIMP
+#include "nclgl\Model.h"
+#include "nclgl\ShaderAI.h"
+#include <glm/gtc/type_ptr.hpp>
 
 
 #include <algorithm> // For min()
@@ -290,11 +294,43 @@ void Renderer::HandleInput() {
 void Renderer::SetupSceneB() {
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_B]->SetCubeMap(cubeMapB);
+	SceneNode* heightMap = new SceneNode(new HeightMap(), "TerrainShader");
+	scenes[SCENE_B]->SetTerrain(heightMap);
+	//Load meshes function
+	//OBJMesh* m = new OBJMesh;
+	//if (m->LoadOBJMesh(MESHDIR"Desp.obj")) {
+	//	tree = m;
+	//}
+	//else {
+	//	__debugbreak();
+	//}
+	//SceneNode* t = new SceneNode(tree, "TerrainShader");
+	//t->SetModelScale(glm::vec3(50.0f));
+	//heightMap->AddChild(t);
 
+	OBJMesh* m = new OBJMesh;
+	if (m->LoadOBJMesh(MESHDIR"sphere.obj")) {
+		bulb = m;
+	}
+	else {
+		__debugbreak();
+	}
+	bulbNode = new SceneNode(bulb, "LightShader");
+	bulbNode->SetModelScale(glm::vec3(10.0f));
+	heightMap->AddChild(bulbNode);
+	heightMap->UseTexture("Terrain");
+	heightMap->UseTexture("TerrainBump");
+
+	scenes[SCENE_B]->AddLight(new Light(glm::vec3(500.0f, 1000.0f, 500.0f), glm::vec4(1.0f), 20000.0f));
+
+	text3D.push_back(new Model(MESHDIR"/AssImp\\Philip.obj"));
+	text3D.push_back(new Model(MESHDIR"/AssImp\\Jones.obj"));
+	text3D.push_back(new Model(MESHDIR"/AssImp\\Graphics.obj"));
+	shaderAI = new ShaderAI(SHADERDIR"VSTest.vs", SHADERDIR"FSTest.fs");
 
 	return;
-	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainTexShader");
 
+	//SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainTexShader");
 	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_B]->SetCubeMap(cubeMapB);
@@ -444,16 +480,16 @@ void Renderer::UpdateScene(float msec) {
 
 		textureMatrix = glm::rotate(glm::radians(time), glm::vec3(0.0, 1.0, 1.0));
 
+		lights.clear();
+		lights.insert(lights.end(), tempLights.begin(), tempLights.end());
+		lights.insert(lights.end(), scenes[currentScene]->GetLights().begin(), scenes[currentScene]->GetLights().end());
+
+		std::sort(lights.begin(), lights.end(), [](const Light* a, const Light* b) { return *a < *b; });
+
 		SceneSpecificUpdates(msec);
-
-
 	}
 
-	lights.clear();
-	lights.insert(lights.end(), tempLights.begin(), tempLights.end());
-	lights.insert(lights.end(), scenes[currentScene]->GetLights().begin(), scenes[currentScene]->GetLights().end());
 
-	std::sort(lights.begin(), lights.end(), [](const Light* a, const Light* b) { return *a < *b;});
 
 	UpdateUniforms();
 
@@ -531,6 +567,12 @@ void Renderer::RenderScene() {
 		return;
 	}
 	else if (currentScene == SCENE_B) {
+		//DrawSkybox();
+		//RenderObjects(NO_CLIP_PLANE);
+		TestDraw();
+		SwapBuffers();
+		return;
+
 		// Enable writing to the stencil buffer
 		glEnable(GL_STENCIL_TEST);
 		// Render circle updating contents of the stencil buffer
@@ -713,8 +755,8 @@ void Renderer::DrawFPS() {
 void Renderer::SetupScenes() {
 	masterRoot = new SceneNode();
 	SetupSceneA();
-	currentScene = SCENE_A; // Revert
-	currentCubeMap = cubeMapA;
+	currentScene = SCENE_B; // Revert
+	currentCubeMap = cubeMapB;
 	SetupSceneB();
 	return; //Revert
 	SetupSceneC();
@@ -1271,8 +1313,12 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	if (currentScene == SCENE_B) {
 		float timeSec = msec / 1000.0f;
 		scope->IncreaseRadius(timeSec * timeSec * timeSec * 100.0f);
-		std::cout << scope->GetRadius() << std::endl;
 		scope->RebufferVertices();
+
+		//lights[0]->SetPosition(glm::vec3(300.0f + 100.0f * sin(msec/ 100.0f), 300.0f + 100.0f * cos(msec / 100.0f), 100.0f + 100.0f  * sin(msec/ 100.0f)));
+		lights[0]->SetPosition(glm::vec3(1040.0f, 250.0f + 200.0f * cos(time / 1000.0f), 300.0f + 200.0f * sin(time / 1000.0f)));
+		lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(3 * time / 1000.0f), 50.0f + 40.0f * cos(2 * time / 1000.0f), 1200.0f + 200.0f * sin(time / 1000.0f)));
+		lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(time / 1000.0f), 50.0f, 500.0f + 50.0f * sin(time / 1000.0f)));
 	}
 	if (currentScene == SCENE_E) {
 		if (sceneTime < 10000) {
@@ -1359,5 +1405,53 @@ void Renderer::SimpleShadowFirstPass() {
 
 void Renderer::DrawSimpleShadowScene() {
 	simpleShadow->BindForReading();
+	RenderObjects(NO_CLIP_PLANE);
+}
+
+void Renderer::TestDraw() {
+	// don't forget to enable shader before setting uniforms
+	shaderAI->Use();
+
+	// view/projection transformations
+	GLint lightPosLocation = glGetUniformLocation(shaderAI->Program, "pointLights[0].position");
+	GLint lightColLocation = glGetUniformLocation(shaderAI->Program, "pointLights[0].colour");
+	GLint lightRadLocation = glGetUniformLocation(shaderAI->Program, "pointLights[0].radius");
+	bulbNode->SetTransform(glm::translate(glm::vec3(lights[0]->GetPosition())));
+	glUniform4fv(lightPosLocation, 1, (float*)&lights[0]->GetPosition());
+	glUniform4fv(lightColLocation, 1, (float*)&lights[0]->GetColour());
+	glUniform1f(lightRadLocation, lights[0]->GetRadius());
+
+	GLint viewLocation = glGetUniformLocation(shaderAI->Program, "viewMatrix");
+	GLint projectionLocation = glGetUniformLocation(shaderAI->Program, "projectionMatrix");
+	if (viewLocation < 0 || projectionLocation < 0)
+	{
+		std::cout << std::endl << glGetError() << std::endl;
+		exit(-88);
+	}
+	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projMatrix));
+	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
+
+	// render the loaded model
+	GLint modelLocation = glGetUniformLocation(shaderAI->Program, "modelMatrix");
+	if (modelLocation < 0)
+	{
+		std::cout << std::endl << glGetError() << std::endl;
+		exit(-77);
+	}
+
+	for (int i = 0; i < 2; ++i) {
+		glm::mat4 modelMat = glm::translate(glm::vec3((i + 5) * 200.0f, 100.0f * (1.5 - i), 60.0f * (i + 5))); // translate it down so it's at the center of the scene
+		modelMat = modelMat * glm::scale(glm::vec3(200.0f, 200.0f, 200.0f));	// it's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMat));
+		text3D[i]->Draw(*shaderAI);
+	}
+
+	glm::mat4 modelMat = glm::translate(glm::vec3((8.2) * 200.0f, 100.0f * (0.5), 60.0f * (18))); // translate it down so it's at the center of the scene
+	modelMat = modelMat * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	modelMat = modelMat * glm::scale(glm::vec3(200.0f, 200.0f, 200.0f));	// it's a bit too big for our scene, so scale it down
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMat));
+	text3D[2]->Draw(*shaderAI);
+
 	RenderObjects(NO_CLIP_PLANE);
 }

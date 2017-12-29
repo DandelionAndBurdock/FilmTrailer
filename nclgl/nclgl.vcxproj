@@ -30,6 +30,8 @@
     <ClCompile Include="MD5Mesh.cpp" />
     <ClCompile Include="MD5Node.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshAI.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="OBJMesh.cpp" />
     <ClCompile Include="OGLRenderer.cpp" />
@@ -47,6 +49,7 @@
     <ClCompile Include="SceneNode.cpp" />
     <ClCompile Include="Scope.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="ShaderAI.cpp" />
     <ClCompile Include="ShaderArt.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
     <ClCompile Include="SimpleShadow.cpp" />
@@ -82,6 +85,8 @@
     <ClInclude Include="MD5Mesh.h" />
     <ClInclude Include="MD5Node.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshAI.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="OBJMesh.h" />
     <ClInclude Include="OGLRenderer.h" />
@@ -100,6 +105,7 @@
     <ClInclude Include="SceneNode.h" />
     <ClInclude Include="Scope.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="ShaderAI.h" />
     <ClInclude Include="ShaderArt.h" />
     <ClInclude Include="ShaderManager.h" />
     <ClInclude Include="SimpleShadow.h" />
@@ -144,7 +150,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>..\GLEW\include;..\SOIL;$(IncludePath)</IncludePath>
-    <LibraryPath>..\SOIL\$(Configuration);..\GLEW\lib\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\assimp\lib;..\SOIL\$(Configuration);..\GLEW\lib\$(Configuration);$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -156,7 +162,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\FreeType\include;$(SolutionDir)..\FreeType\include\freetype2;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\assimp\include;$(SolutionDir)..\FreeType\include;$(SolutionDir)..\FreeType\include\freetype2;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
