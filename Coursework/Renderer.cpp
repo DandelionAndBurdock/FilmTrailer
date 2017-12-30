@@ -481,6 +481,7 @@ void Renderer::UpdateScene(float msec) {
 		textureMatrix = glm::rotate(glm::radians(time), glm::vec3(0.0, 1.0, 1.0));
 
 		lights.clear();
+		auto temp = scenes[currentScene]->GetLights();
 		lights.insert(lights.end(), tempLights.begin(), tempLights.end());
 		lights.insert(lights.end(), scenes[currentScene]->GetLights().begin(), scenes[currentScene]->GetLights().end());
 
@@ -521,6 +522,7 @@ void Renderer::RenderObjects(const glm::vec4& clipPlane) {
 
 }
 void Renderer::RenderScene() {
+
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -561,51 +563,75 @@ void Renderer::RenderScene() {
 		glDisable(GL_STENCIL_TEST);
 		glStencilMask(~0);
 		glClear(GL_STENCIL_BUFFER_BIT);
+		glStencilMask(0x00);
 		glDepthMask(GL_TRUE);
 		SwapBuffers();
 		glUseProgram(0);
+		ClearNodeLists();
+		activeShaders.clear();
 		return;
 	}
 	else if (currentScene == SCENE_B) {
 		//DrawSkybox();
 		//RenderObjects(NO_CLIP_PLANE);
-		TestDraw();
-		SwapBuffers();
-		return;
+		if (false){
+		//if (scope->GetRadius() < 2.99f) {
+			// Enable writing to the stencil buffer
+			glEnable(GL_STENCIL_TEST);
+			// Render circle updating contents of the stencil buffer
+			glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+			glStencilMask(0xFF); // each bit ends up as 0 in the stencil buffer (disabling writes)
+								 //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			glDisable(GL_DEPTH_TEST);
+			scope->DrawCircle();
 
-		// Enable writing to the stencil buffer
-		glEnable(GL_STENCIL_TEST);
-		// Render circle updating contents of the stencil buffer
-		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF); // each bit ends up as 0 in the stencil buffer (disabling writes)
-		//glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		glDisable(GL_DEPTH_TEST);
-		scope->DrawCircle();
+			// Disable writing to the stencil buffer
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			glStencilMask(0x00); // each bit ends up as 0 in the stencil buffer (disabling writes)
 
-		// Disable writing to the stencil buffer
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-		glStencilMask(0x00); // each bit ends up as 0 in the stencil buffer (disabling writes)
+			glStencilFunc(GL_EQUAL, 1, 0xFF);
+			DrawSkybox();
 
-		glStencilFunc(GL_EQUAL, 1, 0xFF);
-		DrawSkybox();
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			shaderArt->Draw();
+			blood->Draw();
 
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		shaderArt->Draw();
-		blood->Draw();
+			glStencilFunc(GL_EQUAL, 1, 0xFF);
+			RenderObjects(NO_CLIP_PLANE);
+		
 
-		glStencilFunc(GL_EQUAL, 1, 0xFF);
-		RenderObjects(NO_CLIP_PLANE);
-
-		glEnable(GL_DEPTH_TEST);
-		glDisable(GL_STENCIL_TEST);
-		glStencilMask(~0);
-		glClear(GL_STENCIL_BUFFER_BIT);
-		glDepthMask(GL_TRUE);
-		SwapBuffers();
-		glUseProgram(0);
-		return;
+			glEnable(GL_DEPTH_TEST);
+			TestDraw();
+			glDisable(GL_STENCIL_TEST);
+			glStencilMask(~0);
+			glClear(GL_STENCIL_BUFFER_BIT);
+			glStencilMask(0x00);
+			glDepthMask(GL_TRUE);
+			SwapBuffers();
+			glUseProgram(0);
+			ClearNodeLists();
+			activeShaders.clear();
+			return;
+		}
+		else {
+			postProcessor->BindSceneFBO();
+			DrawSkybox();
+			TestDraw();
+			postProcessor->ShatterOn();
+			if (sceneTime > 3000) {
+				postProcessor->ProcessScene();
+			}
+			
+			PresentScene();
+			DrawFPS();
+			SwapBuffers();
+			glUseProgram(0);
+			ClearNodeLists();
+			activeShaders.clear();
+			return;
+		}
 	}
 
 	//*************** WATER**************************
@@ -756,7 +782,7 @@ void Renderer::SetupScenes() {
 	masterRoot = new SceneNode();
 	SetupSceneA();
 	currentScene = SCENE_B; // Revert
-	currentCubeMap = cubeMapB;
+	currentCubeMap = cubeMapA;
 	SetupSceneB();
 	return; //Revert
 	SetupSceneC();
@@ -800,6 +826,7 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("BlurShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BlurFragment.glsl");
 	SHADER_MANAGER->AddShader("BloomShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BloomFragment.glsl");
 	SHADER_MANAGER->AddShader("ContrastShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"ContrastFragment.glsl");
+	SHADER_MANAGER->AddShader("ShatterShader", SHADERDIR"TexturedTexVertex.glsl", SHADERDIR"ShatterFragment.glsl");
 	// Missing: SHADER_MANAGER->AddShader("CombineShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"CombineFragment.glsl");
 }
 
@@ -819,6 +846,7 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("Brick", TEXTUREDIR"brick.tga");
 	TEXTURE_MANAGER->AddTexture("Explosion", TEXTUREDIR"ParticleAtlas.png");
 	TEXTURE_MANAGER->AddTexture("Laser", TEXTUREDIR"blueLaser.jpg");
+	TEXTURE_MANAGER->AddTexture("Smash", TEXTUREDIR"testSmash.png");
 
 	TEXTURE_MANAGER->AddTexture("Sun", TEXTUREDIR"sun.png");
 	for (int i = 1; i <= 8; ++i) {
@@ -1312,13 +1340,16 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 
 	if (currentScene == SCENE_B) {
 		float timeSec = msec / 1000.0f;
-		scope->IncreaseRadius(timeSec * timeSec * timeSec * 100.0f);
+		scope->IncreaseRadius(timeSec * timeSec * 200.0f);
 		scope->RebufferVertices();
 
 		//lights[0]->SetPosition(glm::vec3(300.0f + 100.0f * sin(msec/ 100.0f), 300.0f + 100.0f * cos(msec / 100.0f), 100.0f + 100.0f  * sin(msec/ 100.0f)));
-		lights[0]->SetPosition(glm::vec3(1040.0f, 250.0f + 200.0f * cos(time / 1000.0f), 300.0f + 200.0f * sin(time / 1000.0f)));
-		lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(3 * time / 1000.0f), 50.0f + 40.0f * cos(2 * time / 1000.0f), 1200.0f + 200.0f * sin(time / 1000.0f)));
-		lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(time / 1000.0f), 50.0f, 500.0f + 50.0f * sin(time / 1000.0f)));
+		if (!lights.empty()) {
+			lights[0]->SetPosition(glm::vec3(1040.0f, 250.0f + 200.0f * cos(time / 1000.0f), 300.0f + 200.0f * sin(time / 1000.0f)));
+			lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(3 * time / 1000.0f), 50.0f + 40.0f * cos(2 * time / 1000.0f), 1200.0f + 200.0f * sin(time / 1000.0f)));
+			lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(time / 1000.0f), 50.0f, 500.0f + 50.0f * sin(time / 1000.0f)));
+		}
+
 	}
 	if (currentScene == SCENE_E) {
 		if (sceneTime < 10000) {
@@ -1416,10 +1447,13 @@ void Renderer::TestDraw() {
 	GLint lightPosLocation = glGetUniformLocation(shaderAI->Program, "pointLights[0].position");
 	GLint lightColLocation = glGetUniformLocation(shaderAI->Program, "pointLights[0].colour");
 	GLint lightRadLocation = glGetUniformLocation(shaderAI->Program, "pointLights[0].radius");
-	bulbNode->SetTransform(glm::translate(glm::vec3(lights[0]->GetPosition())));
-	glUniform4fv(lightPosLocation, 1, (float*)&lights[0]->GetPosition());
-	glUniform4fv(lightColLocation, 1, (float*)&lights[0]->GetColour());
-	glUniform1f(lightRadLocation, lights[0]->GetRadius());
+	if (!lights.empty()) {
+		bulbNode->SetTransform(glm::translate(glm::vec3(lights[0]->GetPosition())));
+		glUniform4fv(lightPosLocation, 1, (float*)&lights[0]->GetPosition());
+		glUniform4fv(lightColLocation, 1, (float*)&lights[0]->GetColour());
+		glUniform1f(lightRadLocation, lights[0]->GetRadius());
+	}
+
 
 	GLint viewLocation = glGetUniformLocation(shaderAI->Program, "viewMatrix");
 	GLint projectionLocation = glGetUniformLocation(shaderAI->Program, "projectionMatrix");

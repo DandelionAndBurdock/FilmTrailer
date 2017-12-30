@@ -18,6 +18,8 @@ public:
 
 	void BlurOn() { blurOn = true; }
 	void BlurOff() { blurOn = false; }
+	void ShatterOn() { shatterOn = true; }
+	void ShatterOff() { shatterOn = false; }
 	void SetBlurPasses(GLint n) { blurPasses = n; }
 
 protected:
@@ -25,6 +27,7 @@ protected:
 	void Contrast(GLuint startTexture);
 	void Bloom(GLuint startTexture);
 	void Combine(GLuint sceneTexture, GLuint highlightTexture);
+	void Shatter();
 
 	void Initialise();
 	void InitialiseSceneFBO();
@@ -49,5 +52,7 @@ protected:
 	Mesh* sceneQuad;
 
 	GLboolean blurOn = false;
+
+	GLboolean shatterOn = false;
 };
 

@@ -4,8 +4,9 @@
 
 #include "../glm/mat4x4.hpp"
 #include "../glm/gtc/matrix_transform.hpp"
-
+#include "../glm/gtx/transform.hpp"
 #include "Mesh.h"
+#include "TextureManager.h"
 
 PostProcessor::PostProcessor(GLuint screenWidth, GLuint screenHeight)
 {
@@ -101,6 +102,9 @@ void PostProcessor::ProcessScene() {
 	finalProcessTex = sceneColourTex;
 	if (blurOn) {
 		GaussianBlur(sceneColourTex);
+	}
+	if (shatterOn) {
+		Shatter();
 	}
 	//Bloom(sceneColourTex);
 	//Contrast(sceneColourTex);
@@ -238,5 +242,62 @@ void PostProcessor::Combine(GLuint sceneTexture, GLuint highlightTexture) {
 
 	sceneQuad->Draw();
 
+	glEnable(GL_DEPTH_TEST);
+}
+
+void PostProcessor::Shatter() {
+	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D, processColourTex[0], 0);
+	finalProcessTex = processColourTex[0];
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
+	SHADER_MANAGER->SetUniform("ShatterShader", "viewMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("ShatterShader", "modelMatrix", glm::mat4());
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(glm::vec3(0.04f, 0.04f, 0.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.55f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.45f);
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "originalScene", 0);
+	SHADER_MANAGER->SetUniform("ShatterShader", "smash", 1);
+
+	glDisable(GL_DEPTH_TEST);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sceneColourTex);
+	glActiveTexture(GL_TEXTURE1);
+	TEXTURE_MANAGER->BindTexture("Smash");
+	sceneQuad->Draw();
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(glm::vec3(-0.02f, -0.02f, 0.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.3f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.2f);
+	sceneQuad->Draw();
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(glm::vec3(-0.02f, 0.02f, 0.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.15f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.1f);
+	sceneQuad->Draw();
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(glm::vec3(0.01f, 0.05f, 0.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.4f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.35f);
+	sceneQuad->Draw();
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(glm::vec3(-0.03f, 0.07f, 0.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.80f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.75f);
+	sceneQuad->Draw();
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(glm::vec3(0.015f, 0.07f, 0.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.90f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.85f);
+	sceneQuad->Draw();
+
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(glm::vec3(0.01f, 0.15f, 0.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.75f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.70f);
+	sceneQuad->Draw();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_DEPTH_TEST);
 }

@@ -24,6 +24,7 @@
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Lightning.cpp" />
+    <ClCompile Include="Lines.cpp" />
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="MD5Anim.cpp" />
     <ClCompile Include="MD5FileData.cpp" />
@@ -79,6 +80,7 @@
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Lightning.h" />
+    <ClInclude Include="Lines.h" />
     <ClInclude Include="Matrix4.h" />
     <ClInclude Include="MD5Anim.h" />
     <ClInclude Include="MD5FileData.h" />

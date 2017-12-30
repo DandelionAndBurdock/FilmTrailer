@@ -17,6 +17,7 @@ int main() {
 	if(!renderer.HasInitialised()) {
 		return -1;
 	}
+
 	w.LockMouseToWindow(true);
 	w.ShowOSPointer(false);
 
