@@ -1350,6 +1350,11 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(time / 1000.0f), 50.0f, 500.0f + 50.0f * sin(time / 1000.0f)));
 		}
 
+		if (sceneTime > 4000) {
+			postProcessor->ShatterMoveOn();
+			postProcessor->Update(msec / 1000.0f);
+		}
+
 	}
 	if (currentScene == SCENE_E) {
 		if (sceneTime < 10000) {
