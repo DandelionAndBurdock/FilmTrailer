@@ -846,7 +846,7 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("Brick", TEXTUREDIR"brick.tga");
 	TEXTURE_MANAGER->AddTexture("Explosion", TEXTUREDIR"ParticleAtlas.png");
 	TEXTURE_MANAGER->AddTexture("Laser", TEXTUREDIR"blueLaser.jpg");
-	TEXTURE_MANAGER->AddTexture("Smash", TEXTUREDIR"testSmash.png");
+	TEXTURE_MANAGER->AddTexture("Smash", TEXTUREDIR"TestSmashNoAANoLine.png");
 
 	TEXTURE_MANAGER->AddTexture("Sun", TEXTUREDIR"sun.png");
 	for (int i = 1; i <= 8; ++i) {

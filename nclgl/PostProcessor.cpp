@@ -255,11 +255,11 @@ void PostProcessor::Shatter() {
 	SHADER_MANAGER->SetUniform("ShatterShader", "projMatrix", glm::ortho(-1, 1, -1, 1));
 	SHADER_MANAGER->SetUniform("ShatterShader", "viewMatrix", glm::mat4());
 	SHADER_MANAGER->SetUniform("ShatterShader", "modelMatrix", glm::mat4());
-	glm::vec3 shatterOMove = glm::vec3(-0.02f, -0.02f, 0.0f) + velocityA * time + gravity * 0.5f * time * time;
-	angle += glm::radians(5.0f) * time;
-	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(shatterOMove) * glm::rotate(angle, glm::vec3(0.0f, 0.0f, 1.0f)));
-	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.55f);
-	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.45f);
+
+	glm::vec3 shatterOMove = glm::vec3(-0.02f, -0.02f, 0.0f) + velocityO * time + gravity * 0.5f * time * time;
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(shatterOMove) * glm::rotate(angle, glm::vec3(0.5f, 0.5f, 1.0f)));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.51f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.49f);
 
 	SHADER_MANAGER->SetUniform("ShatterShader", "originalScene", 0);
 	SHADER_MANAGER->SetUniform("ShatterShader", "smash", 1);
@@ -271,17 +271,16 @@ void PostProcessor::Shatter() {
 	TEXTURE_MANAGER->BindTexture("Smash");
 	sceneQuad->Draw();
 
-	angleA -=  glm::radians(45.0f) * time;
 	glm::vec3 shatterAMove = glm::vec3(-0.02f, -0.02f, 0.0f) + velocityA * time + gravity * 0.5f * time * time;
-	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(shatterAMove) * glm::rotate(angle, glm::vec3(0.0f, 0.0f, 1.0f)));
-	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.3f);
-	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.2f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(shatterAMove));
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.26f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.24f);
 	sceneQuad->Draw();
 
 	glm::vec3 shatterBMove = glm::vec3(-0.02f, 0.02f, 0.0f) + velocityB * time + gravity * 0.5f * time * time;
 	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(shatterBMove));
-	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.15f);
-	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.1f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.13f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.12f);
 	sceneQuad->Draw();
 
 	glm::vec3 shatterCMove = glm::vec3(0.01f, 0.05f, 0.0f) +velocityC * time + gravity * 0.5f * time * time;
@@ -298,13 +297,13 @@ void PostProcessor::Shatter() {
 
 	glm::vec3 shatterEMove = glm::vec3(0.015f, 0.07f, 0.0f) +velocityE * time + gravity * 0.5f * time * time;
 	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(shatterEMove));
-	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.90f);
-	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.85f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.89f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.88f);
 	sceneQuad->Draw();
 
 	glm::vec3 shatterFMove = glm::vec3(0.015f, 0.07f, 0.0f) +velocityF * time + gravity * 0.5f * time * time;
 	SHADER_MANAGER->SetUniform("ShatterShader", "texMatrix", glm::translate(shatterFMove));
-	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.75f);
+	SHADER_MANAGER->SetUniform("ShatterShader", "upperThreshold", 0.71f);
 	SHADER_MANAGER->SetUniform("ShatterShader", "lowerThreshold", 0.70f);
 	sceneQuad->Draw();
 
