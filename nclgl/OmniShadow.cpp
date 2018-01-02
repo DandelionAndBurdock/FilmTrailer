@@ -11,10 +11,14 @@ OmniShadow::OmniShadow(GLuint screenWidth, GLuint screenHeight)
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
 
-	shadowTexWidth = screenWidth;
-	shadowTexHeight = screenHeight;
-	aspect = shadowTexWidth / shadowTexHeight;
+	//shadowTexWidth = screenWidth;
+	//shadowTexHeight = screenHeight;
+	//aspect = shadowTexWidth / shadowTexHeight;
 
+	shadowTexWidth = screenWidth;
+	shadowTexHeight = screenWidth;
+	aspect = shadowTexWidth / shadowTexHeight; 
+	
 	shader = "ShadowDepth";
 	SHADER_MANAGER->SetUniform("ShadowDepth", "farPlane", Shadow::farPlane);
 	Initialise();
@@ -38,8 +42,8 @@ void OmniShadow::Initialise() {
 	// Create cube map
 	glGenTextures(1, &shadowCubeMapID);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMapID);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -71,9 +75,9 @@ void OmniShadow::Initialise() {
 void OmniShadow::BindForWriting() {
 	glViewport(0, 0, shadowTexWidth, shadowTexWidth);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
-
-	
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 void OmniShadow::BindForReading() {
 	glActiveTexture(GL_TEXTURE4);
@@ -98,6 +102,6 @@ void OmniShadow::SetUniforms(const Light* light) {
 		SHADER_MANAGER->SetUniform(shader, "lightViewMatrices[" + std::to_string(i) + "]", lightTransforms[i]);
 	}
 	SHADER_MANAGER->SetUniform(shader, "lightWorldPos", lightPos);
-	SHADER_MANAGER->SetUniform(shader, "modelMatrix", light->GetTransform());
+	SHADER_MANAGER->SetUniform(shader, "modelMatrix", light->GetWorldTransform());
 
 }

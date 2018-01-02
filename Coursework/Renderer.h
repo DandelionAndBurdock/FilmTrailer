@@ -209,4 +209,5 @@ protected:
 	void TestDraw();
 	OBJMesh* bulb;
 	SceneNode* bulbNode;
+
 };

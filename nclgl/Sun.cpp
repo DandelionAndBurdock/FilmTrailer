@@ -12,6 +12,6 @@ Sun::Sun(glm::vec3 direction, glm::vec3 colour, GLfloat distance) :
 
 Sun::~Sun()
 {
-	delete light;
+	//delete light;
 	light = nullptr;
 }

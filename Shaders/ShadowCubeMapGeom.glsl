@@ -21,7 +21,7 @@ void main()
 		// to a different cube map face (of the cubemap currently attached
 		// to the active framebuffer)
         gl_Layer = face; 
-        for(int i = 0; i < gl_in.length; ++i) 
+        for(int i = 0; i < 3; ++i) 
         {
             fragWorldPos = gl_in[i].gl_Position;
 			// Position in light space

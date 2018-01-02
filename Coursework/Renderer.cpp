@@ -27,6 +27,7 @@
 #include "nclgl\ShaderArt.h"
 #include "nclgl\Scope.h"
 #include "../glm/glm.hpp"
+#include "../glm/gtx/transform.hpp"
 
 // Ugly ASSIMP
 #include "nclgl\Model.h"
@@ -39,10 +40,25 @@
 #include <iomanip> // setprecision()
 
 
+// Can't get these stupid shadows working last try...
+const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+unsigned int depthMapFBO;
+unsigned int depthCubemap;
+float near_plane = 1.0f;
+float far_plane = 25.0f;
+glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT, near_plane, far_plane);
+
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
+std::vector<GLuint> shadowMatrixLocations;
+GLuint farPlaneLocation;
+GLuint modelMatrixLocation;
+GLuint lightPosLocation;
+ShaderAI* depthShader;
+
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CubeRobot::CreateCube();
 	Light::CreateLightMesh();
-
 	reflectionQuad = Mesh::GenerateQuad();
 	refractionQuad = Mesh::GenerateQuad();
 	sceneQuad = Mesh::GenerateQuad();
@@ -108,6 +124,39 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	splitScreenMesh = Mesh::GenerateQuad();
 
 	simpleShadow = new SimpleShadow(screenSize.x, screenSize.y);
+
+
+	// Can't get these stupid shadows working. Last try...
+	glGenFramebuffers(1, &depthMapFBO);
+	// create depth cubemap texture
+	glGenTextures(1, &depthCubemap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+	for (unsigned int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	// attach depth texture as FBO's depth buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	depthShader = new ShaderAI(SHADERDIR"ShadowDepthVertex.glsl", SHADERDIR"ShadowDepthFrag.glsl", SHADERDIR"ShadowDepthGeom.glsl");
+	depthShader->Use();
+	for (int i = 0; i < 6; ++i) {
+		shadowMatrixLocations.push_back(glGetUniformLocation(depthShader->Program, std::string("lightViewMatrices[" + std::to_string(i) + "]").c_str()));
+	}
+	//farPlaneLocation = glGetUniformLocation(depthShader->Program, "farPlane");
+	lightPosLocation = glGetUniformLocation(depthShader->Program, "lightPos");
+	modelMatrixLocation = glGetUniformLocation(depthShader->Program, "modelMatrix");
+
+	//glUniform1f(farPlaneLocation, farPlane);
+	// End stupid shadow stuff
+
 }; //Temp variables
 	
 
@@ -158,7 +207,7 @@ void Renderer::SetupSceneA() {
 	hellKnightData->AddAnim(MESHDIR"attack2.md5anim");
 	hellKnightNode->PlayAnim(MESHDIR"walk7.md5anim");
 
-	masterRoot->AddChild(hellKnightNode);
+	scenes[SCENE_A]->GetRoot()->AddChild(hellKnightNode);
 	hellKnightNode->SetModelScale(glm::vec3(100.0f));
 	return;//Revert
 	SceneNode* heightMap = new SceneNode(new HeightMap, "TerrainShadowShader");
@@ -294,8 +343,9 @@ void Renderer::HandleInput() {
 void Renderer::SetupSceneB() {
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_B]->SetCubeMap(cubeMapB);
-	SceneNode* heightMap = new SceneNode(new HeightMap(), "TerrainShader");
+	SceneNode* heightMap = new SceneNode(new HeightMap(), "TerrainShadowShader");
 	scenes[SCENE_B]->SetTerrain(heightMap);
+	
 	//Load meshes function
 	//OBJMesh* m = new OBJMesh;
 	//if (m->LoadOBJMesh(MESHDIR"Desp.obj")) {
@@ -356,13 +406,31 @@ void Renderer::SetupSceneB() {
 }
 
 void Renderer::SetupSceneC() {
+	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainShader");
+	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_C]->SetCubeMap(cubeMapC);
-	HeightMap* terrain = new HeightMap(TEXTUREDIR"PoolMap.data");
-	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
 	scenes[SCENE_C]->SetTerrain(heightMap);
 	heightMap->UseTexture("Terrain");
 	heightMap->UseTexture("TerrainBump");
+	//heightMap->UseTexture("Sand");
+	//heightMap->UseTexture("SandGrass");
+	//heightMap->UseTexture("Grass");
+	//heightMap->UseTexture("Rock");
+
+
+	sun = new Sun(glm::vec3(0.5f, -1.0f, 0.0f), glm::vec3(1.0, 1.0, 1.0), 1000.0f);
+	dirLight = sun->GetLight();
+	sun->SetTransform(glm::translate(sun->GetPosition()));
+	sun->UseTexture("Sun");
+	heightMap->AddChild(sun);
+
+	ufoNode = new CubeRobot();
+	ufoNode->SetTransform(glm::translate(glm::vec3(300.0f)));
+	spotlight = new Spotlight(glm::vec3(0.0), glm::vec3(0.0, 0.0, 1.0), glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
+	heightMap->AddChild(ufoNode);
+	ufoNode->AddChild(spotlight);
+	heightMap->AddChild(new CubeRobot());
 
 	water = new Water(GetScreenSize().x, GetScreenSize().y);
 	waterNode = new SceneNode(water, "WaterShader");
@@ -375,6 +443,18 @@ void Renderer::SetupSceneC() {
 	waterNode->UseTexture("dudvMap");
 	waterNode->UseTexture("DepthMap");
 	heightMap->AddChild(waterNode);
+
+
+	return;
+	scenes.push_back(new Scene(masterRoot));
+	scenes[SCENE_C]->SetCubeMap(cubeMapC);
+	HeightMap* terrain = new HeightMap(TEXTUREDIR"PoolMap.data");
+//	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
+	scenes[SCENE_C]->SetTerrain(heightMap);
+	heightMap->UseTexture("Terrain");
+	heightMap->UseTexture("TerrainBump");
+
+
 
 
 	//scenes[SCENE_C]->AddLight(new Light(glm::vec3(+500.0f, 500.0f, -500.0f), glm::vec4(1.0f), 2000.0f));
@@ -513,7 +593,7 @@ void Renderer::RenderObjects(const glm::vec4& clipPlane) {
 	}
 	DrawNodes();
 	if (currentScene == SCENE_C) {
-		grass->Draw();
+		//grass->Draw(); Revert
 	}
 	
 
@@ -574,8 +654,8 @@ void Renderer::RenderScene() {
 	else if (currentScene == SCENE_B) {
 		//DrawSkybox();
 		//RenderObjects(NO_CLIP_PLANE);
-		if (false){
-		//if (scope->GetRadius() < 2.99f) {
+		//if (false){
+		if (scope->GetRadius() < 2.99f) {
 			// Enable writing to the stencil buffer
 			glEnable(GL_STENCIL_TEST);
 			// Render circle updating contents of the stencil buffer
@@ -616,12 +696,75 @@ void Renderer::RenderScene() {
 			return;
 		}
 		else {
-			postProcessor->BindSceneFBO();
+			// Calculate Shadows
+			if (sceneTime < 3000 && !lights.empty()) {
+				glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+				glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+				glEnable(GL_DEPTH_TEST);
+				glClear(GL_DEPTH_BUFFER_BIT);
+				//SHADER_MANAGER->SetShader("ShadowDepth");
+				//TestDraw();
+				depthShader->Use();
+				for (int i = 0; i < 2; ++i) {
+					glm::mat4 modelMat = glm::translate(glm::vec3((i + 5) * 200.0f, 100.0f * (1.5 - i), 60.0f * (i + 5))); // translate it down so it's at the center of the scene
+					modelMat = modelMat * glm::scale(glm::vec3(200.0f, 200.0f, 200.0f));	// it's a bit too big for our scene, so scale it down
+					glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMat));
+					text3D[i]->Draw(*depthShader);
+				}
+
+				glm::mat4 modelMat = glm::translate(glm::vec3((8.2) * 200.0f, 100.0f * (0.5), 60.0f * (18))); // translate it down so it's at the center of the scene
+
+				modelMat = modelMat * glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+				modelMat = modelMat * glm::scale(glm::vec3(200.0f, 200.0f, 200.0f));	// it's a bit too big for our scene, so scale it down
+				glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMat));
+				text3D[2]->Draw(*depthShader);
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				//omniShadow->BindForWriting();
+				//omniShadow->SetUniforms(lights[0]);
+				//shadowRender = true;
+				//TestDraw();
+				//shadowRender = false;
+				//omniShadow->Unbind();
+				//omniShadow->BindForReading();
+			}
+			// Draw Scene
+			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+
+			postProcessor->BindSceneFBO();		
 			DrawSkybox();
 			TestDraw();
-			postProcessor->ShatterOn();
+			
 			if (sceneTime > 3000) {
+				scenes[SCENE_B]->GetRoot()->SetInactive();
+				scenes[SCENE_C]->GetRoot()->SetActive();
+				currentCubeMap = scenes[SCENE_C]->GetCubeMap();
+				currentScene = SCENE_C;
+				BuildNodeLists(masterRoot);
+				SortNodeLists();
+				masterRoot->Update(0.0f);
+				if (waterNode && waterNode->IsActive()) {
+					glEnable(GL_CLIP_DISTANCE0);
+					SetupReflectionBuffer();
+					SetupRefractionBuffer();
+					glDisable(GL_CLIP_DISTANCE0);
+				}
+				postProcessor->BindSpecialFBO();
+				DrawSkybox();
+				RenderObjects(NO_CLIP_PLANE);
+				scenes[SCENE_C]->GetRoot()->SetInactive();
+				scenes[SCENE_B]->GetRoot()->SetActive();
+				UpdateUniforms();
+
+				currentCubeMap = scenes[SCENE_B]->GetCubeMap();
+				currentScene = SCENE_B;
+				postProcessor->ShatterOn();
 				postProcessor->ProcessScene();
+				postProcessor->ShatterOff();
+			}
+			else {
+
 			}
 			
 			PresentScene();
@@ -632,6 +775,27 @@ void Renderer::RenderScene() {
 			activeShaders.clear();
 			return;
 		}
+	}
+	else if (currentScene == SCENE_C) {
+		if (waterNode && waterNode->IsActive()) {
+			glEnable(GL_CLIP_DISTANCE0);
+			SetupReflectionBuffer();
+			SetupRefractionBuffer();
+			glDisable(GL_CLIP_DISTANCE0);
+		}
+		DrawSceneToBuffer();
+		postProcessor->ProcessScene();
+		RenderViewPointToBuffer(ufoNode->GetPosition(), glm::vec3(0.0f, -1.0f, 0.0f));
+		PresentScene();
+		RenderSplitScreen(100, 100, 150, 150);
+
+		DrawFPS();
+
+		SwapBuffers();
+		glUseProgram(0);
+		ClearNodeLists();
+		activeShaders.clear();
+		return;
 	}
 
 	//*************** WATER**************************
@@ -683,7 +847,6 @@ void Renderer::RenderScene() {
 }
 
 void Renderer::DrawSceneToBuffer() {
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	postProcessor->BindSceneFBO();
 	DrawSkybox();
 	RenderObjects(NO_CLIP_PLANE);
@@ -781,11 +944,13 @@ void Renderer::DrawFPS() {
 void Renderer::SetupScenes() {
 	masterRoot = new SceneNode();
 	SetupSceneA();
-	currentScene = SCENE_B; // Revert
+	currentScene = SCENE_A; // Revert
 	currentCubeMap = cubeMapA;
 	SetupSceneB();
-	return; //Revert
 	SetupSceneC();
+	scenes[SCENE_B]->GetRoot()->SetInactive();
+	scenes[SCENE_C]->GetRoot()->SetInactive();
+	return; //Revert
 	SetupSceneD();
 	SetupSceneE();
 	SetupSceneF();
@@ -853,7 +1018,7 @@ void Renderer::LoadTextures() {
 		TEXTURE_MANAGER->AddTexture(std::string("Flare") + std::to_string(i), TEXTUREDIR + std::string("Flare") + std::to_string(i) + std::string(".png"));
 	}
 	
-	cubeMapA = SOIL_load_OGL_cubemap(
+	cubeMapC = SOIL_load_OGL_cubemap(
 		TEXTUREDIR"lake1_lf.jpg",
 		TEXTUREDIR"lake1_rt.jpg",
 		TEXTUREDIR"lake1_up.jpg",
@@ -863,7 +1028,7 @@ void Renderer::LoadTextures() {
 		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0
 	);
 
-	if (!cubeMapA) {
+	if (!cubeMapC) {
 		std::cout << SOIL_last_result() << std::endl;
 		__debugbreak();
 	}
@@ -883,17 +1048,17 @@ void Renderer::LoadTextures() {
 		__debugbreak();
 	}
 
-	cubeMapC = SOIL_load_OGL_cubemap(
-		TEXTUREDIR"rusted_west.jpg",
-		TEXTUREDIR"rusted_east.jpg",
-		TEXTUREDIR"rusted_up.jpg",
-		TEXTUREDIR"rusted_down.jpg",
-		TEXTUREDIR"rusted_south.jpg",
-		TEXTUREDIR"rusted_north.jpg",
+	cubeMapA = SOIL_load_OGL_cubemap(
+		TEXTUREDIR"land_lf.jpg",
+		TEXTUREDIR"land_rt.jpg",
+		TEXTUREDIR"land_up.jpg",
+		TEXTUREDIR"land_dn.jpg",
+		TEXTUREDIR"land_ft.jpg",
+		TEXTUREDIR"land_bk.jpg",
 		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0
 	);
 
-	if (!cubeMapC) {
+	if (!cubeMapA) {
 		std::cout << SOIL_last_result() << std::endl;
 		__debugbreak();
 	}
@@ -1339,6 +1504,9 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	}
 
 	if (currentScene == SCENE_B) {
+		if (sceneTime > 13000.0f) {
+			Transition(SCENE_B, SCENE_C);
+		}
 		float timeSec = msec / 1000.0f;
 		scope->IncreaseRadius(timeSec * timeSec * 200.0f);
 		scope->RebufferVertices();
@@ -1350,10 +1518,37 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(time / 1000.0f), 50.0f, 500.0f + 50.0f * sin(time / 1000.0f)));
 		}
 
-		if (sceneTime > 4000) {
+		if (sceneTime > 6000) {
 			postProcessor->ShatterMoveOn();
 			postProcessor->Update(msec / 1000.0f);
 		}
+
+		// Can't get these stupid shadows working. Last try...
+
+		if (!lights.empty()) {
+			std::vector<glm::mat4> shadowTransforms;
+			glm::vec3 lightPos = glm::vec3(lights[0]->GetPosition());
+			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+		/*	SHADER_MANAGER->SetShader("ShadowDepth");
+			for (int i = 0; i < 6; ++i) {
+				SHADER_MANAGER->SetUniform("ShadowDepth", "shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+			}
+			SHADER_MANAGER->SetUniform("ShadowDepth", "lightWorldPos", lightPos);
+			SHADER_MANAGER->SetUniform("ShadowDepth", "farPlane", farPlane);*/
+			depthShader->Use();
+			for (int i = 0; i < 6; ++i) {
+				glUniformMatrix4fv(shadowMatrixLocations[i], 1, GL_FALSE, &shadowTransforms[i][0][0]);
+			}
+			glUniform3fv(lightPosLocation, 1, &lightPos[0]);
+			shadowTransforms.clear();
+		}
+
 
 	}
 	if (currentScene == SCENE_E) {
@@ -1382,7 +1577,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 		tempLights = lightning->GetLights();
 	}
 
-	if (currentScene == SCENE_B && ufoNode) {
+	if (currentScene == SCENE_C && ufoNode) {
 		const float UFO_SPEED = 0.001f; // Units per milliseconds
 
 		glm::vec3 targetPosition = ufoTargetPositions[ufoTargetIndex];

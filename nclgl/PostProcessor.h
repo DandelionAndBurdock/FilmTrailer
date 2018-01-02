@@ -16,6 +16,8 @@ public:
 	void ProcessScene();
 	void BindProcessedTexture();
 
+	void BindSpecialFBO();
+
 	void BlurOn() { blurOn = true; }
 	void BlurOff() { blurOn = false; }
 	void ShatterOn() { shatterOn = true; }
@@ -36,6 +38,7 @@ protected:
 	void Initialise();
 	void InitialiseSceneFBO();
 	void InitialiseProcessFBO();
+	void InitaliseSpecialFBO();
 
 	GLuint sceneFBO;
 	GLuint sceneColourTex;
@@ -79,5 +82,9 @@ protected:
 	GLfloat angleE = 0.0f;
 	GLfloat angleF = 0.0f;
 	GLfloat angleG = 0.0f;
+
+	GLuint specialFBO;
+	GLuint specialColourTex;
+	GLuint specialDepthTex;
 };
 

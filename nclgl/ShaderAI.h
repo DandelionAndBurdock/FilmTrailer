@@ -12,7 +12,7 @@ class ShaderAI
 {
 public:
 	GLuint Program;
-	ShaderAI(const GLchar *vertexPath, const GLchar* fragmentPath);
+	ShaderAI(const GLchar *vertexPath, const GLchar* fragmentPath, const GLchar* geomPath = nullptr);
 	void Use();
 
 private:

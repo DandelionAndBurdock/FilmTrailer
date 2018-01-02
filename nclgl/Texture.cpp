@@ -54,7 +54,7 @@ void Texture::SetWrapping(bool repeatingS, bool repeatingT) {
 void Texture::SetFiltering(bool linearMin, bool linearMax) {
 	glBindTexture(GL_TEXTURE_2D, ID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-		linearMin ? GL_LINEAR : GL_NEAREST);
+		linearMin ? GL_NEAREST_MIPMAP_LINEAR : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 		linearMax ? GL_LINEAR : GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);

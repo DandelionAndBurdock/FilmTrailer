@@ -32,7 +32,7 @@ namespace Shadow {
 	};
 
 	const GLfloat nearPlane = 1.0f;
-	const GLfloat farPlane = 2000.0f;
+	const GLfloat farPlane = 25.0f;
 }
 
 class Light;
