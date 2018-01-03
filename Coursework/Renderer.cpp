@@ -406,17 +406,17 @@ void Renderer::SetupSceneB() {
 }
 
 void Renderer::SetupSceneC() {
-	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainShader");
+	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainMultiTexShader");
 	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_C]->SetCubeMap(cubeMapC);
 	scenes[SCENE_C]->SetTerrain(heightMap);
 	heightMap->UseTexture("Terrain");
 	heightMap->UseTexture("TerrainBump");
-	//heightMap->UseTexture("Sand");
-	//heightMap->UseTexture("SandGrass");
-	//heightMap->UseTexture("Grass");
-	//heightMap->UseTexture("Rock");
+	heightMap->UseTexture("Sand");
+	heightMap->UseTexture("SandGrass");
+	heightMap->UseTexture("Grass");
+	heightMap->UseTexture("Rock");
 
 
 	sun = new Sun(glm::vec3(0.5f, -1.0f, 0.0f), glm::vec3(1.0, 1.0, 1.0), 1000.0f);
@@ -944,12 +944,12 @@ void Renderer::DrawFPS() {
 void Renderer::SetupScenes() {
 	masterRoot = new SceneNode();
 	SetupSceneA();
-	currentScene = SCENE_A; // Revert
-	currentCubeMap = cubeMapA;
+	currentScene = SCENE_C; // Revert
+	currentCubeMap = cubeMapC;
 	SetupSceneB();
 	SetupSceneC();
+	scenes[SCENE_A]->GetRoot()->SetInactive();
 	scenes[SCENE_B]->GetRoot()->SetInactive();
-	scenes[SCENE_C]->GetRoot()->SetInactive();
 	return; //Revert
 	SetupSceneD();
 	SetupSceneE();
@@ -969,7 +969,7 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingVertex.glsl", SHADERDIR"LightingFragment.glsl");
 	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingHeightVertex.glsl", SHADERDIR"LightingFragment.glsl");
 
-	// Misisng:SHADER_MANAGER->AddShader("TerrainTexShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
+	Misisng:SHADER_MANAGER->AddShader("TerrainMultiTexShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
 	SHADER_MANAGER->AddShader("HoleTerrainShader", SHADERDIR"DeformVertex.glsl", SHADERDIR"DeformFragment.glsl");
 	SHADER_MANAGER->AddShader("ShadowDepth", SHADERDIR"ShadowCubeMapVertex.glsl", SHADERDIR"ShadowCubeMapFrag.glsl", SHADERDIR"ShadowCubeMapGeom.glsl");
 	SHADER_MANAGER->AddShader("AnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl");
