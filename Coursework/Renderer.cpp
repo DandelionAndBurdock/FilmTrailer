@@ -56,6 +56,9 @@ GLuint modelMatrixLocation;
 GLuint lightPosLocation;
 ShaderAI* depthShader;
 
+// Add some more global variables
+std::string reel[] = { "One", "Two", "Three", "Four", "Five" };
+
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CubeRobot::CreateCube();
 	Light::CreateLightMesh();
@@ -156,7 +159,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	//glUniform1f(farPlaneLocation, farPlane);
 	// End stupid shadow stuff
-
+	sceneTime = 0.0f;
 }; //Temp variables
 	
 
@@ -426,11 +429,20 @@ void Renderer::SetupSceneC() {
 	heightMap->AddChild(sun);
 
 	ufoNode = new CubeRobot();
+
+	OBJMesh* m = new OBJMesh;
+	if (!m->LoadOBJMesh(MESHDIR"sphere.obj")) {
+		__debugbreak();
+	}
+	ufoNode = new SceneNode(m, "TerrainShader");
+	ufoNode->UseTexture("Terrain");
+	ufoNode->UseTexture("TerrainBump");
+	ufoNode->SetModelScale(glm::vec3(100.0, 30.0f, 100.0));
 	ufoNode->SetTransform(glm::translate(glm::vec3(300.0f)));
 	spotlight = new Spotlight(glm::vec3(0.0), glm::vec3(0.0, 0.0, 1.0), glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f)));
+	spotlight->SetTransform(glm::translate(glm::vec3(0.0f, -30.0f, 0.0f)));
 	heightMap->AddChild(ufoNode);
 	ufoNode->AddChild(spotlight);
-	heightMap->AddChild(new CubeRobot());
 
 	water = new Water(GetScreenSize().x, GetScreenSize().y);
 	waterNode = new SceneNode(water, "WaterShader");
@@ -483,16 +495,33 @@ void Renderer::SetupSceneC() {
 
 void Renderer::SetupSceneD() {
 	scenes.push_back(new Scene(masterRoot));
-	scenes[SCENE_D]->SetCubeMap(cubeMapD);
-	SceneNode* heightMap = new SceneNode(new HeightMap(), "CausticShader");
+	SceneNode* heightMap = new SceneNode(new HeightMap(), "HoleTerrainShader");
+	heightMap->UseTexture("Terrain");
+	heightMap->UseTexture("TerrainBump");
+	laser = new SceneNode(Mesh::GenerateQuad(), "TextureQuadShader");
+	heightMap->AddChild(ufoNode);
+	heightMap->AddChild(laser);
+	laser->SetModelScale(glm::vec3(10.0f, 500.0f, 1.0f));
+	laser->SetTransform(glm::translate(glm::vec3(500.0f, 0.0f, 500.0f)));
+	SHADER_MANAGER->SetUniform("HoleTerrainShader", "epicentre", glm::vec2(500.0f, 500.0f));
+	laser->UseTexture("Laser");
 	scenes[SCENE_D]->SetTerrain(heightMap);
-	scenes[SCENE_D]->AddLight(new Light(glm::vec3(+0.0f, 0.0f, 0.0f), glm::vec4(1.0f), 5000.0f));
-	heightMap->UseTexture("Brick");
-
-	heightMap = nullptr;
+	scenes[SCENE_D]->SetCubeMap(cubeMapC);
+	scenes[SCENE_D]->SetEmitter(new ParticleEmitter);
+	return;
+	//scenes.push_back(new Scene(masterRoot));
+	//scenes[SCENE_D]->SetCubeMap(cubeMapD);
+	//SceneNode* heightMap = new SceneNode(new HeightMap(), "CausticShader");
+	//scenes[SCENE_D]->SetTerrain(heightMap);
+	//scenes[SCENE_D]->AddLight(new Light(glm::vec3(+0.0f, 0.0f, 0.0f), glm::vec4(1.0f), 5000.0f));
+	//heightMap->UseTexture("Brick");
+	//
+	//heightMap = nullptr;
 }
 
 void Renderer::SetupSceneE() {
+	scenes.push_back(new Scene(masterRoot));
+	return;
 	scenes.push_back(new Scene(masterRoot));
 	SceneNode* heightMap = new SceneNode(new HeightMap(), "HoleTerrainShader");
 	heightMap->UseTexture("Terrain");
@@ -523,12 +552,17 @@ void Renderer::SetupSceneE() {
 
 
 void Renderer::SetupSceneF() {
+	scenes.push_back(new Scene(masterRoot));
+	return;
 	//scenes.push_back(new Scene(masterRoot));
 	//scenes[SCENE_F]->SetFireworks(new FireworkSystem(glm::vec3(0.0f, 0.0f, 0.0f)));
 	//scenes[SCENE_F]->SetCubeMap(cubeMapF);
 }
 
 void Renderer::UpdateScene(float msec) {
+	if (currentScene == SCENE_F && sceneTime > 6000) {
+			Transition(SCENE_F, SCENE_A);
+	}
 	OGLRenderer::UpdateScene(msec);
 
 	CalculateFPS(msec);
@@ -554,8 +588,14 @@ void Renderer::UpdateScene(float msec) {
 			masterRoot->Update(msec);
 		}
 
-		PrepareToTransition();
-		PostTransition();
+		if (currentScene == SCENE_C) {
+			PrepareToTransition();
+		}
+		if (currentScene == SCENE_D) {
+			PostTransition();
+		}
+		
+
 		scenes[currentScene]->UpdateEffects(msec, camera->GetPosition());
 
 		textureMatrix = glm::rotate(glm::radians(time), glm::vec3(0.0, 1.0, 1.0));
@@ -785,12 +825,73 @@ void Renderer::RenderScene() {
 		}
 		DrawSceneToBuffer();
 		postProcessor->ProcessScene();
-		RenderViewPointToBuffer(ufoNode->GetPosition(), glm::vec3(0.0f, -1.0f, 0.0f));
+		RenderViewPointToBuffer(ufoNode->GetPosition() - glm::vec3(0.0f, -30.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		PresentScene();
 		RenderSplitScreen(100, 100, 150, 150);
 
 		DrawFPS();
 
+		SwapBuffers();
+		glUseProgram(0);
+		ClearNodeLists();
+		activeShaders.clear();
+		return;
+	}
+	else if (currentScene == SCENE_D) {
+		DrawSceneToBuffer();
+		postProcessor->ProcessScene();
+		PresentScene();
+
+		DrawFPS();
+
+		SwapBuffers();
+		glUseProgram(0);
+		ClearNodeLists();
+		activeShaders.clear();
+		return;
+	}
+	else if (currentScene == SCENE_E) {
+		SHADER_MANAGER->SetUniform("OldFilm","background", 0);
+		glActiveTexture(GL_TEXTURE0);
+		TEXTURE_MANAGER->BindTexture("Fin");
+		SHADER_MANAGER->SetUniform("OldFilm", "time", time);
+		SHADER_MANAGER->SetUniform("OldFilm", "projMatrix", glm::ortho(-1, 1, -1, 1));
+		SHADER_MANAGER->SetUniform("OldFilm", "viewMatrix", glm::mat4());
+		SHADER_MANAGER->SetUniform("OldFilm", "modelMatrix", glm::mat4());
+		sceneQuad->Draw();
+		SwapBuffers();
+		glUseProgram(0);
+		ClearNodeLists();
+		activeShaders.clear();
+		return;
+	}
+	else if (currentScene == SCENE_F) {
+		SHADER_MANAGER->SetUniform("OldFilm", "background", 0);
+		glActiveTexture(GL_TEXTURE0);
+		if (sceneTime < 1000) {
+			TEXTURE_MANAGER->BindTexture(reel[4]);
+		}
+		else if (sceneTime < 2000) {
+			TEXTURE_MANAGER->BindTexture(reel[3]);
+		}
+		else if (sceneTime < 3000) {
+			TEXTURE_MANAGER->BindTexture(reel[2]);
+		}
+		else if (sceneTime < 4000) {
+			TEXTURE_MANAGER->BindTexture(reel[1]);
+		}
+		else if (sceneTime < 5000) {
+			TEXTURE_MANAGER->BindTexture(reel[0]);
+		}
+			
+		
+
+		
+		SHADER_MANAGER->SetUniform("OldFilm", "time", time);
+		SHADER_MANAGER->SetUniform("OldFilm", "projMatrix", glm::ortho(-1, 1, -1, 1));
+		SHADER_MANAGER->SetUniform("OldFilm", "viewMatrix", glm::mat4());
+		SHADER_MANAGER->SetUniform("OldFilm", "modelMatrix", glm::mat4());
+		sceneQuad->Draw();
 		SwapBuffers();
 		glUseProgram(0);
 		ClearNodeLists();
@@ -944,12 +1045,17 @@ void Renderer::DrawFPS() {
 void Renderer::SetupScenes() {
 	masterRoot = new SceneNode();
 	SetupSceneA();
-	currentScene = SCENE_C; // Revert
-	currentCubeMap = cubeMapC;
+	currentScene = SCENE_F; // Revert
+	currentCubeMap = cubeMapA;
 	SetupSceneB();
 	SetupSceneC();
-	scenes[SCENE_A]->GetRoot()->SetInactive();
+	SetupSceneD();
+	SetupSceneE();
+	SetupSceneF();
+	scenes[SCENE_D]->GetRoot()->SetInactive();
 	scenes[SCENE_B]->GetRoot()->SetInactive();
+	scenes[SCENE_C]->GetRoot()->SetInactive();
+	scenes[SCENE_A]->GetRoot()->SetInactive();
 	return; //Revert
 	SetupSceneD();
 	SetupSceneE();
@@ -978,6 +1084,7 @@ void Renderer::LoadShaders() {
 	// Missing: SHADER_MANAGER->AddShader("SimpleShadowScene", SHADERDIR"ShadowSceneVert.glsl", SHADERDIR"ShadowSceneFrag.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("TextureQuadShader", SHADERDIR"TexturedQuadVertex.glsl", SHADERDIR"TexturedQuadFragment.glsl"); // Adding this one just so I don't break an
+	SHADER_MANAGER->AddShader("OldFilm", SHADERDIR"NoiseVertex.glsl", SHADERDIR"NoiseFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 	SHADER_MANAGER->AddShader("WaterShader", SHADERDIR"WaterVertex.glsl", SHADERDIR"WaterFragment.glsl");
 	SHADER_MANAGER->AddShader("CubeMapShader", SHADERDIR"skyboxVertex.glsl", SHADERDIR"skyboxFragment.glsl");
@@ -1012,6 +1119,12 @@ void Renderer::LoadTextures() {
 	TEXTURE_MANAGER->AddTexture("Explosion", TEXTUREDIR"ParticleAtlas.png");
 	TEXTURE_MANAGER->AddTexture("Laser", TEXTUREDIR"blueLaser.jpg");
 	TEXTURE_MANAGER->AddTexture("Smash", TEXTUREDIR"TestSmashNoAANoLine.png");
+	TEXTURE_MANAGER->AddTexture("Fin", TEXTUREDIR"Fin.png");
+	TEXTURE_MANAGER->AddTexture(reel[0], TEXTUREDIR"1.png");
+	TEXTURE_MANAGER->AddTexture(reel[1], TEXTUREDIR"2.png");
+	TEXTURE_MANAGER->AddTexture(reel[2], TEXTUREDIR"3.png");
+	TEXTURE_MANAGER->AddTexture(reel[3], TEXTUREDIR"4.png");
+	TEXTURE_MANAGER->AddTexture(reel[4], TEXTUREDIR"5.png");
 
 	TEXTURE_MANAGER->AddTexture("Sun", TEXTUREDIR"sun.png");
 	for (int i = 1; i <= 8; ++i) {
@@ -1504,6 +1617,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	}
 
 	if (currentScene == SCENE_B) {
+		std::cout << sceneTime << std::endl;
 		if (sceneTime > 13000.0f) {
 			Transition(SCENE_B, SCENE_C);
 		}
@@ -1551,8 +1665,9 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 
 
 	}
-	if (currentScene == SCENE_E) {
+	if (currentScene == SCENE_D) {
 		if (sceneTime < 10000) {
+			ufoNode->SetTransform(glm::translate(laser->GetPosition() + glm::vec3(0.0, 500.0f, 0.0f)));
 			laser->SetActive();
 			SHADER_MANAGER->SetUniform("HoleTerrainShader", "holeTime", sceneTime / 10.0f);
 		}
@@ -1560,14 +1675,18 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			laser->SetInactive();
 		}
 
-		if (sceneTime > 6750 && !hellKnightNode->IsIdle()) {
+		if (sceneTime > 10000) {
+			Transition(SCENE_D, SCENE_E);
+		}
+
+		/*if (sceneTime > 6750 && !hellKnightNode->IsIdle()) {
 			hellKnightNode->SetIdle(true);
 			hellKnightNode->PlayAnim(MESHDIR"idle2.md5anim");
 			scenes[currentScene]->ToggleEmitter();
 		}
 		else if (sceneTime > 12000) {
 			hellKnightNode->SetShader("ExplodeAnimShader");
-		}
+		}*/
 
 		
 	}
@@ -1578,7 +1697,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	}
 
 	if (currentScene == SCENE_C && ufoNode) {
-		const float UFO_SPEED = 0.001f; // Units per milliseconds
+    	const float UFO_SPEED = 0.001f; // Units per milliseconds
 
 		glm::vec3 targetPosition = ufoTargetPositions[ufoTargetIndex];
 		glm::vec3 movementDirection = targetPosition - ufoNode->GetPosition();

@@ -1,6 +1,7 @@
 #include "Frustum.h"
 
 bool Frustum::InsideFrustum(SceneNode& n) {
+	return true;
 	glm::vec3 nodePosition = glm::vec3(n.GetWorldTransform()[3]);
 	GLfloat nodeBoundingRadius = n.GetBoundingRadius();
 	for (int p = 0; p < 6; ++p) {
