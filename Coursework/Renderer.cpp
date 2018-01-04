@@ -160,9 +160,18 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//glUniform1f(farPlaneLocation, farPlane);
 	// End stupid shadow stuff
 	sceneTime = 0.0f;
-	std::vector<glm::vec3> wps = { glm::vec3(1200.0f, 100.0f, 1100.0f), glm::vec3(1200.0f, 100.0f, 1100.0f), glm::vec3(800.0f, 100.0f, 1150.0f), glm::vec3(1400.0f, 500.0f, 200.0f), glm::vec3(1400.0f, 500.0f, 200.0f) };
-	std::vector<glm::vec3> vps = { glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f),  glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f)), glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f)) };
-	std::vector<float> tps = { 2500.0f, 5000.0f, 3000.0f,  8000.0f };
+	// Scene B
+	std::vector<glm::vec3> wps = { glm::vec3(1200.0f, 100.0f, 1100.0f), glm::vec3(1200.0f, 100.0f, 1100.0f), glm::vec3(800.0f, 100.0f, 1150.0f), glm::vec3(1900.0f, 500.0f, 0.0f), glm::vec3(1900.0f, 500.0f, 0.0f), glm::vec3(1200.0f, 100.0f, 1100.0f),  glm::vec3(1200.0f, 100.0f, 1100.0f) };
+	std::vector<glm::vec3> vps = { glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f),  glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f)), glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f)),  glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -1.0f) };
+	std::vector<float> tps = { 2500.0f, 5000.0f, 3000.0f,  5000.0f, 1000.0f, 9000.0f };
+
+	// Scene C
+	wps.push_back(glm::vec3(1500.0f, 500.0f, 100.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(-1.0f, -1.0f, 0.0f))));
+	tps.push_back(4000.0f);
+	wps.push_back(glm::vec3(1500.0f, 500.0f, 100.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(-1.0f, -1.0f, 0.0f))));
+	tps.push_back(4000.0f);
 	controller = new CameraController(camera, wps, vps, tps); //Hippo
 }; //Temp variables
 	
@@ -781,7 +790,7 @@ void Renderer::RenderScene() {
 			DrawSkybox();
 			TestDraw();
 			
-			if (sceneTime > 10000) {
+			if (sceneTime > 17000) {
 				scenes[SCENE_B]->GetRoot()->SetInactive();
 				scenes[SCENE_C]->GetRoot()->SetActive();
 				currentCubeMap = scenes[SCENE_C]->GetCubeMap();
@@ -1624,7 +1633,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	}
 
 	if (currentScene == SCENE_B) {
-		if (sceneTime > 13000.0f) {
+		if (sceneTime > 30000.0f) {
 			Transition(SCENE_B, SCENE_C);
 		}
 		float timeSec = msec / 1000.0f;
@@ -1645,7 +1654,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 		
 		}
 
-		if (sceneTime > 13000) {
+		if (sceneTime > 20000) {
 			postProcessor->ShatterMoveOn();
 			postProcessor->Update(msec / 1000.0f);
 		}
