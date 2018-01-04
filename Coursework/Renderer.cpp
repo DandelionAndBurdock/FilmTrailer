@@ -166,6 +166,9 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	std::vector<float> tps = { 2500.0f, 5000.0f, 3000.0f,  5000.0f, 1000.0f, 9000.0f };
 
 	// Scene C
+	wps.push_back(glm::vec3(1200.0f, 600.0f, 1100.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f))));
+	tps.push_back(4000.0f);
 	wps.push_back(glm::vec3(1500.0f, 500.0f, 100.0f));
 	vps.push_back(glm::vec3(glm::normalize(glm::vec3(-1.0f, -1.0f, 0.0f))));
 	tps.push_back(4000.0f);
@@ -534,6 +537,8 @@ void Renderer::SetupSceneD() {
 
 void Renderer::SetupSceneE() {
 	scenes.push_back(new Scene(masterRoot));
+	scenes[SCENE_E]->SetFireworks(new FireworkSystem(glm::vec3(0.0f, 0.0f, 0.0f)));
+	scenes[SCENE_E]->SetCubeMap(cubeMapF);
 	return;
 	scenes.push_back(new Scene(masterRoot));
 	SceneNode* heightMap = new SceneNode(new HeightMap(), "HoleTerrainShader");
@@ -576,6 +581,11 @@ void Renderer::UpdateScene(float msec) {
 	if (currentScene == SCENE_F && sceneTime > 6000) {
 			Transition(SCENE_F, SCENE_A);
 	}
+	if (currentScene == SCENE_D && sceneTime > 6000) {
+		camera->SetPosition(glm::vec3(16.0f, 71.0f, 99.0f));
+		controller->ToggleAutoMovement();
+		Transition(SCENE_D, SCENE_E);
+	}
 	OGLRenderer::UpdateScene(msec);
 
 	CalculateFPS(msec);
@@ -584,9 +594,15 @@ void Renderer::UpdateScene(float msec) {
 
 	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);
 
-	if (currentScene != SCENE_A) {
+	if (currentScene != SCENE_A && currentScene != SCENE_F) {
 		//camera->UpdateCamera(msec);
-		controller->Update(msec);
+		if (currentScene == SCENE_B && scope->GetRadius() < 3.0f) {
+			
+		}
+		else {
+			controller->Update(msec);
+		}
+		
 	}
 	
 	viewMatrix = camera->BuildViewMatrix();
@@ -839,9 +855,9 @@ void Renderer::RenderScene() {
 		}
 		DrawSceneToBuffer();
 		postProcessor->ProcessScene();
-		RenderViewPointToBuffer(ufoNode->GetPosition() - glm::vec3(0.0f, -30.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+		//RenderViewPointToBuffer(ufoNode->GetPosition() - glm::vec3(0.0f, -30.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		PresentScene();
-		RenderSplitScreen(100, 100, 150, 150);
+		//RenderSplitScreen(100, 100, 150, 150);
 
 		DrawFPS();
 
@@ -873,10 +889,11 @@ void Renderer::RenderScene() {
 		SHADER_MANAGER->SetUniform("OldFilm", "viewMatrix", glm::mat4());
 		SHADER_MANAGER->SetUniform("OldFilm", "modelMatrix", glm::mat4());
 		sceneQuad->Draw();
+		scenes[currentScene]->DrawEffects(projMatrix * viewMatrix, camera->GetPosition());
 		SwapBuffers();
 		glUseProgram(0);
 		ClearNodeLists();
-		activeShaders.clear();
+		activeShaders.clear(); //Rhino
 		return;
 	}
 	else if (currentScene == SCENE_F) {
@@ -1056,21 +1073,22 @@ void Renderer::DrawFPS() {
 	glEnable(GL_DEPTH_TEST);
 }
 
-void Renderer::SetupScenes() {
+void Renderer::SetupScenes() { //Warthog
 	masterRoot = new SceneNode();
 	SetupSceneA();
-	currentScene = SCENE_B; // Revert
-	currentCubeMap = cubeMapB;
+	currentScene = SCENE_F; // Rever
+	currentCubeMap = cubeMapF;
 	SetupSceneB();
 	SetupSceneC();
 	SetupSceneD();
 	SetupSceneE();
 	SetupSceneF();
 	scenes[SCENE_D]->GetRoot()->SetInactive();
-	scenes[SCENE_E]->GetRoot()->SetInactive();
+	ufoNode->SetActive();
+	scenes[SCENE_B]->GetRoot()->SetInactive();
 	scenes[SCENE_C]->GetRoot()->SetInactive();
 	scenes[SCENE_A]->GetRoot()->SetInactive();
-	camera->SetPosition(glm::vec3(1200.0f, 100.0f, 1100.0f));
+
 	return; //Revert
 	SetupSceneD();
 	SetupSceneE();
@@ -1611,6 +1629,7 @@ void Renderer::RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWi
 
 // Temporary ugly function
 void Renderer::SceneSpecificUpdates(GLfloat msec) {
+	std::cout << camera->GetPosition().x << "," << camera->GetPosition().y << "," << camera->GetPosition().z << std::endl;
 	if (currentScene == SCENE_A) {
 		if (shaderArt) {
 			if (scope->GetRadius() > 0.399f) {
@@ -1628,17 +1647,23 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	
 		}
 		if (bloodCountdown < 0.0f) {
+			camera->SetPosition(glm::vec3(1200.0f, 100.0f, 1100.0f));
 			Transition(SCENE_A, SCENE_B);
 		}
 	}
 
 	if (currentScene == SCENE_B) {
-		if (sceneTime > 30000.0f) {
+		if (sceneTime > 27000.0f) {
 			Transition(SCENE_B, SCENE_C);
 		}
 		float timeSec = msec / 1000.0f;
-		scope->IncreaseRadius(timeSec * timeSec * 200.0f);
-		scope->RebufferVertices();
+		
+		if (scope->GetRadius() < 3.0f) {
+			scope->IncreaseRadius(timeSec * timeSec * 200.0f);
+			scope->RebufferVertices();
+			sceneTime = 0.0f;
+		}
+
 
 		//lights[0]->SetPosition(glm::vec3(300.0f + 100.0f * sin(msec/ 100.0f), 300.0f + 100.0f * cos(msec / 100.0f), 100.0f + 100.0f  * sin(msec/ 100.0f)));
 		if (!lights.empty()) {

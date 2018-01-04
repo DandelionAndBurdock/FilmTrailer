@@ -123,7 +123,7 @@ void Scope::UpdateCircle(GLfloat deltaSec) {
 	}
 	else {
 		static float endTime = time;
-		ReduceRadius( (time -endTime) * (time - endTime) * (time - endTime) * 0.0001f);
+		ReduceRadius( (time -endTime) * (time - endTime) * (time - endTime) * 0.000005f);
 	}
 
 	

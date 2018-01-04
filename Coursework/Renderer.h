@@ -43,7 +43,7 @@ class Model;
 
 class Renderer : public OGLRenderer {
 	enum SceneNumber {SCENE_A, SCENE_B, SCENE_C, SCENE_D, SCENE_E, SCENE_F, NUM_SCENES};
-	const float SCENE_TIME = 9000.0f; // Time in msec to display each scene 
+	const float SCENE_TIME = 25000.0f; // Time in msec to display each scene 
 	const float SCENE_TRANSITION_TIME = 2000.0f; // Time in msec to move from one scene to another
 public:
 	Renderer(Window& parent);
