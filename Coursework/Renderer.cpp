@@ -1084,7 +1084,8 @@ void Renderer::LoadShaders() {
 	// Missing: SHADER_MANAGER->AddShader("SimpleShadowScene", SHADERDIR"ShadowSceneVert.glsl", SHADERDIR"ShadowSceneFrag.glsl");
 	SHADER_MANAGER->AddShader("QuadShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"TexturedFragment.glsl");
 	SHADER_MANAGER->AddShader("TextureQuadShader", SHADERDIR"TexturedQuadVertex.glsl", SHADERDIR"TexturedQuadFragment.glsl"); // Adding this one just so I don't break an
-	SHADER_MANAGER->AddShader("OldFilm", SHADERDIR"NoiseVertex.glsl", SHADERDIR"NoiseFragment.glsl");
+	SHADER_MANAGER->AddShader("OldFilm", SHADERDIR"NoiseVertex.glsl", SHADERDIR"NoiseFragment2.glsl");
+	//SHADER_MANAGER->AddShader("OldFilm", SHADERDIR"NoiseVertex.glsl", SHADERDIR"NoiseFragment.glsl");
 	SHADER_MANAGER->AddShader("LightShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneFragment.glsl");
 	SHADER_MANAGER->AddShader("WaterShader", SHADERDIR"WaterVertex.glsl", SHADERDIR"WaterFragment.glsl");
 	SHADER_MANAGER->AddShader("CubeMapShader", SHADERDIR"skyboxVertex.glsl", SHADERDIR"skyboxFragment.glsl");
