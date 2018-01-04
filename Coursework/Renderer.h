@@ -35,6 +35,7 @@ class MD5FileData;
 class SimpleShadow;
 class ShaderArt;
 class Scope;
+class CameraController;
 
 // Shader AI
 class ShaderAI;
@@ -211,6 +212,6 @@ protected:
 	SceneNode* bulbNode;
 
 	// Reel
-	int reelNo = 4;
+	CameraController* controller;
 
 };

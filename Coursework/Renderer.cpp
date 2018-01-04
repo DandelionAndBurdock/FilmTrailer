@@ -160,6 +160,10 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//glUniform1f(farPlaneLocation, farPlane);
 	// End stupid shadow stuff
 	sceneTime = 0.0f;
+	std::vector<glm::vec3> wps = { glm::vec3(1200.0f, 100.0f, 1100.0f), glm::vec3(1200.0f, 100.0f, 1100.0f), glm::vec3(800.0f, 100.0f, 1150.0f), glm::vec3(1400.0f, 500.0f, 200.0f), glm::vec3(1400.0f, 500.0f, 200.0f) };
+	std::vector<glm::vec3> vps = { glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f),  glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f)), glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f)) };
+	std::vector<float> tps = { 2500.0f, 5000.0f, 3000.0f,  8000.0f };
+	controller = new CameraController(camera, wps, vps, tps); //Hippo
 }; //Temp variables
 	
 
@@ -572,7 +576,8 @@ void Renderer::UpdateScene(float msec) {
 	projMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);
 
 	if (currentScene != SCENE_A) {
-		camera->UpdateCamera(msec);
+		//camera->UpdateCamera(msec);
+		controller->Update(msec);
 	}
 	
 	viewMatrix = camera->BuildViewMatrix();
@@ -737,7 +742,7 @@ void Renderer::RenderScene() {
 		}
 		else {
 			// Calculate Shadows
-			if (sceneTime < 3000 && !lights.empty()) {
+			if (sceneTime < 10000 && !lights.empty()) {
 				glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 				glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 				glEnable(GL_DEPTH_TEST);
@@ -776,7 +781,7 @@ void Renderer::RenderScene() {
 			DrawSkybox();
 			TestDraw();
 			
-			if (sceneTime > 3000) {
+			if (sceneTime > 10000) {
 				scenes[SCENE_B]->GetRoot()->SetInactive();
 				scenes[SCENE_C]->GetRoot()->SetActive();
 				currentCubeMap = scenes[SCENE_C]->GetCubeMap();
@@ -1045,17 +1050,18 @@ void Renderer::DrawFPS() {
 void Renderer::SetupScenes() {
 	masterRoot = new SceneNode();
 	SetupSceneA();
-	currentScene = SCENE_F; // Revert
-	currentCubeMap = cubeMapA;
+	currentScene = SCENE_B; // Revert
+	currentCubeMap = cubeMapB;
 	SetupSceneB();
 	SetupSceneC();
 	SetupSceneD();
 	SetupSceneE();
 	SetupSceneF();
 	scenes[SCENE_D]->GetRoot()->SetInactive();
-	scenes[SCENE_B]->GetRoot()->SetInactive();
+	scenes[SCENE_E]->GetRoot()->SetInactive();
 	scenes[SCENE_C]->GetRoot()->SetInactive();
 	scenes[SCENE_A]->GetRoot()->SetInactive();
+	camera->SetPosition(glm::vec3(1200.0f, 100.0f, 1100.0f));
 	return; //Revert
 	SetupSceneD();
 	SetupSceneE();
@@ -1219,7 +1225,7 @@ void Renderer::SetupCamera() {
 	camera->SetPosition(glm::vec3(0.0f, 100.0f, 750.0f));
 	std::vector<glm::vec3> wps = { glm::vec3(-2000.0f, 1800.0f, -2000.0f), glm::vec3(2000.0f, -1800.0f, -2000.0f) , glm::vec3(2000.0f, 1800.0f, 2000.0f), glm::vec3(-2000.0f, -1800.0f, 2000.0f) }; //TODO: Read in from file
 	std::vector<glm::vec3> lps = { glm::vec3(00.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f) , glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f) };
-	cameraControl = new CameraController(camera, wps, lps);
+//	cameraControl = new CameraController(camera, wps, lps);
 }
 
 
@@ -1618,7 +1624,6 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	}
 
 	if (currentScene == SCENE_B) {
-		std::cout << sceneTime << std::endl;
 		if (sceneTime > 13000.0f) {
 			Transition(SCENE_B, SCENE_C);
 		}
@@ -1628,12 +1633,19 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 
 		//lights[0]->SetPosition(glm::vec3(300.0f + 100.0f * sin(msec/ 100.0f), 300.0f + 100.0f * cos(msec / 100.0f), 100.0f + 100.0f  * sin(msec/ 100.0f)));
 		if (!lights.empty()) {
-			lights[0]->SetPosition(glm::vec3(1040.0f, 250.0f + 200.0f * cos(time / 1000.0f), 300.0f + 200.0f * sin(time / 1000.0f)));
-			lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(3 * time / 1000.0f), 50.0f + 40.0f * cos(2 * time / 1000.0f), 1200.0f + 200.0f * sin(time / 1000.0f)));
-			lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(time / 1000.0f), 50.0f, 500.0f + 50.0f * sin(time / 1000.0f)));
+			if (sceneTime < 4800) {//Hippo
+				lights[0]->SetPosition(glm::vec3(1040.0f, 250.0f + 200.0f * cos(time / 1000.0f), 300.0f + 200.0f * sin(time / 1000.0f)));
+			}
+			else if (sceneTime < 10000) {
+				lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(3 * time / 1000.0f), 50.0f + 40.0f * cos(2 * time / 1000.0f), 1200.0f + 200.0f * sin(time / 1000.0f)));
+			}
+			else {
+				lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(time / 1000.0f), 50.0f, 500.0f + 50.0f * sin(time / 1000.0f)));
+			}
+		
 		}
 
-		if (sceneTime > 6000) {
+		if (sceneTime > 13000) {
 			postProcessor->ShatterMoveOn();
 			postProcessor->Update(msec / 1000.0f);
 		}

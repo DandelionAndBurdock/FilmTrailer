@@ -4,8 +4,8 @@
 
 #include <iostream>
 
-CameraController::CameraController(Camera* camera, std::vector<glm::vec3>& wayPoints, std::vector<glm::vec3>& lookPoints) :
-	camera(camera), wayPoints(wayPoints), viewPoints(lookPoints)
+CameraController::CameraController(Camera* camera, std::vector<glm::vec3>& wayPoints, std::vector<glm::vec3>& lookPoints, std::vector<float>& tps) :
+	camera(camera), wayPoints(wayPoints), viewPoints(lookPoints), timePoints(tps)
 {
 	if (wayPoints.size() != lookPoints.size()) {
 		std::cout << "Error initalising camera controller" << std::endl;
@@ -15,7 +15,8 @@ CameraController::CameraController(Camera* camera, std::vector<glm::vec3>& wayPo
 	time = 0.0f;
 	currentWaypoint = 0;
 	nextWaypoint = (currentWaypoint + 1) % wayPoints.size();
-	automatic = false;
+	timePerWayPoint = tps[currentWaypoint];
+	automatic = true;
 }
 
 CameraController::~CameraController()
@@ -42,9 +43,9 @@ void CameraController::UpdateTime(float msec) {
 
 	if (time > timePerWayPoint) { //TODO: Would have problems with very small timePerWayPoint < frameRate
 		time = time - timePerWayPoint;
-		++currentWaypoint;
 		currentWaypoint = (currentWaypoint + 1) % wayPoints.size();
 		nextWaypoint = (currentWaypoint + 1) % wayPoints.size();
+		timePerWayPoint = timePoints[currentWaypoint % timePoints.size()];
 	}
 }
 
@@ -72,7 +73,7 @@ void CameraController::UpdatePosition() {
 }
 
 void CameraController::UpdateViewDirection() {
-	glm::vec3 targetDirection = lerp<glm::vec3>(viewPoints[currentWaypoint], viewPoints[nextWaypoint], time / timePerWayPoint) - camera->GetPosition();
+	glm::vec3 targetDirection = lerp<glm::vec3>(viewPoints[currentWaypoint], viewPoints[nextWaypoint], time / timePerWayPoint);
 	glm::vec3 currentDirection = camera->GetViewDirection();
 	camera->SetViewDirection(glm::normalize(lerp<glm::vec3>(currentDirection, targetDirection, time / timePerWayPoint)));
 }
