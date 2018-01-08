@@ -11,18 +11,18 @@
 
 namespace Random {
 	// Some random colours
-	const int NUM_RANDOM_COLOURS = 3;
+	const int NUM_RANDOM_COLOURS = 10;
 	const glm::vec3 RANDOM_COLOURS[NUM_RANDOM_COLOURS] = {
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 1.0f),
-		//glm::vec3(1.0f, 0.411765f, 0.705882f),
-		//glm::vec3(1.0f, 1.0f, 0.0f),
-		//glm::vec3(0.627451f, 0.12549f, 0.941176f),
-		//glm::vec3(1.0f, 0.0f, 1.0f),
-		//glm::vec3(1.0f, 0.54902f, 0  .0f),
-		//glm::vec3(0.0f, 0.74902f, 1.0f),
-		//glm::vec3(0.862745f, 0.0784314f, 0.235294f)
+		glm::vec3(1.0f, 0.411765f, 0.705882f),
+		glm::vec3(1.0f, 1.0f, 0.0f),
+		glm::vec3(0.627451f, 0.12549f, 0.941176f),
+		glm::vec3(1.0f, 0.0f, 1.0f),
+		glm::vec3(1.0f, 0.54902f, 0.0f),
+		glm::vec3(0.0f, 0.74902f, 1.0f),
+		glm::vec3(0.862745f, 0.0784314f, 0.235294f)
 		 
 	};
 }

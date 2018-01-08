@@ -50,16 +50,20 @@ void FlareManager::Render() {
 
 void FlareManager::LoadFlares() {
 	const int NUM_FLARES = 11;
-	GLfloat scales[NUM_FLARES] = { 0.5f, 0.23f, 0.1f, 0.05f, 0.06f, 0.07f, 0.2f, 0.07f, 0.3f, 0.4f, 0.6f };
+	GLfloat scales[NUM_FLARES] = { 0.1f, 0.15f, 0.05f, 0.01f, 0.01f, 0.015f, 0.05f, 0.015f, 0.1f, 0.3f, 0.15f };
 	GLint textures[NUM_FLARES] = { 5, 3, 1, 6, 2, 4, 6, 2, 4, 3, 7 };
 	for (int i = 0; i < NUM_FLARES; ++i) {
 		flares.push_back(Flare("Flare" + std::to_string(textures[i]), scales[i]));
 	}
 	
 }
+
+float FLARE_SPACINGS[11] = { 0.0, 3.0, 0.3, 0.8, 1.2, 1.6, 2.2, 2.4, 2.9, 3.1, 0.1 };
 void FlareManager::SetFlarePositions(const glm::vec2& lightPos, const glm::vec2& lightToCentre) {
 	for (int i = 0; i < flares.size(); ++i) {
-		glm::vec2 sunToFlare = glm::scale(glm::mat3(), glm::vec2(GLfloat(i) * FLARE_SPACING)) * glm::vec3(lightToCentre, 1.0);
+		//glm::vec2 sunToFlare = glm::scale(glm::mat3(), glm::vec2(GLfloat(i) * FLARE_SPACING)) * glm::vec3(lightToCentre, 1.0);
+		glm::vec2 sunToFlare = glm::scale(glm::mat3(), glm::vec2(FLARE_SPACINGS[i])) * glm::vec3(lightToCentre, 1.0);
+
 		flares[i].screenPos = lightPos + sunToFlare;
 	}
 }

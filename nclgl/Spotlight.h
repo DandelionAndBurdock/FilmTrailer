@@ -15,6 +15,7 @@ public:
 	float GetOuterCutOff() { return outerCutoff; }
 	float GetRadius() { return radius; }
 	void Randomise(float msec);
+	void Rotate(const glm::mat4& rot);
 protected:
 	glm::vec3 direction;
 	// Cosine of cutoff angle for spotlight cone in radians 
@@ -27,4 +28,6 @@ protected:
 	// Used for randomisation
 	float lastChangedTime = 0.0f;						// Time since changed colour in milliseconds
 	float colourChangeTime = 1000.0f;	// Time
+
+	
 };

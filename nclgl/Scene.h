@@ -36,7 +36,7 @@ public:
 	void UpdateEffects(GLfloat msec, const glm::vec3& cameraPos);
 	void DrawEffects(const glm::mat4& viewProj, const glm::vec3& cameraPos);
 	void ToggleEmitter() { emitterOn = !emitterOn; }
-
+	void EmitterOn() { emitterOn = true; }
 	void SetFireworks(FireworkSystem* firework) { fireworks = firework; }
 	void SetEmitter(ParticleEmitter* particleEmitter);
 	void SetLightning(Lightning* lightning) { this->lightning = lightning; }

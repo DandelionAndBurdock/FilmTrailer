@@ -68,8 +68,8 @@ protected:
 	glm::vec3 velocityB = glm::vec3(0.05f, -0.2f, 0.0f);
 	glm::vec3 velocityC = glm::vec3(0.1f, -0.4f, 0.0f);
 	glm::vec3 velocityD = glm::vec3(0.2f, -0.2f, 0.0f);
-	glm::vec3 velocityE = glm::vec3(-0.0f, -0.02f, 0.0f);
-	glm::vec3 velocityF = glm::vec3(0.15f, -0.3f, 0.0f);
+	glm::vec3 velocityE = glm::vec3(-0.1f, -0.02f, 0.0f);
+	glm::vec3 velocityF = glm::vec3(0.0f, -0.0f, 0.0f);
 	glm::vec3 velocityG = glm::vec3(-0.1f, -0.2f, 0.0f);
 	GLfloat time = 0.0f;
 	glm::vec3 gravity = glm::vec3(0.0f, 0.1f, 0.0f);

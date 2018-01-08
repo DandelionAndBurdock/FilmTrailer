@@ -166,14 +166,36 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	std::vector<float> tps = { 2500.0f, 5000.0f, 3000.0f,  5000.0f, 1000.0f, 9000.0f };
 
 	// Scene C
-	wps.push_back(glm::vec3(1200.0f, 600.0f, 1100.0f));
-	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f))));
+
+	wps.push_back(glm::vec3(1200.0f, 800.0f, 1100.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f))));
 	tps.push_back(4000.0f);
-	wps.push_back(glm::vec3(1500.0f, 500.0f, 100.0f));
-	vps.push_back(glm::vec3(glm::normalize(glm::vec3(-1.0f, -1.0f, 0.0f))));
+
+
+	wps.push_back(glm::vec3(338.0f, 889.0f, 1093.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(-0.65f, -0.06f, -0.75f))));
 	tps.push_back(4000.0f);
-	wps.push_back(glm::vec3(1500.0f, 500.0f, 100.0f));
-	vps.push_back(glm::vec3(glm::normalize(glm::vec3(-1.0f, -1.0f, 0.0f))));
+	wps.push_back(glm::vec3(338.0f, 889.0f, 1093.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.63f, -0.48f, 0.62f))));
+	tps.push_back(4000.0f);
+
+	wps.push_back(glm::vec3(1849.0f, 157.0f, 2560.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(-0.37f, -0.23f, -0.898f))));
+	tps.push_back(4000.0f);
+	wps.push_back(glm::vec3(1849.0f, 157.0f, 2560.0f));
+	vps.push_back(glm::vec3(glm::vec3(glm::normalize(glm::vec3(-0.37f, -0.23f, -0.898f)))));
+	tps.push_back(7000.0f);
+
+	wps.push_back(glm::vec3(1849.0f, 907.0f, 2560.0f));
+	vps.push_back(glm::vec3(glm::vec3(glm::normalize(glm::vec3(-0.37f, -0.4f, -0.898f)))));
+	tps.push_back(7000.0f);
+
+	// Scene D
+	wps.push_back(glm::vec3(636.0f, 808.0f, 1190.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.0f, -0.6f, -0.8f))));
+	tps.push_back(4000.0f);
+	wps.push_back(glm::vec3(636.0f, 808.0f, 1190.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.0f, -0.6f, -0.8f))));
 	tps.push_back(4000.0f);
 	controller = new CameraController(camera, wps, vps, tps); //Hippo
 }; //Temp variables
@@ -425,8 +447,10 @@ void Renderer::SetupSceneB() {
 }
 
 void Renderer::SetupSceneC() {
-	SceneNode* heightMap = new SceneNode(new HeightMap(TEXTUREDIR"terrain.raw"), "TerrainMultiTexShader");
-	//grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
+	HeightMap* terrain = new HeightMap(TEXTUREDIR"terrain.raw");
+	//	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
+	SceneNode* heightMap = new SceneNode(terrain, "TerrainMultiTexShader");
+	grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_C]->SetCubeMap(cubeMapC);
 	scenes[SCENE_C]->SetTerrain(heightMap);
@@ -444,7 +468,7 @@ void Renderer::SetupSceneC() {
 	sun->UseTexture("Sun");
 	heightMap->AddChild(sun);
 
-	ufoNode = new CubeRobot();
+	//ufoNode = new CubeRobot();
 
 	OBJMesh* m = new OBJMesh;
 	if (!m->LoadOBJMesh(MESHDIR"sphere.obj")) {
@@ -472,11 +496,20 @@ void Renderer::SetupSceneC() {
 	waterNode->UseTexture("DepthMap");
 	heightMap->AddChild(waterNode);
 
-
+	cone= new OBJMesh;
+	if (!cone->LoadOBJMesh(MESHDIR"cone.obj")) {
+		__debugbreak();
+	}
+	coneNode = new SceneNode(cone, "ConeShader");
+	coneNode->SetColour(glm::vec4(0.0f));
+	coneNode->SetModelScale(glm::vec3(80.0f));
+	spotlight->AddChild(coneNode);
+	ufoNode->SetBoundingRadius(10000.0f);
+	coneNode->SetBoundingRadius(100000.0f);
 	return;
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_C]->SetCubeMap(cubeMapC);
-	HeightMap* terrain = new HeightMap(TEXTUREDIR"PoolMap.data");
+//	HeightMap* terrain = new HeightMap(TEXTUREDIR"PoolMap.data");
 //	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
 	scenes[SCENE_C]->SetTerrain(heightMap);
 	heightMap->UseTexture("Terrain");
@@ -524,6 +557,9 @@ void Renderer::SetupSceneD() {
 	scenes[SCENE_D]->SetTerrain(heightMap);
 	scenes[SCENE_D]->SetCubeMap(cubeMapC);
 	scenes[SCENE_D]->SetEmitter(new ParticleEmitter);
+
+	lightning = new Lightning(glm::vec3(950.0f, 500.0f, 700.0f), glm::vec3(1150.0f, 0.0f, 800.0f));//TODO: Double delete
+	scenes[SCENE_D]->SetLightning(lightning);
 	return;
 	//scenes.push_back(new Scene(masterRoot));
 	//scenes[SCENE_D]->SetCubeMap(cubeMapD);
@@ -581,11 +617,7 @@ void Renderer::UpdateScene(float msec) {
 	if (currentScene == SCENE_F && sceneTime > 6000) {
 			Transition(SCENE_F, SCENE_A);
 	}
-	if (currentScene == SCENE_D && sceneTime > 6000) {
-		camera->SetPosition(glm::vec3(16.0f, 71.0f, 99.0f));
-		controller->ToggleAutoMovement();
-		Transition(SCENE_D, SCENE_E);
-	}
+
 	OGLRenderer::UpdateScene(msec);
 
 	CalculateFPS(msec);
@@ -622,6 +654,7 @@ void Renderer::UpdateScene(float msec) {
 			PrepareToTransition();
 		}
 		if (currentScene == SCENE_D) {
+			coneNode->SetInactive();
 			PostTransition();
 		}
 		
@@ -651,9 +684,9 @@ void Renderer::UpdateScene(float msec) {
 	
 	//dirLight->Rotate(1.0 / 10.0 * msec, glm::vec3(0.0, 0.0, 1.0));
 
-	//spotlight->Randomise(msec);
+
 	
-	//Revert: flareManager->PrepareToRender(camera->GetPosition(), projMatrix * viewMatrix, sun->GetPosition());
+
 }
 
 void Renderer::RenderObjects(const glm::vec4& clipPlane) {
@@ -663,7 +696,7 @@ void Renderer::RenderObjects(const glm::vec4& clipPlane) {
 	}
 	DrawNodes();
 	if (currentScene == SCENE_C) {
-		//grass->Draw(); Revert
+		grass->Draw(); 
 	}
 	
 
@@ -836,7 +869,7 @@ void Renderer::RenderScene() {
 			else {
 
 			}
-			
+			glDisable(GL_BLEND);
 			PresentScene();
 			DrawFPS();
 			SwapBuffers();
@@ -855,10 +888,16 @@ void Renderer::RenderScene() {
 		}
 		DrawSceneToBuffer();
 		postProcessor->ProcessScene();
-		//RenderViewPointToBuffer(ufoNode->GetPosition() - glm::vec3(0.0f, -30.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+		if (sceneTime > 25000) {
+			RenderViewPointToBuffer(ufoNode->GetPosition() - glm::vec3(0.0f, 50.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+		}
+		glDisable(GL_BLEND);
 		PresentScene();
-		//RenderSplitScreen(100, 100, 150, 150);
+		if (sceneTime > 25000) {
+			RenderSplitScreen(100, 100, 150, 150);
+		}
 
+		flareManager->Render();
 		DrawFPS();
 
 		SwapBuffers();
@@ -1083,10 +1122,10 @@ void Renderer::SetupScenes() { //Warthog
 	SetupSceneD();
 	SetupSceneE();
 	SetupSceneF();
-	scenes[SCENE_D]->GetRoot()->SetInactive();
+	scenes[SCENE_C]->GetRoot()->SetInactive();
 	ufoNode->SetActive();
 	scenes[SCENE_B]->GetRoot()->SetInactive();
-	scenes[SCENE_C]->GetRoot()->SetInactive();
+	scenes[SCENE_D]->GetRoot()->SetInactive();
 	scenes[SCENE_A]->GetRoot()->SetInactive();
 
 	return; //Revert
@@ -1127,7 +1166,7 @@ void Renderer::LoadShaders() {
 	SHADER_MANAGER->AddShader("GerstnerShader", SHADERDIR"GerstnerVertex.glsl", SHADERDIR"GerstnerFragment.glsl");
 	// Missing: SHADER_MANAGER->AddShader("CausticShader", SHADERDIR"CausticVertex3JustCheat.glsl", SHADERDIR"CausticFragment3JustCheat.glsl");
 	SHADER_MANAGER->AddShader("ParticleShader", SHADERDIR"vertex.glsl", SHADERDIR"fragment.glsl", SHADERDIR"geometry.glsl");
-
+	SHADER_MANAGER->AddShader("ConeShader", SHADERDIR"SceneVertex.glsl", SHADERDIR"SceneColourFragment.glsl");
 	// Post processing shaders
 	SHADER_MANAGER->AddShader("BlurShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BlurFragment.glsl");
 	SHADER_MANAGER->AddShader("BloomShader", SHADERDIR"TexturedVertex.glsl", SHADERDIR"BloomFragment.glsl");
@@ -1260,7 +1299,7 @@ void Renderer::SetupCamera() {
 void Renderer::UpdateUniforms() {
 
 	activeShaders.insert("CubeMapShader");
-	if (currentScene == SCENE_E) {
+	if (currentScene == SCENE_D) {
 		activeShaders.insert("ParticleShader");
 	}
 	if (currentScene == SCENE_A) {
@@ -1627,9 +1666,11 @@ void Renderer::RenderSplitScreen(GLuint windowX, GLuint windowY, GLuint windowWi
 	glEnable(GL_DEPTH_TEST);
 }
 
+#include <glm/gtx/norm.hpp>
 // Temporary ugly function
 void Renderer::SceneSpecificUpdates(GLfloat msec) {
 	std::cout << camera->GetPosition().x << "," << camera->GetPosition().y << "," << camera->GetPosition().z << std::endl;
+	std::cout << camera->GetViewDirection().x << "," << camera->GetViewDirection().y << "," << camera->GetViewDirection().z << std::endl;
 	if (currentScene == SCENE_A) {
 		if (shaderArt) {
 			if (scope->GetRadius() > 0.399f) {
@@ -1667,7 +1708,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 
 		//lights[0]->SetPosition(glm::vec3(300.0f + 100.0f * sin(msec/ 100.0f), 300.0f + 100.0f * cos(msec / 100.0f), 100.0f + 100.0f  * sin(msec/ 100.0f)));
 		if (!lights.empty()) {
-			if (sceneTime < 4800) {//Hippo
+			if (sceneTime < 4800) {
 				lights[0]->SetPosition(glm::vec3(1040.0f, 250.0f + 200.0f * cos(time / 1000.0f), 300.0f + 200.0f * sin(time / 1000.0f)));
 			}
 			else if (sceneTime < 10000) {
@@ -1712,6 +1753,30 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 
 
 	}
+	if (currentScene == SCENE_C) {
+		flareManager->PrepareToRender(camera->GetPosition(), projMatrix * viewMatrix, sun->GetPosition());
+
+		//coneNode->SetTransform(glm::rotate(rotation, rotationAxis) * coneNode->GetTransform());
+		//glm::vec3 startingDir = glm::normalize(glm::vec3(spotlight->GetDirection()));
+		spotlight->Randomise(msec);
+		rotationAngle = 10.0f * sin(sceneTime / 750.0f);
+		glm::mat4 rot = glm::rotate(glm::radians(rotationAngle), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
+		coneNode->SetTransform(rot);
+		spotlight->Rotate(rot);
+		
+		//glm::vec3 currentDir = glm::normalize(glm::vec3(spotlight->GetDirection()));
+		//glm::vec3 rotationAxis = glm::cross(startingDir, currentDir);
+		//if (glm::length2(rotationAxis) > 0.01) {
+		//	float rotation = glm::asin(rotationAxis.length());
+		//	coneNode->SetTransform(glm::rotate(rotation, rotationAxis) * coneNode->GetTransform());
+		//
+		//}
+	////InProgress: Rotate cone node depending on direction (check without randomise first)
+											// Step2: Send colour to shader
+											// Step3: have a go at changing size
+											
+
+	}
 	if (currentScene == SCENE_D) {
 		if (sceneTime < 10000) {
 			ufoNode->SetTransform(glm::translate(laser->GetPosition() + glm::vec3(0.0, 500.0f, 0.0f)));
@@ -1722,10 +1787,16 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			laser->SetInactive();
 		}
 
-		if (sceneTime > 10000) {
+		if (sceneTime > 25000) {
+			camera->SetPosition(glm::vec3(-100.0f, 30.0f, 18.0f));
+			controller->ToggleAutoMovement();
 			Transition(SCENE_D, SCENE_E);
 		}
 
+		if (sceneTime > 1000 && sceneTime < 1050) {
+			scenes[currentScene]->EmitterOn();
+		}
+		
 		/*if (sceneTime > 6750 && !hellKnightNode->IsIdle()) {
 			hellKnightNode->SetIdle(true);
 			hellKnightNode->PlayAnim(MESHDIR"idle2.md5anim");
@@ -1738,7 +1809,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 		
 	}
 
-	if (currentScene == SCENE_A && lightning) {
+	if (currentScene == SCENE_D && lightning) {
 		ambientStrength = 0.2f * lightning->GetDimRatio();
 		tempLights = lightning->GetLights();
 	}
