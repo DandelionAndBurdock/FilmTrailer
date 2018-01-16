@@ -2,7 +2,7 @@
 in vec4 FragPos;
 
 uniform vec3 lightPos;
-const float farPlane = 1000.0f;
+const float farPlane = 25.0f;
 
 void main()
 {
@@ -13,5 +13,5 @@ void main()
     
     // write this as modified depth
     gl_FragDepth = lightDistance;
-	gl_FragDepth = 1.0f;
+	gl_FragDepth = 0.0;
 }

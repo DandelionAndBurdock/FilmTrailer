@@ -56,7 +56,7 @@ void main() {
 			outPosition = position[0];
 			vec3 dir = GetRandomDir(time / 1000.0);
 			dir.y = max(dir.y, 0.75);				// Cap y component so that always emitted upwards
-			outVelocity = normalize(dir) * 40;	//TODO: Remove random number + add noise
+			outVelocity = normalize(dir) * 30;	//TODO: Remove random number + add noise
 			outLifetime = 0.0;
 			outColour = vec4(GetRandomColour(time / deltaTime), 1.0);
 			outSize = 1.0;

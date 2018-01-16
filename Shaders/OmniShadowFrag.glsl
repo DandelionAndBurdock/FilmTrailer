@@ -39,8 +39,11 @@ float CalculateShadow(vec3 worldPos);
 vec3 PointLightContribution(PointLight light, vec3 normal, vec3 fragPos, vec3 fragToCamera, float shadow);
 
 void main(){
+	
 	// Test if this fragment is in shadow
 	float shadow = CalculateShadow(IN.worldPos);
+	//gl_FragColor = vec4(shadow, shadow, shadow, 1.0);
+	//return;
 	// Profile if (shadow) {discard;}
 
 	// Sample normal from bump map 
@@ -60,20 +63,24 @@ void main(){
 
 float CalculateShadow(vec3 worldPos){
 	// Vector from fragment position to light
-	vec3 fragToLight = worldPos - pointLights[0].position.xyz;
-
+	vec3 fragToLight = -pointLights[0].position.xyz + worldPos;
 	//  Depth of closest object in the light direction	
-    float closestDepth = texture(depthMapTex, fragToLight).r;
+	vec3 new_vec = vec3(fragToLight.x, fragToLight.y, fragToLight.z);
 	
+    float closestDepth = texture(depthMapTex, normalize(new_vec)).r;
+
+	//float farPlane = 250.0f;
 	// Renormalise closest depth from range [0, 1] to [0, farPlane]
 	closestDepth *= farPlane;
 	
 	// Depth of this fragment to the light
-	float currentDepth = length(fragToLight);
-	
+	//float currentDepth = length(fragToLight) / farPlane;
+float currentDepth = length(fragToLight);
 	// Bias to prevent shadow acne. Give surfaces which are almost perpendicular to the light a smaller bias
 	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
-	float bias = 0.05;
+	//float bias = 0.05;
+	//float bias = 0.0;
+	float bias = 0.0;
 	if (currentDepth > closestDepth + bias)
 		return 1.0;
 	else

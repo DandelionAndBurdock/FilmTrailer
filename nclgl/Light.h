@@ -21,6 +21,7 @@ public:
 		this->position = position;
 		this->lightColour = colour;
 		this->radius = radius;
+		this->boundingRadius =10000.0f;
 		/*transform = glm::translate(position);
 		SetModelScale(glm::vec3(10.0f));*/
 	}

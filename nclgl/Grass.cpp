@@ -35,8 +35,8 @@ void Grass::BufferGrassPositions(HeightMap* const terrain) {
 	// Each grass cluster is offset from the previous cluster by 
 	// a randomly generated offset between grassCusterOffsetMin 
 	// and grassCusterOffsetMax 
-	float grassClusterOffsetMin = 1.0f;
-	float grassClusterOffsetMax = 1.5f;
+	float grassClusterOffsetMin = 0.25f;
+	float grassClusterOffsetMax = 0.5f;
 	
 	// Each grass cluster has a height between grassPatchHeightMin
 	// and grassPatchHeightMax
@@ -45,17 +45,17 @@ void Grass::BufferGrassPositions(HeightMap* const terrain) {
 
 	// Start in the centre 	add clusters while not gone out of the boundaries
 	GLfloat startX = xDimension * 0.2f;
-	GLfloat startZ = zDimension * 0.8f;
+	GLfloat startZ = zDimension * 0.2f;
 	glm::vec3 currentClusterPosition(startX, 0.0f, startZ);
 	glm::vec3 startingClusterPosition(startX, terrain->GetHeightAtPosition(startX, startZ), startZ);
 	//glm::vec3 startingClusterPosition(xDimension * 0.25f, 0.0f, zDimension * 0.5f);
 	std::vector<glm::vec3> vertices;
 
 	//TODO: Make a function InBounds()
-	while (currentClusterPosition.x + grassClusterOffsetMax < startingClusterPosition.x + 500.0f && 
-		   currentClusterPosition.x > startingClusterPosition.x - 500.0f &&
-		 currentClusterPosition.z + grassClusterOffsetMax < startingClusterPosition.z + 500.0f &&
-		currentClusterPosition.z > startingClusterPosition.z - 500.0f)
+	while (currentClusterPosition.x + grassClusterOffsetMax < startingClusterPosition.x + 250.0f && 
+		   currentClusterPosition.x > startingClusterPosition.x - 250.0f &&
+		 currentClusterPosition.z + grassClusterOffsetMax < startingClusterPosition.z + 250.0f &&
+		currentClusterPosition.z > startingClusterPosition.z - 250.0f)
 	{
 		++numClusters;
 		currentClusterPosition.x += RNG->GetRandOffset(grassClusterOffsetMin, grassClusterOffsetMax);

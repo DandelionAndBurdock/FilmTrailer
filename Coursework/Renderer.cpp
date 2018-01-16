@@ -45,19 +45,21 @@ const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 unsigned int depthMapFBO;
 unsigned int depthCubemap;
 float near_plane = 1.0f;
-float far_plane = 25.0f;
+float far_plane = 250.0f;
 glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT, near_plane, far_plane);
-
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 std::vector<GLuint> shadowMatrixLocations;
 GLuint farPlaneLocation;
 GLuint modelMatrixLocation;
-GLuint lightPosLocation;
+
 ShaderAI* depthShader;
 
 // Add some more global variables
 std::string reel[] = { "One", "Two", "Three", "Four", "Five" };
+
+const int TEXT_POS_X = 850;
+const int TEXT_POS_Y = 600;
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CubeRobot::CreateCube();
@@ -154,7 +156,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		shadowMatrixLocations.push_back(glGetUniformLocation(depthShader->Program, std::string("lightViewMatrices[" + std::to_string(i) + "]").c_str()));
 	}
 	//farPlaneLocation = glGetUniformLocation(depthShader->Program, "farPlane");
-	lightPosLocation = glGetUniformLocation(depthShader->Program, "lightPos");
+
 	modelMatrixLocation = glGetUniformLocation(depthShader->Program, "modelMatrix");
 
 	//glUniform1f(farPlaneLocation, farPlane);
@@ -188,15 +190,27 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	wps.push_back(glm::vec3(1849.0f, 907.0f, 2560.0f));
 	vps.push_back(glm::vec3(glm::vec3(glm::normalize(glm::vec3(-0.37f, -0.4f, -0.898f)))));
-	tps.push_back(7000.0f);
+	tps.push_back(5000.0f);
 
 	// Scene D
 	wps.push_back(glm::vec3(636.0f, 808.0f, 1190.0f));
 	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.0f, -0.6f, -0.8f))));
-	tps.push_back(4000.0f);
+	tps.push_back(6000.0f);
 	wps.push_back(glm::vec3(636.0f, 808.0f, 1190.0f));
 	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.0f, -0.6f, -0.8f))));
+	tps.push_back(7000.0f);
+	wps.push_back(glm::vec3(546.0f, 51.0f, 1067.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.8f, -0.0f, -0.4f))));
 	tps.push_back(4000.0f);
+	wps.push_back(glm::vec3(546.0f, 51.0f, 1067.0f));
+	vps.push_back(glm::vec3(glm::normalize(glm::vec3(0.8f, -0.0f, -0.4f))));
+	tps.push_back(40500.0f);
+	//wps.push_back(glm::vec3(1836.0f, 208.0f, 800.0f));
+	//vps.push_back(glm::vec3(glm::normalize(glm::vec3(-0.3f, -0.0f, -0.8f))));
+	//tps.push_back(2500.0f);
+	//wps.push_back(glm::vec3(1836.0f, 208.0f, 800.0f));
+	//vps.push_back(glm::vec3(glm::normalize(glm::vec3(-0.3f, -0.0f, -0.8f))));
+	//tps.push_back(12500.0f);
 	controller = new CameraController(camera, wps, vps, tps); //Hippo
 }; //Temp variables
 	
@@ -450,7 +464,7 @@ void Renderer::SetupSceneC() {
 	HeightMap* terrain = new HeightMap(TEXTUREDIR"terrain.raw");
 	//	SceneNode* heightMap = new SceneNode(terrain, "TerrainShader");
 	SceneNode* heightMap = new SceneNode(terrain, "TerrainMultiTexShader");
-	grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
+	
 	scenes.push_back(new Scene(masterRoot));
 	scenes[SCENE_C]->SetCubeMap(cubeMapC);
 	scenes[SCENE_C]->SetTerrain(heightMap);
@@ -544,6 +558,8 @@ void Renderer::SetupSceneC() {
 
 void Renderer::SetupSceneD() {
 	scenes.push_back(new Scene(masterRoot));
+	HeightMap* terrain = new HeightMap();
+	grass = new Grass(terrain, TEXTUREDIR"grassPack.png");
 	SceneNode* heightMap = new SceneNode(new HeightMap(), "HoleTerrainShader");
 	heightMap->UseTexture("Terrain");
 	heightMap->UseTexture("TerrainBump");
@@ -557,9 +573,11 @@ void Renderer::SetupSceneD() {
 	scenes[SCENE_D]->SetTerrain(heightMap);
 	scenes[SCENE_D]->SetCubeMap(cubeMapC);
 	scenes[SCENE_D]->SetEmitter(new ParticleEmitter);
-
+	
 	lightning = new Lightning(glm::vec3(950.0f, 500.0f, 700.0f), glm::vec3(1150.0f, 0.0f, 800.0f));//TODO: Double delete
 	scenes[SCENE_D]->SetLightning(lightning);
+
+
 	return;
 	//scenes.push_back(new Scene(masterRoot));
 	//scenes[SCENE_D]->SetCubeMap(cubeMapD);
@@ -695,7 +713,7 @@ void Renderer::RenderObjects(const glm::vec4& clipPlane) {
 		SHADER_MANAGER->SetUniform(shader, "viewMatrix", camera->BuildViewMatrix()); //TODO: Store
 	}
 	DrawNodes();
-	if (currentScene == SCENE_C) {
+	if (currentScene == SCENE_D) {
 		grass->Draw(); 
 	}
 	
@@ -748,6 +766,11 @@ void Renderer::RenderScene() {
 		glClear(GL_STENCIL_BUFFER_BIT);
 		glStencilMask(0x00);
 		glDepthMask(GL_TRUE);
+		if (sceneTime > 1000.0f && sceneTime < 5500.0f) {
+			glDisable(GL_DEPTH_TEST);
+			text->RenderText(std::string("Stencil Buffer"), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+			glEnable(GL_DEPTH_TEST);
+		}
 		SwapBuffers();
 		glUseProgram(0);
 		ClearNodeLists();
@@ -799,8 +822,9 @@ void Renderer::RenderScene() {
 			return;
 		}
 		else {
+		
 			// Calculate Shadows
-			if (sceneTime < 10000 && !lights.empty()) {
+			if (!lights.empty()) {
 				glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 				glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 				glEnable(GL_DEPTH_TEST);
@@ -808,6 +832,7 @@ void Renderer::RenderScene() {
 				//SHADER_MANAGER->SetShader("ShadowDepth");
 				//TestDraw();
 				depthShader->Use();
+				glCullFace(GL_FRONT);
 				for (int i = 0; i < 2; ++i) {
 					glm::mat4 modelMat = glm::translate(glm::vec3((i + 5) * 200.0f, 100.0f * (1.5 - i), 60.0f * (i + 5))); // translate it down so it's at the center of the scene
 					modelMat = modelMat * glm::scale(glm::vec3(200.0f, 200.0f, 200.0f));	// it's a bit too big for our scene, so scale it down
@@ -822,6 +847,7 @@ void Renderer::RenderScene() {
 				glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMat));
 				text3D[2]->Draw(*depthShader);
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				glCullFace(GL_BACK);
 
 				//omniShadow->BindForWriting();
 				//omniShadow->SetUniforms(lights[0]);
@@ -863,14 +889,27 @@ void Renderer::RenderScene() {
 				currentCubeMap = scenes[SCENE_B]->GetCubeMap();
 				currentScene = SCENE_B;
 				postProcessor->ShatterOn();
+				glDisable(GL_BLEND);
 				postProcessor->ProcessScene();
 				postProcessor->ShatterOff();
+
+
 			}
 			else {
 
 			}
-			glDisable(GL_BLEND);
+	
+			if (sceneTime > 8500.0f && sceneTime < 15000.0f) {
+				glDisable(GL_DEPTH_TEST);
+				text->RenderText(std::string("Multi-Directional Shadows!?!"), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+				glEnable(GL_DEPTH_TEST);
+			}
 			PresentScene();
+			if (sceneTime > 21000.0f && sceneTime < 23000.0f) {
+				glDisable(GL_DEPTH_TEST);
+				text->RenderText(std::string("Textured Quad Water Effect"), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+				glEnable(GL_DEPTH_TEST);
+			}
 			DrawFPS();
 			SwapBuffers();
 			glUseProgram(0);
@@ -889,7 +928,9 @@ void Renderer::RenderScene() {
 		DrawSceneToBuffer();
 		postProcessor->ProcessScene();
 		if (sceneTime > 25000) {
+			coneNode->SetInactive();
 			RenderViewPointToBuffer(ufoNode->GetPosition() - glm::vec3(0.0f, 50.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+			coneNode->SetActive();
 		}
 		glDisable(GL_BLEND);
 		PresentScene();
@@ -899,6 +940,17 @@ void Renderer::RenderScene() {
 
 		flareManager->Render();
 		DrawFPS();
+
+		if (sceneTime > 4000.0f && sceneTime < 6000.0f) {
+			glDisable(GL_DEPTH_TEST);
+			text->RenderText(std::string("\"Lens Flare\""), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+			glEnable(GL_DEPTH_TEST);
+		}
+		else if (sceneTime > 25000) {
+			glDisable(GL_DEPTH_TEST);
+			text->RenderText(std::string("UFO Viewpoint"), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+			glEnable(GL_DEPTH_TEST);
+		}
 
 		SwapBuffers();
 		glUseProgram(0);
@@ -912,7 +964,16 @@ void Renderer::RenderScene() {
 		PresentScene();
 
 		DrawFPS();
-
+		if (sceneTime > 00.0f && sceneTime < 8000.0f) {
+			glDisable(GL_DEPTH_TEST);
+			text->RenderText(std::string("Dynamic Terrain"), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+			glEnable(GL_DEPTH_TEST);
+		}
+		else if (sceneTime > 9000.0f && sceneTime < 15000.0f) {
+			glDisable(GL_DEPTH_TEST);
+			text->RenderText(std::string("Lightning \& Particle Effect"), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+			glEnable(GL_DEPTH_TEST);
+		}
 		SwapBuffers();
 		glUseProgram(0);
 		ClearNodeLists();
@@ -929,6 +990,11 @@ void Renderer::RenderScene() {
 		SHADER_MANAGER->SetUniform("OldFilm", "modelMatrix", glm::mat4());
 		sceneQuad->Draw();
 		scenes[currentScene]->DrawEffects(projMatrix * viewMatrix, camera->GetPosition());
+		if (sceneTime > 00.0f && sceneTime < 4000.0f) {
+			glDisable(GL_DEPTH_TEST);
+			text->RenderText(std::string("Transform Feedback \"Fireworks\""), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+			glEnable(GL_DEPTH_TEST);
+		}
 		SwapBuffers();
 		glUseProgram(0);
 		ClearNodeLists();
@@ -954,7 +1020,7 @@ void Renderer::RenderScene() {
 			TEXTURE_MANAGER->BindTexture(reel[0]);
 		}
 			
-		
+
 
 		
 		SHADER_MANAGER->SetUniform("OldFilm", "time", time);
@@ -962,6 +1028,11 @@ void Renderer::RenderScene() {
 		SHADER_MANAGER->SetUniform("OldFilm", "viewMatrix", glm::mat4());
 		SHADER_MANAGER->SetUniform("OldFilm", "modelMatrix", glm::mat4());
 		sceneQuad->Draw();
+		if (sceneTime > 2000 && sceneTime < 4000) {
+			glDisable(GL_DEPTH_TEST);
+			text->RenderText(std::string("Old Projector Effect"), TEXT_POS_X, TEXT_POS_Y, 1.5f);
+			glEnable(GL_DEPTH_TEST);
+		}
 		SwapBuffers();
 		glUseProgram(0);
 		ClearNodeLists();
@@ -1104,6 +1175,7 @@ void Renderer::ClearNodeLists() {
 }
 
 void Renderer::DrawFPS() {
+	return;
 	glDisable(GL_DEPTH_TEST);
 	std::stringstream ss;
 	//ss << std::fixed << std::setprecision(0) << framesPerSecond;
@@ -1148,7 +1220,7 @@ void Renderer::LoadShaders() {
 	//SHADER_MANAGER->AddShader("TerrainShader", SHADERDIR"LightingHeightVertex.glsl", SHADERDIR"LightingFragment.glsl");
 
 	Misisng:SHADER_MANAGER->AddShader("TerrainMultiTexShader", SHADERDIR"LightingVertexMultiTex.glsl", SHADERDIR"LightingFragmentMultiTex.glsl");
-	SHADER_MANAGER->AddShader("HoleTerrainShader", SHADERDIR"DeformVertex.glsl", SHADERDIR"DeformFragment.glsl");
+	SHADER_MANAGER->AddShader("HoleTerrainShader", SHADERDIR"DeformVertexDouble.txt", SHADERDIR"DeformFragment.glsl");
 	SHADER_MANAGER->AddShader("ShadowDepth", SHADERDIR"ShadowCubeMapVertex.glsl", SHADERDIR"ShadowCubeMapFrag.glsl", SHADERDIR"ShadowCubeMapGeom.glsl");
 	SHADER_MANAGER->AddShader("AnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl");
 	// Missing: SHADER_MANAGER->AddShader("ExplodeAnimShader", SHADERDIR"AnimVertexNCLGL.glsl", SHADERDIR"AnimFragmentNCLGL.glsl", SHADERDIR"ExplodingGeom.glsl");
@@ -1620,7 +1692,7 @@ void Renderer::Transition(SceneNumber from, SceneNumber to) {
 void Renderer::SetConstants() {
 	ambientStrength = 0.2;
 	nearPlane = 1.0f;
-	farPlane = 10000.0f;
+	farPlane = 5000.0f;
 }
 
 void Renderer::RenderNoiseQuad() {
@@ -1711,7 +1783,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			if (sceneTime < 4800) {
 				lights[0]->SetPosition(glm::vec3(1040.0f, 250.0f + 200.0f * cos(time / 1000.0f), 300.0f + 200.0f * sin(time / 1000.0f)));
 			}
-			else if (sceneTime < 10000) {
+			else if (sceneTime < 9000) {
 				lights[0]->SetPosition(glm::vec3(1500.0f + 100.0f * sin(3 * time / 1000.0f), 50.0f + 40.0f * cos(2 * time / 1000.0f), 1200.0f + 200.0f * sin(time / 1000.0f)));
 			}
 			else {
@@ -1730,13 +1802,17 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 		if (!lights.empty()) {
 			std::vector<glm::mat4> shadowTransforms;
 			glm::vec3 lightPos = glm::vec3(lights[0]->GetPosition());
-			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-			shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+			//lightPos = glm::vec3(1300.0f, 50.0f, 300.0f);
+			//shadowProj = projMatrix;
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
 
+		//projMatrix = shadowProj;
+		//viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		/*	SHADER_MANAGER->SetShader("ShadowDepth");
 			for (int i = 0; i < 6; ++i) {
 				SHADER_MANAGER->SetUniform("ShadowDepth", "shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
@@ -1747,6 +1823,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			for (int i = 0; i < 6; ++i) {
 				glUniformMatrix4fv(shadowMatrixLocations[i], 1, GL_FALSE, &shadowTransforms[i][0][0]);
 			}
+			GLuint lightPosLocation = glGetUniformLocation(depthShader->Program, "lightPos");
 			glUniform3fv(lightPosLocation, 1, &lightPos[0]);
 			shadowTransforms.clear();
 		}
@@ -1759,7 +1836,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 		//coneNode->SetTransform(glm::rotate(rotation, rotationAxis) * coneNode->GetTransform());
 		//glm::vec3 startingDir = glm::normalize(glm::vec3(spotlight->GetDirection()));
 		spotlight->Randomise(msec);
-		rotationAngle = 10.0f * sin(sceneTime / 750.0f);
+		rotationAngle = 17.5f * sin(sceneTime / 750.0f);
 		glm::mat4 rot = glm::rotate(glm::radians(rotationAngle), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(glm::radians(rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
 		coneNode->SetTransform(rot);
 		spotlight->Rotate(rot);
@@ -1783,8 +1860,25 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			laser->SetActive();
 			SHADER_MANAGER->SetUniform("HoleTerrainShader", "holeTime", sceneTime / 10.0f);
 		}
-		else {
+		else if (sceneTime < 15000){
+			const float UFO_SPEED = 0.0005f; // Units per milliseconds
+
+			glm::vec3 targetPosition = glm::vec3(1000.0f, 150.0f, 1000.0f);
+			glm::vec3 movementDirection = targetPosition - ufoNode->GetPosition();
+
+			ufoNode->SetTransform(glm::translate(glm::vec3(UFO_SPEED * msec * movementDirection)) * ufoNode->GetTransform());
 			laser->SetInactive();
+			
+		}
+		else if (sceneTime < 15100) {
+			glm::vec3 ufoPos = ufoNode->GetPosition();
+			laser->SetTransform(glm::translate(ufoPos - glm::vec3(0.0, 500.0f, 0.0f)));
+			laser->SetActive();
+			SHADER_MANAGER->SetUniform("HoleTerrainShader", "epicentre2", glm::vec2(ufoPos.x, ufoPos.z));
+			SHADER_MANAGER->SetUniform("HoleTerrainShader", "holeTime2", (sceneTime - 15100) / 10.0f);
+		}
+		else{
+			SHADER_MANAGER->SetUniform("HoleTerrainShader", "holeTime2", (sceneTime - 15100) / 10.0f);
 		}
 
 		if (sceneTime > 25000) {
@@ -1793,10 +1887,12 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 			Transition(SCENE_D, SCENE_E);
 		}
 
-		if (sceneTime > 1000 && sceneTime < 1050) {
+		if (sceneTime > 12000 && sceneTime < 12050) {
 			scenes[currentScene]->EmitterOn();
 		}
+	
 		
+
 		/*if (sceneTime > 6750 && !hellKnightNode->IsIdle()) {
 			hellKnightNode->SetIdle(true);
 			hellKnightNode->PlayAnim(MESHDIR"idle2.md5anim");
@@ -1828,7 +1924,7 @@ void Renderer::SceneSpecificUpdates(GLfloat msec) {
 		ufoNode->SetTransform(glm::translate(glm::vec3(UFO_SPEED * msec * movementDirection)) * ufoNode->GetTransform());
 	} 
 
-	if (currentScene == SCENE_C && grass) {
+	if (currentScene == SCENE_D && grass) {
 		grass->Update(msec);
 		SHADER_MANAGER->SetUniform("Grass", "modelMatrix", modelMatrix);
 		SHADER_MANAGER->SetUniform("Grass", "viewMatrix", viewMatrix);
@@ -1924,5 +2020,8 @@ void Renderer::TestDraw() {
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMat));
 	text3D[2]->Draw(*shaderAI);
 
+	SHADER_MANAGER->SetUniform("TerrainShadowShader", "depthMapTex", 4);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 	RenderObjects(NO_CLIP_PLANE);
 }
